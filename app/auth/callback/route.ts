@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
 
       if (!supabaseUrl || !supabaseAnonKey) {
         console.error("[v0] Supabase environment variables not available in auth callback")
-        // Redirect to onboarding anyway since user clicked verification link
-        return NextResponse.redirect(`${origin}${next}`)
+        const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+        return NextResponse.redirect(`${redirectUrl}${next}`)
       }
 
       const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -33,10 +33,15 @@ export async function GET(request: NextRequest) {
 
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (!error) {
-        const forwardedHost = request.headers.get("x-forwarded-host") // original origin before load balancer
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+        const forwardedHost = request.headers.get("x-forwarded-host")
         const isLocalEnv = process.env.NODE_ENV === "development"
-        if (isLocalEnv) {
-          // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
+
+        if (siteUrl) {
+          // Use the configured site URL (production domain)
+          return NextResponse.redirect(`${siteUrl}${next}`)
+        } else if (isLocalEnv) {
+          // Local development - use origin
           return NextResponse.redirect(`${origin}${next}`)
         } else if (forwardedHost) {
           return NextResponse.redirect(`https://${forwardedHost}${next}`)
@@ -46,10 +51,11 @@ export async function GET(request: NextRequest) {
       }
     } catch (error) {
       console.error("[v0] Auth callback error:", error)
-      return NextResponse.redirect(`${origin}${next}`)
+      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+      return NextResponse.redirect(`${redirectUrl}${next}`)
     }
   }
 
-  // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
+  return NextResponse.redirect(`${redirectUrl}/auth/auth-code-error`)
 }

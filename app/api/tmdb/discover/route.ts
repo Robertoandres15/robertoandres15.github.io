@@ -13,18 +13,42 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || "movie"
     const page = searchParams.get("page") || "1"
     const genre = searchParams.get("genre") || ""
-    const year = searchParams.get("year") || ""
+    const yearParam = searchParams.get("year") || ""
     const sortBy = searchParams.get("sort_by") || "popularity.desc"
     const minRating = searchParams.get("min_rating") || ""
     const inTheaters = searchParams.get("in_theaters") === "true"
     const streamingServices = searchParams.get("streaming_services") || ""
 
+    let year = ""
+    if (yearParam && yearParam !== "0") {
+      const yearNum = Number.parseInt(yearParam, 10)
+      const currentYear = new Date().getFullYear()
+      // Validate year is reasonable (between 1900 and current year + 5)
+      if (!isNaN(yearNum) && yearNum >= 1900 && yearNum <= currentYear + 5) {
+        year = yearParam
+      } else {
+        console.warn("[v0] Invalid year parameter:", yearParam, "- ignoring")
+      }
+    }
+
     const params: any = {
       page: Number.parseInt(page),
-      genre,
-      year,
-      sort_by: sortBy,
-      vote_average_gte: minRating,
+    }
+
+    if (genre && genre !== "0") {
+      params.genre = genre
+    }
+
+    if (year) {
+      params.year = year
+    }
+
+    if (sortBy) {
+      params.sort_by = sortBy
+    }
+
+    if (minRating && minRating !== "0") {
+      params.vote_average_gte = minRating
     }
 
     if (inTheaters && type === "movie") {
@@ -42,7 +66,7 @@ export async function GET(request: NextRequest) {
       params.watch_region = "US" // Default to US region
     }
 
-    console.log("[v0] Discovering content:", { type, params, inTheaters, streamingServices })
+    console.log("[v0] Discovering content:", { type, params, inTheaters, streamingServices, processedYear: year })
     const results = type === "tv" ? await tmdb.discoverTV(params) : await tmdb.discoverMovies(params)
     console.log("[v0] Successfully fetched discover results:", results.results?.length, "items")
 

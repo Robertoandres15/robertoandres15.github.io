@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Search, Filter, Star, Calendar, Plus } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"
+import { Search, Filter, Star, Calendar, Plus, X } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import { useIsMobile } from "@/components/ui/use-mobile"
+import { MobileNavigation } from "@/components/mobile-navigation"
 import type { TMDBMovie, TMDBTVShow, TMDBGenre } from "@/lib/tmdb"
 
 interface MediaItem extends TMDBMovie, TMDBTVShow {
@@ -48,6 +49,7 @@ export default function ExplorePage() {
   const [userLists, setUserLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
@@ -227,6 +229,29 @@ export default function ExplorePage() {
     }
   }
 
+  const handleApplyFilters = async () => {
+    await handleSearch()
+    if (isMobile) {
+      setShowMobileFilters(false)
+    }
+  }
+
+  const handleClearFilters = () => {
+    setSelectedGenre("0")
+    setSelectedYear("0")
+    setSortBy("popularity.desc")
+    setMinRating("0")
+    setMediaType("all")
+    setInTheaters(false)
+    setSelectedStreamingServices([])
+    setMovieDuration("any")
+    setRecommendedBy("0")
+    loadTrending()
+    if (isMobile) {
+      setShowMobileFilters(false)
+    }
+  }
+
   const loadMore = () => {
     if (currentPage < totalPages) {
       handleSearch(currentPage + 1)
@@ -306,8 +331,8 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        <nav className="flex items-center justify-center gap-4 sm:gap-8 mb-8 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-x-auto">
+      <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
+        <nav className="hidden md:flex items-center justify-center gap-4 sm:gap-8 mb-8 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-x-auto">
           <Link
             href="/feed"
             className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
@@ -344,7 +369,7 @@ export default function ExplorePage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Explore Movies & TV</h1>
           <div className="flex gap-2">
             {isMobile ? (
-              <Sheet>
+              <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
@@ -355,6 +380,16 @@ export default function ExplorePage() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="bg-slate-900 border-slate-700 max-h-[85vh]">
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-4 top-4 z-10 h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Close</span>
+                    </Button>
+                  </SheetClose>
                   <SheetHeader>
                     <SheetTitle className="text-white">Filters</SheetTitle>
                   </SheetHeader>
@@ -470,6 +505,24 @@ export default function ExplorePage() {
                       </div>
 
                       <div>
+                        <label className="text-white text-sm mb-3 block">Availability</label>
+                        <Button
+                          variant={inTheaters ? "default" : "outline"}
+                          onClick={() => setInTheaters(!inTheaters)}
+                          disabled={mediaType === "tv"}
+                          className={
+                            mediaType === "tv"
+                              ? "border-white/10 text-white/50 bg-white/5 cursor-not-allowed w-full h-10"
+                              : inTheaters
+                                ? "bg-purple-600 hover:bg-purple-700 text-white w-full h-10"
+                                : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full h-10"
+                          }
+                        >
+                          {inTheaters ? "✓ " : ""}In Theaters
+                        </Button>
+                      </div>
+
+                      <div>
                         <label className="text-white text-sm mb-3 block">Streaming Services</label>
                         <div className="grid grid-cols-2 gap-2">
                           {streamingServices.map((service) => (
@@ -492,23 +545,12 @@ export default function ExplorePage() {
                       </div>
 
                       <div className="flex flex-col gap-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900 pb-4">
-                        <Button onClick={() => handleSearch()} className="bg-purple-600 hover:bg-purple-700 h-12">
+                        <Button onClick={handleApplyFilters} className="bg-purple-600 hover:bg-purple-700 h-12">
                           Apply Filters
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => {
-                            setSelectedGenre("0")
-                            setSelectedYear("0")
-                            setSortBy("popularity.desc")
-                            setMinRating("0")
-                            setMediaType("all")
-                            setInTheaters(false)
-                            setSelectedStreamingServices([])
-                            setMovieDuration("any")
-                            setRecommendedBy("0")
-                            loadTrending()
-                          }}
+                          onClick={handleClearFilters}
                           className="border-white/20 text-white hover:bg-white/20 bg-white/10 h-12"
                         >
                           Clear All
@@ -885,6 +927,8 @@ export default function ExplorePage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <MobileNavigation />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { MobileNavigation } from "@/components/mobile-navigation"
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -38,30 +39,110 @@ export default function FriendsPage() {
     }
   }
 
-  useEffect(() => {
-    // Fetch friends and pending requests on component mount
-    const fetchFriendsAndRequests = async () => {
-      setIsLoading(true)
-      try {
-        const friendsResponse = await fetch("/api/friends/list?type=friends")
-        const friendsData = await friendsResponse.json()
-        setFriends(friendsData.friends || [])
+  const sendFriendRequest = async (friendId: string) => {
+    try {
+      const response = await fetch("/api/friends/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendId }),
+      })
 
-        const requestsResponse = await fetch("/api/friends/list?type=pending")
-        const requestsData = await requestsResponse.json()
-        setPendingRequests(requestsData.requests || [])
-      } catch (error) {
-        console.error("Failed to fetch friends and requests:", error)
+      const data = await response.json()
+
+      if (response.ok) {
         toast({
-          title: "Failed to load friends and requests",
-          description: "An error occurred while loading your friends and pending requests",
+          title: "Friend request sent",
+          description: "Your friend request has been sent successfully",
+        })
+
+        // Update the search results to reflect the new status
+        setSearchResults((prev) =>
+          prev.map((user: any) => (user.id === friendId ? { ...user, friendship_status: "pending_sent" } : user)),
+        )
+      } else {
+        toast({
+          title: "Failed to send request",
+          description: data.error || "An error occurred while sending the friend request",
           variant: "destructive",
         })
-      } finally {
-        setIsLoading(false)
       }
+    } catch (error) {
+      console.error("Failed to send friend request:", error)
+      toast({
+        title: "Failed to send request",
+        description: "An error occurred while sending the friend request",
+        variant: "destructive",
+      })
     }
+  }
 
+  const respondToRequest = async (friendshipId: string, action: "accept" | "decline") => {
+    try {
+      const response = await fetch("/api/friends/respond", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendshipId, action }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: action === "accept" ? "Friend request accepted" : "Friend request declined",
+          description: `You have ${action === "accept" ? "accepted" : "declined"} the friend request`,
+        })
+
+        // Remove the request from pending requests
+        setPendingRequests((prev) => prev.filter((request: any) => request.id !== friendshipId))
+
+        // If accepted, refresh the friends list
+        if (action === "accept") {
+          fetchFriendsAndRequests()
+        }
+      } else {
+        toast({
+          title: `Failed to ${action} request`,
+          description: data.error || `An error occurred while ${action}ing the friend request`,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} friend request:`, error)
+      toast({
+        title: `Failed to ${action} request`,
+        description: `An error occurred while ${action}ing the friend request`,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const fetchFriendsAndRequests = async () => {
+    setIsLoading(true)
+    try {
+      const friendsResponse = await fetch("/api/friends/list?type=friends")
+      const friendsData = await friendsResponse.json()
+      setFriends(friendsData.friends || [])
+
+      const requestsResponse = await fetch("/api/friends/list?type=pending")
+      const requestsData = await requestsResponse.json()
+      setPendingRequests(requestsData.requests || [])
+    } catch (error) {
+      console.error("Failed to fetch friends and requests:", error)
+      toast({
+        title: "Failed to load friends and requests",
+        description: "An error occurred while loading your friends and pending requests",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchFriendsAndRequests()
   }, [])
 
@@ -113,9 +194,46 @@ export default function FriendsPage() {
     }
   }
 
+  const getFriendButtonContent = (user: any) => {
+    switch (user.friendship_status) {
+      case "friends":
+        return (
+          <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white" disabled>
+            <Check className="h-4 w-4 mr-2" />
+            Friends
+          </Button>
+        )
+      case "pending_sent":
+        return (
+          <Button variant="outline" className="bg-yellow-600 hover:bg-yellow-700 text-white" disabled>
+            <Clock className="h-4 w-4 mr-2" />
+            Pending
+          </Button>
+        )
+      case "pending_received":
+        return (
+          <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white" disabled>
+            <Clock className="h-4 w-4 mr-2" />
+            Respond in Requests
+          </Button>
+        )
+      default:
+        return (
+          <Button
+            variant="outline"
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+            onClick={() => sendFriendRequest(user.id)}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Friend
+          </Button>
+        )
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <nav className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
+      <nav className="hidden md:block border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
@@ -150,7 +268,7 @@ export default function FriendsPage() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-8">Friends</h1>
 
@@ -264,81 +382,124 @@ export default function FriendsPage() {
                 </CardContent>
               </Card>
 
-              {/* Existing search results code */}
-              {searchResults.map((user: any) => (
-                <div key={user.id} className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
-                    <AvatarFallback>{user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-white font-medium">{user.display_name}</h3>
-                    <p className="text-slate-400 text-sm">@{user.username}</p>
-                  </div>
-                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add Friend
-                  </Button>
-                </div>
-              ))}
+              {searchResults.length > 0 && (
+                <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="text-white">Search Results</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {searchResults.map((user: any) => (
+                      <div key={user.id} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
+                        <Avatar>
+                          <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                          <AvatarFallback>
+                            {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className="text-white font-medium">{user.display_name}</h3>
+                          <p className="text-slate-400 text-sm">@{user.username}</p>
+                        </div>
+                        {getFriendButtonContent(user)}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
-            {/* Existing TabsContent for friends */}
             <TabsContent value="friends" className="space-y-4">
-              {friends.map((friend: any) => (
-                <div key={friend.id} className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage
-                      src={friend.friend?.avatar_url || "/placeholder.svg"}
-                      alt={friend.friend?.display_name}
-                    />
-                    <AvatarFallback>
-                      {friend.friend?.display_name?.charAt(0) || friend.friend?.username?.charAt(0) || "F"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-white font-medium">{friend.friend?.display_name}</h3>
-                    <p className="text-slate-400 text-sm">@{friend.friend?.username}</p>
-                  </div>
-                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
-                    <Check className="h-4 w-4 mr-2" />
-                    Confirmed
-                  </Button>
-                </div>
-              ))}
+              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-white">Your Friends</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {friends.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-400">No friends yet. Start by searching for people you know!</p>
+                    </div>
+                  ) : (
+                    friends.map((friend: any) => (
+                      <div key={friend.id} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
+                        <Avatar>
+                          <AvatarImage
+                            src={friend.friend?.avatar_url || "/placeholder.svg"}
+                            alt={friend.friend?.display_name}
+                          />
+                          <AvatarFallback>
+                            {friend.friend?.display_name?.charAt(0) || friend.friend?.username?.charAt(0) || "F"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className="text-white font-medium">{friend.friend?.display_name}</h3>
+                          <p className="text-slate-400 text-sm">@{friend.friend?.username}</p>
+                        </div>
+                        <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white" disabled>
+                          <Check className="h-4 w-4 mr-2" />
+                          Friends
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
-            {/* Existing TabsContent for requests */}
             <TabsContent value="requests" className="space-y-4">
-              {pendingRequests.map((request: any) => (
-                <div key={request.id} className="flex items-center gap-4">
-                  <Avatar>
-                    <AvatarImage
-                      src={request.user?.avatar_url || "/placeholder.svg"}
-                      alt={request.user?.display_name}
-                    />
-                    <AvatarFallback>
-                      {request.user?.display_name?.charAt(0) || request.user?.username?.charAt(0) || "R"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-white font-medium">{request.user?.display_name}</h3>
-                    <p className="text-slate-400 text-sm">@{request.user?.username}</p>
-                  </div>
-                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
-                    <Check className="h-4 w-4 mr-2" />
-                    Accept
-                  </Button>
-                  <Button variant="outline" className="bg-red-600 hover:bg-red-700 text-white">
-                    <X className="h-4 w-4 mr-2" />
-                    Decline
-                  </Button>
-                </div>
-              ))}
+              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-white">Friend Requests</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {pendingRequests.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-slate-400">No pending friend requests.</p>
+                    </div>
+                  ) : (
+                    pendingRequests.map((request: any) => (
+                      <div key={request.id} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
+                        <Avatar>
+                          <AvatarImage
+                            src={request.user?.avatar_url || "/placeholder.svg"}
+                            alt={request.user?.display_name}
+                          />
+                          <AvatarFallback>
+                            {request.user?.display_name?.charAt(0) || request.user?.username?.charAt(0) || "R"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className="text-white font-medium">{request.user?.display_name}</h3>
+                          <p className="text-slate-400 text-sm">@{request.user?.username}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => respondToRequest(request.id, "accept")}
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Accept
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => respondToRequest(request.id, "decline")}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Decline
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      <MobileNavigation />
     </div>
   )
 }
