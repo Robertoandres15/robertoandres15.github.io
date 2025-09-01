@@ -1,16 +1,16 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Overpass } from "next/font/google"
+import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { MobileInitializer } from "@/components/mobile-initializer"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import "./globals.css"
 
-const overpass = Overpass({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-overpass",
+  variable: "--font-inter",
   weight: ["300", "400", "500", "600", "700", "800"],
 })
 
@@ -36,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans ${overpass.variable}`}>
+      <body className={`font-sans ${inter.variable}`}>
         <MobileInitializer />
         <Suspense fallback={null}>{children}</Suspense>
         <PWAInstallPrompt />
