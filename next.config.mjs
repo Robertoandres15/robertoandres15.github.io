@@ -6,9 +6,6 @@ const nextConfig = {
     unoptimized: true
   },
   assetPrefix: process.env.NODE_ENV === 'production' ? './' : '',
-  experimental: {
-    esmExternals: false
-  },
   eslint: {
     ignoreDuringBuilds: true,
   },
