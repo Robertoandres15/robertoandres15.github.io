@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Film, Users, Heart, Star } from "lucide-react"
+import { PWAInstallButton } from "@/components/pwa-install-button"
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -52,9 +53,12 @@ export default async function HomePage() {
             <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto text-pretty">
               Share recommendations, build wishlists, and discover your next favorite movie through your social circle.
             </p>
-            <Button size="lg" asChild className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-6">
-              <Link href="/auth/signup">Get Started</Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button size="lg" asChild className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-6">
+                <Link href="/auth/signup">Get Started</Link>
+              </Button>
+              <PWAInstallButton />
+            </div>
           </div>
 
           {/* Features Grid */}
