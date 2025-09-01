@@ -17,83 +17,74 @@ export function PWAInstallPrompt() {
 
   useEffect(() => {
     setIsClient(true)
+    console.log("[v0] PWA Install Prompt - Starting initialization")
 
-    // Add delay to ensure proper hydration
-    const timer = setTimeout(() => {
-      console.log("[v0] PWA Install Prompt - Starting initialization")
+    // Check if app is already installed
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+    const isInStandaloneMode = (window.navigator as any).standalone === true
+    const appInstalled = isStandalone || isInStandaloneMode
 
-      // Check if app is already installed
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-      const isInStandaloneMode = (window.navigator as any).standalone === true
-      const isAppInstalled = isStandalone || isInStandaloneMode
+    console.log("[v0] PWA Install Prompt - App installed check:", {
+      isStandalone,
+      isInStandaloneMode,
+      isAppInstalled: appInstalled,
+    })
 
-      console.log("[v0] PWA Install Prompt - App installed check:", {
-        isStandalone,
-        isInStandaloneMode,
-        isAppInstalled,
-      })
+    if (appInstalled) {
+      setIsInstalled(true)
+      return
+    }
 
-      if (isAppInstalled) {
-        console.log("[v0] PWA Install Prompt - App already installed, not showing prompt")
-        setIsInstalled(true)
+    // Device detection
+    const userAgent = navigator.userAgent
+    const platform = navigator.platform
+    const maxTouchPoints = navigator.maxTouchPoints || 0
+    const touchSupport = "ontouchstart" in window || maxTouchPoints > 0
+    const screenWidth = window.screen.width
+    const screenHeight = window.screen.height
+    const isMobileScreen = screenWidth <= 768 || screenHeight <= 768
+
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (platform === "MacIntel" && maxTouchPoints > 1)
+    const isAndroid = /Android/.test(userAgent)
+    const isMobile = isIOS || isAndroid || touchSupport || isMobileScreen
+
+    console.log("[v0] PWA Install Prompt - Device detection:", {
+      userAgent,
+      platform,
+      maxTouchPoints,
+      touchSupport,
+      screenWidth,
+      screenHeight,
+      isMobileScreen,
+      isIOS,
+      isAndroid,
+      isMobile,
+    })
+
+    // Check if dismissed recently
+    const dismissed = localStorage.getItem("pwa-prompt-dismissed")
+    if (dismissed) {
+      const dismissedTime = Number.parseInt(dismissed)
+      const dayInMs = 24 * 60 * 60 * 1000
+      if (Date.now() - dismissedTime < dayInMs) {
+        console.log("[v0] PWA Install Prompt - Recently dismissed, not showing")
         return
       }
+    }
 
-      // Enhanced device detection
-      const userAgent = navigator.userAgent
-      const platform = navigator.platform
-      const maxTouchPoints = navigator.maxTouchPoints || 0
-      const touchSupport = "ontouchstart" in window || maxTouchPoints > 0
-      const screenWidth = window.screen.width
-      const screenHeight = window.screen.height
-      const isMobileScreen = screenWidth <= 768 || screenHeight <= 768
+    console.log("[v0] PWA Install Prompt - Device detected, showing prompt after 1000ms")
 
-      // Enhanced iOS detection
-      const isIOS =
-        /iPad|iPhone|iPod/.test(userAgent) ||
-        (platform === "MacIntel" && maxTouchPoints > 1) ||
-        /iPhone|iPad|iPod|iOS/.test(userAgent)
-
-      const isAndroid = /Android/.test(userAgent)
-      const isMobile = isIOS || isAndroid || touchSupport || isMobileScreen
-
-      console.log("[v0] PWA Install Prompt - Device detection:", {
-        userAgent,
-        platform,
-        maxTouchPoints,
-        touchSupport,
-        screenWidth,
-        screenHeight,
-        isMobileScreen,
-        isIOS,
-        isAndroid,
-        isMobile,
-      })
-
-      // Check if dismissed recently
-      const dismissed = localStorage.getItem("pwa-prompt-dismissed")
-      if (dismissed) {
-        const dismissedTime = Number.parseInt(dismissed)
-        const dayInMs = 24 * 60 * 60 * 1000
-        if (Date.now() - dismissedTime < dayInMs) {
-          console.log("[v0] PWA Install Prompt - Recently dismissed, not showing")
-          return
-        }
-      }
-
-      // Show prompt for all devices (not just mobile)
-      console.log("[v0] PWA Install Prompt - Device detected, showing prompt after 1000ms")
-      setTimeout(() => {
-        setShowPrompt(true)
-        console.log("[v0] PWA Install Prompt - Showing PWA prompt now")
-      }, 1000)
-    }, 500)
+    const timer = setTimeout(() => {
+      console.log("[v0] PWA Install Prompt - Showing PWA prompt now")
+      setShowPrompt(true)
+    }, 1000)
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log("[v0] PWA Install Prompt - beforeinstallprompt event received")
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
+      setShowPrompt(true)
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
@@ -125,30 +116,25 @@ export function PWAInstallPrompt() {
     localStorage.setItem("pwa-prompt-dismissed", Date.now().toString())
   }
 
-  // Don't render on server side or if not ready
-  if (!isClient || isInstalled || !showPrompt) {
-    return null
-  }
+  // Don't render on server or if conditions not met
+  if (!isClient || isInstalled || !showPrompt) return null
 
-  const isIOS =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-
-  console.log("[v0] PWA Install Prompt - Rendering prompt, isIOS:", isIOS)
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 bg-slate-900 border border-purple-500/20 rounded-lg p-4 shadow-lg"
+      className="fixed bottom-4 left-4 right-4 z-50 bg-slate-900 border border-purple-500/20 rounded-lg p-4 shadow-lg"
       style={{
         position: "fixed",
         bottom: "16px",
         left: "16px",
         right: "16px",
         zIndex: 9999,
-        backgroundColor: "rgb(15 23 42)",
-        border: "1px solid rgba(168 85 247 / 0.2)",
+        backgroundColor: "#0f172a",
+        border: "1px solid rgba(168, 85, 247, 0.2)",
         borderRadius: "8px",
         padding: "16px",
-        boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
       }}
     >
       <div className="flex items-start gap-3">
