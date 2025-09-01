@@ -70,7 +70,7 @@ export function PWAInstallPrompt() {
 
       window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
 
-      const detectMobile = () => {
+      const detectDevice = () => {
         const userAgent = navigator.userAgent
         const platform = navigator.platform
         const maxTouchPoints = navigator.maxTouchPoints || 0
@@ -100,7 +100,7 @@ export function PWAInstallPrompt() {
 
         const isInStandaloneMode = window.navigator.standalone
 
-        console.log("[v0] Enhanced mobile detection:", {
+        console.log("[v0] Device detection:", {
           isIOS,
           isAndroid,
           isMobile,
@@ -113,28 +113,28 @@ export function PWAInstallPrompt() {
           touchSupport: "ontouchstart" in window,
         })
 
-        return { isIOS, isAndroid, isMobile, isInStandaloneMode }
+        return { isInStandaloneMode }
       }
 
-      const { isIOS, isMobile, isInStandaloneMode } = detectMobile()
+      const { isInStandaloneMode } = detectDevice()
 
-      if ((isIOS || isMobile) && !isInStandaloneMode) {
+      if (!isInStandaloneMode) {
         // Check if prompt was recently dismissed
         const dismissed = localStorage.getItem("pwa-prompt-dismissed")
         if (dismissed) {
           const dismissedTime = Number.parseInt(dismissed)
           const dayInMs = 24 * 60 * 60 * 1000
           const timeSinceDismissed = Date.now() - dismissedTime
-          console.log("[v0] Mobile prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
+          console.log("[v0] Prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
           if (timeSinceDismissed < dayInMs) {
-            console.log("[v0] Mobile prompt dismissed recently, not showing")
+            console.log("[v0] Prompt dismissed recently, not showing")
             return
           }
         }
 
-        console.log("[v0] Mobile device detected, showing prompt after 1000ms")
+        console.log("[v0] Device detected, showing prompt after 1000ms")
         setTimeout(() => {
-          console.log("[v0] Showing mobile prompt now")
+          console.log("[v0] Showing PWA prompt now")
           setShowPrompt(true)
         }, 1000)
       }
