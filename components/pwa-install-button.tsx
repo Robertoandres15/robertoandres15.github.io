@@ -155,7 +155,7 @@ export function PWAInstallButton() {
       onClick={handleInstallClick}
       variant="outline"
       size="lg"
-      className="bg-white/20 border-white/40 text-white hover:bg-white/30 hover:border-white/60 text-lg px-8 py-6 backdrop-blur-sm"
+      className="bg-white/30 border-white/60 text-white hover:bg-white/40 hover:border-white/80 text-lg px-8 py-6 backdrop-blur-sm font-semibold shadow-lg"
     >
       {getIcon()}
       {getButtonText()}
