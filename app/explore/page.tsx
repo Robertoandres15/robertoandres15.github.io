@@ -370,7 +370,7 @@ export default function ExplorePage() {
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                               <SelectItem value="all">All</SelectItem>
                               <SelectItem value="movie">Movies</SelectItem>
                               <SelectItem value="tv">TV Shows</SelectItem>
@@ -384,7 +384,7 @@ export default function ExplorePage() {
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
                               <SelectItem value="0">Any Genre</SelectItem>
                               {genres.map((genre) => (
                                 <SelectItem key={genre.id} value={genre.id.toString()}>
@@ -403,7 +403,7 @@ export default function ExplorePage() {
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
                               <SelectItem value="0">Any Year</SelectItem>
                               {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
                                 <SelectItem key={year} value={year.toString()}>
@@ -420,7 +420,7 @@ export default function ExplorePage() {
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                               <SelectItem value="popularity.desc">Most Popular</SelectItem>
                               <SelectItem value="vote_average.desc">Highest Rated</SelectItem>
                               <SelectItem value="release_date.desc">Newest</SelectItem>
@@ -437,7 +437,7 @@ export default function ExplorePage() {
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                               <SelectItem value="0">Any Rating</SelectItem>
                               <SelectItem value="7">7+ Stars</SelectItem>
                               <SelectItem value="8">8+ Stars</SelectItem>
@@ -458,7 +458,7 @@ export default function ExplorePage() {
                             >
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                               <SelectItem value="any">Any Duration</SelectItem>
                               <SelectItem value="0-90">Under 90 min</SelectItem>
                               <SelectItem value="90-120">90-120 min</SelectItem>
@@ -568,7 +568,7 @@ export default function ExplorePage() {
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                       <SelectItem value="all">All</SelectItem>
                       <SelectItem value="movie">Movies</SelectItem>
                       <SelectItem value="tv">TV Shows</SelectItem>
@@ -582,7 +582,7 @@ export default function ExplorePage() {
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
                       <SelectItem value="0">Any Genre</SelectItem>
                       {genres.map((genre) => (
                         <SelectItem key={genre.id} value={genre.id.toString()}>
@@ -599,7 +599,7 @@ export default function ExplorePage() {
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
                       <SelectItem value="0">Any Year</SelectItem>
                       {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
                         <SelectItem key={year} value={year.toString()}>
@@ -616,7 +616,7 @@ export default function ExplorePage() {
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                       <SelectItem value="popularity.desc">Most Popular</SelectItem>
                       <SelectItem value="vote_average.desc">Highest Rated</SelectItem>
                       <SelectItem value="release_date.desc">Newest</SelectItem>
@@ -631,7 +631,7 @@ export default function ExplorePage() {
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                       <SelectItem value="0">Any Rating</SelectItem>
                       <SelectItem value="7">7+ Stars</SelectItem>
                       <SelectItem value="8">8+ Stars</SelectItem>
@@ -652,7 +652,7 @@ export default function ExplorePage() {
                     >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                       <SelectItem value="any">Any Duration</SelectItem>
                       <SelectItem value="0-90">Under 90 min</SelectItem>
                       <SelectItem value="90-120">90-120 min</SelectItem>
@@ -670,7 +670,7 @@ export default function ExplorePage() {
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
                       <SelectItem value="0">Anyone</SelectItem>
                       {friends.map((friend) => (
                         <SelectItem key={friend.id} value={friend.id}>
