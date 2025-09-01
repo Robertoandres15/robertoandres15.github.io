@@ -16,113 +16,136 @@ export function PWAInstallPrompt() {
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    setIsClient(true)
-    console.log("[v0] PWA Install Prompt component mounted on client")
+    const initializePrompt = () => {
+      setIsClient(true)
+      console.log("[v0] PWA Install Prompt component mounted on client")
 
-    const checkIfInstalled = () => {
-      // Check if app is already installed
-      if (window.matchMedia("(display-mode: standalone)").matches) {
-        console.log("[v0] App detected as installed via display-mode")
-        return true
-      }
-      // Check for iOS standalone mode
-      if (window.navigator.standalone === true) {
-        console.log("[v0] App detected as installed via iOS standalone")
-        return true
-      }
-      // Check for Android TWA
-      if (document.referrer.includes("android-app://")) {
-        console.log("[v0] App detected as installed via Android TWA")
-        return true
-      }
-      console.log("[v0] App not detected as installed")
-      return false
-    }
-
-    if (checkIfInstalled()) {
-      setIsInstalled(true)
-      return
-    }
-
-    // Listen for beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
-      console.log("[v0] beforeinstallprompt event fired")
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-
-      // Check if prompt was recently dismissed
-      const dismissed = localStorage.getItem("pwa-prompt-dismissed")
-      if (dismissed) {
-        const dismissedTime = Number.parseInt(dismissed)
-        const dayInMs = 24 * 60 * 60 * 1000
-        const timeSinceDismissed = Date.now() - dismissedTime
-        console.log("[v0] Prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
-        if (timeSinceDismissed < dayInMs) {
-          console.log("[v0] Prompt dismissed recently, not showing")
-          return
+      const checkIfInstalled = () => {
+        // Check if app is already installed
+        if (window.matchMedia("(display-mode: standalone)").matches) {
+          console.log("[v0] App detected as installed via display-mode")
+          return true
         }
-      }
-
-      console.log("[v0] Showing prompt via beforeinstallprompt")
-      setShowPrompt(true)
-    }
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-
-    const detectMobile = () => {
-      const userAgent = navigator.userAgent
-      const platform = navigator.platform
-
-      // Enhanced iOS detection
-      const isIOS =
-        /iPad|iPhone|iPod/.test(userAgent) ||
-        (platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
-        /iPhone|iPad|iPod|iOS/.test(userAgent) ||
-        (userAgent.includes("Safari") && userAgent.includes("Mobile"))
-
-      const isAndroid = /Android/.test(userAgent)
-      const isInStandaloneMode = window.navigator.standalone
-      const isMobile = isIOS || isAndroid || /Mobile|Tablet/.test(userAgent)
-
-      console.log("[v0] Enhanced mobile detection:", {
-        isIOS,
-        isAndroid,
-        isMobile,
-        isInStandaloneMode,
-        userAgent,
-        platform,
-        maxTouchPoints: navigator.maxTouchPoints,
-      })
-
-      return { isIOS, isAndroid, isMobile, isInStandaloneMode }
-    }
-
-    const { isIOS, isMobile, isInStandaloneMode } = detectMobile()
-
-    if ((isIOS || isMobile) && !isInStandaloneMode) {
-      // Check if prompt was recently dismissed
-      const dismissed = localStorage.getItem("pwa-prompt-dismissed")
-      if (dismissed) {
-        const dismissedTime = Number.parseInt(dismissed)
-        const dayInMs = 24 * 60 * 60 * 1000
-        const timeSinceDismissed = Date.now() - dismissedTime
-        console.log("[v0] Mobile prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
-        if (timeSinceDismissed < dayInMs) {
-          console.log("[v0] Mobile prompt dismissed recently, not showing")
-          return
+        // Check for iOS standalone mode
+        if (window.navigator.standalone === true) {
+          console.log("[v0] App detected as installed via iOS standalone")
+          return true
         }
+        // Check for Android TWA
+        if (document.referrer.includes("android-app://")) {
+          console.log("[v0] App detected as installed via Android TWA")
+          return true
+        }
+        console.log("[v0] App not detected as installed")
+        return false
       }
 
-      console.log("[v0] Mobile device detected, showing prompt after 500ms")
-      setTimeout(() => {
-        console.log("[v0] Showing mobile prompt now")
+      if (checkIfInstalled()) {
+        setIsInstalled(true)
+        return
+      }
+
+      // Listen for beforeinstallprompt event
+      const handleBeforeInstallPrompt = (e: Event) => {
+        console.log("[v0] beforeinstallprompt event fired")
+        e.preventDefault()
+        setDeferredPrompt(e as BeforeInstallPromptEvent)
+
+        // Check if prompt was recently dismissed
+        const dismissed = localStorage.getItem("pwa-prompt-dismissed")
+        if (dismissed) {
+          const dismissedTime = Number.parseInt(dismissed)
+          const dayInMs = 24 * 60 * 60 * 1000
+          const timeSinceDismissed = Date.now() - dismissedTime
+          console.log("[v0] Prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
+          if (timeSinceDismissed < dayInMs) {
+            console.log("[v0] Prompt dismissed recently, not showing")
+            return
+          }
+        }
+
+        console.log("[v0] Showing prompt via beforeinstallprompt")
         setShowPrompt(true)
-      }, 500)
+      }
+
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
+
+      const detectMobile = () => {
+        const userAgent = navigator.userAgent
+        const platform = navigator.platform
+        const maxTouchPoints = navigator.maxTouchPoints || 0
+        const screenWidth = window.screen.width
+        const screenHeight = window.screen.height
+
+        // Multiple iOS detection methods
+        const isIOS =
+          /iPad|iPhone|iPod/.test(userAgent) ||
+          (platform === "MacIntel" && maxTouchPoints > 1) ||
+          /iPhone|iPad|iPod|iOS/.test(userAgent) ||
+          (userAgent.includes("Safari") && userAgent.includes("Mobile")) ||
+          // Additional iOS detection for modern devices
+          (userAgent.includes("AppleWebKit") && maxTouchPoints > 0 && screenWidth <= 1024)
+
+        const isAndroid = /Android/.test(userAgent)
+
+        // Enhanced mobile detection using multiple signals
+        const isMobile =
+          isIOS ||
+          isAndroid ||
+          /Mobile|Tablet/.test(userAgent) ||
+          maxTouchPoints > 0 ||
+          screenWidth <= 768 ||
+          // Check for mobile viewport
+          (screenWidth <= 1024 && screenHeight <= 1366)
+
+        const isInStandaloneMode = window.navigator.standalone
+
+        console.log("[v0] Enhanced mobile detection:", {
+          isIOS,
+          isAndroid,
+          isMobile,
+          isInStandaloneMode,
+          userAgent,
+          platform,
+          maxTouchPoints,
+          screenWidth,
+          screenHeight,
+          touchSupport: "ontouchstart" in window,
+        })
+
+        return { isIOS, isAndroid, isMobile, isInStandaloneMode }
+      }
+
+      const { isIOS, isMobile, isInStandaloneMode } = detectMobile()
+
+      if ((isIOS || isMobile) && !isInStandaloneMode) {
+        // Check if prompt was recently dismissed
+        const dismissed = localStorage.getItem("pwa-prompt-dismissed")
+        if (dismissed) {
+          const dismissedTime = Number.parseInt(dismissed)
+          const dayInMs = 24 * 60 * 60 * 1000
+          const timeSinceDismissed = Date.now() - dismissedTime
+          console.log("[v0] Mobile prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
+          if (timeSinceDismissed < dayInMs) {
+            console.log("[v0] Mobile prompt dismissed recently, not showing")
+            return
+          }
+        }
+
+        console.log("[v0] Mobile device detected, showing prompt after 1000ms")
+        setTimeout(() => {
+          console.log("[v0] Showing mobile prompt now")
+          setShowPrompt(true)
+        }, 1000)
+      }
+
+      return () => {
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
+      }
     }
 
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
-    }
+    const timer = setTimeout(initializePrompt, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   const handleInstallClick = async () => {
