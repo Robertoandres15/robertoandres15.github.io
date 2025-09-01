@@ -1,12 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
+import { Overpass } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { MobileInitializer } from "@/components/mobile-initializer"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import "./globals.css"
+
+const overpass = Overpass({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-overpass",
+  weight: ["300", "400", "500", "600", "700", "800"],
+})
 
 export const metadata: Metadata = {
   title: "Reel Friends",
@@ -30,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`font-sans ${overpass.variable}`}>
         <MobileInitializer />
         <Suspense fallback={null}>{children}</Suspense>
         <PWAInstallPrompt />
