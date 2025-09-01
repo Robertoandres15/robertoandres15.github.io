@@ -13,9 +13,11 @@ export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showPrompt, setShowPrompt] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] PWA Install Prompt component mounted")
+    setIsClient(true)
+    console.log("[v0] PWA Install Prompt component mounted on client")
 
     const checkIfInstalled = () => {
       // Check if app is already installed
@@ -68,37 +70,54 @@ export function PWAInstallPrompt() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
 
     const detectMobile = () => {
-      const isIOS =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-      const isAndroid = /Android/.test(navigator.userAgent)
-      const isInStandaloneMode = window.navigator.standalone
+      const userAgent = navigator.userAgent
+      const platform = navigator.platform
 
-      console.log("[v0] Mobile detection:", { isIOS, isAndroid, isInStandaloneMode, userAgent: navigator.userAgent })
-      return { isIOS, isAndroid, isInStandaloneMode }
+      // Enhanced iOS detection
+      const isIOS =
+        /iPad|iPhone|iPod/.test(userAgent) ||
+        (platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        /iPhone|iPad|iPod|iOS/.test(userAgent) ||
+        (userAgent.includes("Safari") && userAgent.includes("Mobile"))
+
+      const isAndroid = /Android/.test(userAgent)
+      const isInStandaloneMode = window.navigator.standalone
+      const isMobile = isIOS || isAndroid || /Mobile|Tablet/.test(userAgent)
+
+      console.log("[v0] Enhanced mobile detection:", {
+        isIOS,
+        isAndroid,
+        isMobile,
+        isInStandaloneMode,
+        userAgent,
+        platform,
+        maxTouchPoints: navigator.maxTouchPoints,
+      })
+
+      return { isIOS, isAndroid, isMobile, isInStandaloneMode }
     }
 
-    const { isIOS, isInStandaloneMode } = detectMobile()
+    const { isIOS, isMobile, isInStandaloneMode } = detectMobile()
 
-    if (isIOS && !isInStandaloneMode) {
+    if ((isIOS || isMobile) && !isInStandaloneMode) {
       // Check if prompt was recently dismissed
       const dismissed = localStorage.getItem("pwa-prompt-dismissed")
       if (dismissed) {
         const dismissedTime = Number.parseInt(dismissed)
         const dayInMs = 24 * 60 * 60 * 1000
         const timeSinceDismissed = Date.now() - dismissedTime
-        console.log("[v0] iOS prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
+        console.log("[v0] Mobile prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
         if (timeSinceDismissed < dayInMs) {
-          console.log("[v0] iOS prompt dismissed recently, not showing")
+          console.log("[v0] Mobile prompt dismissed recently, not showing")
           return
         }
       }
 
-      console.log("[v0] iOS detected, showing prompt after 1 second")
+      console.log("[v0] Mobile device detected, showing prompt after 500ms")
       setTimeout(() => {
-        console.log("[v0] Showing iOS prompt now")
+        console.log("[v0] Showing mobile prompt now")
         setShowPrompt(true)
-      }, 1000)
+      }, 500)
     }
 
     return () => {
@@ -126,12 +145,20 @@ export function PWAInstallPrompt() {
     localStorage.setItem("pwa-prompt-dismissed", Date.now().toString())
   }
 
-  console.log("[v0] PWA Prompt render state:", { isInstalled, showPrompt, hasDeferredPrompt: !!deferredPrompt })
+  console.log("[v0] PWA Prompt render state:", {
+    isInstalled,
+    showPrompt,
+    hasDeferredPrompt: !!deferredPrompt,
+    isClient,
+  })
 
-  if (isInstalled || !showPrompt) return null
+  if (!isClient || isInstalled || !showPrompt) return null
 
   const isIOS =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    typeof window !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+      /iPhone|iPad|iPod|iOS/.test(navigator.userAgent))
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 bg-slate-900 border border-purple-500/20 rounded-lg p-4 shadow-lg animate-in slide-in-from-bottom-2">
