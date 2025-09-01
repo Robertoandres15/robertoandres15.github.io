@@ -1,0 +1,236 @@
+const TMDB_API_READ_ACCESS_TOKEN =
+  "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzYWYzOTcwNTY0NGIxOTcwN2ExZWJlOWJkMWFmZDY2NiIsIm5iZiI6MTc1NjY4NTE0Ny42MTEsInN1YiI6IjY4YjRlMzViMGI4YTRhY2VhNzU0ZTQ2NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.GSeuf0FL9yKfoQ69Sxw3t5lLlkLm3KSmT-cg3QzL_JQ"
+const TMDB_BASE_URL = "https://api.themoviedb.org/3"
+const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p"
+
+export interface TMDBMovie {
+  id: number
+  title: string
+  overview: string
+  poster_path: string | null
+  backdrop_path: string | null
+  release_date: string
+  vote_average: number
+  vote_count: number
+  genre_ids: number[]
+  adult: boolean
+  original_language: string
+  original_title: string
+  popularity: number
+  video: boolean
+}
+
+export interface TMDBTVShow {
+  id: number
+  name: string
+  overview: string
+  poster_path: string | null
+  backdrop_path: string | null
+  first_air_date: string
+  vote_average: number
+  vote_count: number
+  genre_ids: number[]
+  adult: boolean
+  original_language: string
+  original_name: string
+  popularity: number
+  origin_country: string[]
+}
+
+export interface TMDBSearchResponse {
+  page: number
+  results: (TMDBMovie | TMDBTVShow)[]
+  total_pages: number
+  total_results: number
+}
+
+export interface TMDBGenre {
+  id: number
+  name: string
+}
+
+export interface TMDBWatchProvider {
+  display_priority: number
+  logo_path: string
+  provider_id: number
+  provider_name: string
+}
+
+export interface TMDBWatchProviders {
+  id: number
+  results: {
+    [countryCode: string]: {
+      link: string
+      flatrate?: TMDBWatchProvider[]
+      rent?: TMDBWatchProvider[]
+      buy?: TMDBWatchProvider[]
+    }
+  }
+}
+
+export class TMDBClient {
+  private baseUrl: string
+
+  constructor() {
+    this.baseUrl = TMDB_BASE_URL
+  }
+
+  private getAuthToken(): string {
+    const token = TMDB_API_READ_ACCESS_TOKEN
+    if (!token) {
+      throw new Error("TMDB API Read Access Token is required")
+    }
+    return token
+  }
+
+  private async request(endpoint: string, params: Record<string, string> = {}) {
+    const token = this.getAuthToken()
+    const url = new URL(`${this.baseUrl}${endpoint}`)
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) url.searchParams.append(key, value)
+    })
+
+    console.log("[v0] TMDB API request:", url.toString())
+
+    try {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          accept: "application/json",
+        },
+      })
+
+      // Get response text first to handle both JSON and HTML responses
+      const responseText = await response.text()
+      console.log("[v0] TMDB API response status:", response.status)
+      console.log("[v0] TMDB API response preview:", responseText.substring(0, 200))
+
+      if (!response.ok) {
+        console.error("[v0] TMDB API error response:", responseText)
+        if (response.status === 401) {
+          throw new Error(`TMDB API authentication failed. Please check your API key/token.`)
+        } else if (response.status === 404) {
+          throw new Error(`TMDB API endpoint not found: ${endpoint}`)
+        } else {
+          throw new Error(`TMDB API error (${response.status}): ${responseText.substring(0, 100)}`)
+        }
+      }
+
+      // Try to parse as JSON, with better error handling
+      try {
+        return JSON.parse(responseText)
+      } catch (parseError) {
+        console.error("[v0] Failed to parse TMDB response as JSON:", parseError)
+        console.error("[v0] Response text:", responseText)
+        throw new Error(`TMDB API returned invalid JSON: ${responseText.substring(0, 100)}`)
+      }
+    } catch (fetchError) {
+      if (fetchError instanceof TypeError && fetchError.message.includes("fetch")) {
+        throw new Error(`Network error connecting to TMDB API: ${fetchError.message}`)
+      }
+      throw fetchError
+    }
+  }
+
+  async searchMulti(query: string, page = 1): Promise<TMDBSearchResponse> {
+    return this.request("/search/multi", { query, page: page.toString() })
+  }
+
+  async getPopularMovies(page = 1): Promise<TMDBSearchResponse> {
+    return this.request("/movie/popular", { page: page.toString() })
+  }
+
+  async getPopularTVShows(page = 1): Promise<TMDBSearchResponse> {
+    return this.request("/tv/popular", { page: page.toString() })
+  }
+
+  async getTrendingAll(timeWindow: "day" | "week" = "week", page = 1): Promise<TMDBSearchResponse> {
+    return this.request(`/trending/all/${timeWindow}`, { page: page.toString() })
+  }
+
+  async getMovieDetails(id: number) {
+    return this.request(`/movie/${id}`)
+  }
+
+  async getTVDetails(id: number) {
+    return this.request(`/tv/${id}`)
+  }
+
+  async getMovieGenres(): Promise<{ genres: TMDBGenre[] }> {
+    return this.request("/genre/movie/list")
+  }
+
+  async getTVGenres(): Promise<{ genres: TMDBGenre[] }> {
+    return this.request("/genre/tv/list")
+  }
+
+  async discoverMovies(
+    params: {
+      page?: number
+      genre?: string
+      year?: string
+      sort_by?: string
+      vote_average_gte?: string
+      with_watch_providers?: string
+      watch_region?: string
+      release_date_gte?: string
+      release_date_lte?: string
+      with_release_type?: string
+    } = {},
+  ): Promise<TMDBSearchResponse> {
+    const queryParams: Record<string, string> = {}
+
+    if (params.page) queryParams.page = params.page.toString()
+    if (params.genre) queryParams.with_genres = params.genre
+    if (params.year) queryParams.year = params.year
+    if (params.sort_by) queryParams.sort_by = params.sort_by
+    if (params.vote_average_gte) queryParams["vote_average.gte"] = params.vote_average_gte
+    if (params.with_watch_providers) queryParams.with_watch_providers = params.with_watch_providers
+    if (params.watch_region) queryParams.watch_region = params.watch_region
+    if (params.release_date_gte) queryParams["release_date.gte"] = params.release_date_gte
+    if (params.release_date_lte) queryParams["release_date.lte"] = params.release_date_lte
+    if (params.with_release_type) queryParams.with_release_type = params.with_release_type
+
+    return this.request("/discover/movie", queryParams)
+  }
+
+  async discoverTV(
+    params: {
+      page?: number
+      genre?: string
+      year?: string
+      sort_by?: string
+      vote_average_gte?: string
+      with_watch_providers?: string
+      watch_region?: string
+    } = {},
+  ): Promise<TMDBSearchResponse> {
+    const queryParams: Record<string, string> = {}
+
+    if (params.page) queryParams.page = params.page.toString()
+    if (params.genre) queryParams.with_genres = params.genre
+    if (params.year) queryParams.first_air_date_year = params.year
+    if (params.sort_by) queryParams.sort_by = params.sort_by
+    if (params.vote_average_gte) queryParams["vote_average.gte"] = params.vote_average_gte
+    if (params.with_watch_providers) queryParams.with_watch_providers = params.with_watch_providers
+    if (params.watch_region) queryParams.watch_region = params.watch_region
+
+    return this.request("/discover/tv", queryParams)
+  }
+
+  async getMovieWatchProviders(id: number): Promise<TMDBWatchProviders> {
+    return this.request(`/movie/${id}/watch/providers`)
+  }
+
+  async getTVWatchProviders(id: number): Promise<TMDBWatchProviders> {
+    return this.request(`/tv/${id}/watch/providers`)
+  }
+
+  getImageUrl(path: string | null, size: "w200" | "w300" | "w500" | "w780" | "original" = "w500"): string | null {
+    if (!path) return null
+    return `${TMDB_IMAGE_BASE_URL}/${size}${path}`
+  }
+}
+
+export const tmdb = new TMDBClient()

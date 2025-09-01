@@ -1,0 +1,40 @@
+{
+  "testEnvironments": {
+    "development": {
+      "enablePerformanceMonitoring": true,
+      "enableErrorTracking": true,
+      "logLevel": "debug",
+      "mockData": true
+    },
+    "staging": {
+      "enablePerformanceMonitoring": true,
+      "enableErrorTracking": true,
+      "logLevel": "info",
+      "mockData": false
+    },
+    "production": {
+      "enablePerformanceMonitoring": true,
+      "enableErrorTracking": true,
+      "logLevel": "error",
+      "mockData": false
+    }
+  },
+  "deviceTests": {
+    "ios": {
+      "minVersion": "14.0",
+      "devices": ["iPhone 12", "iPhone 13", "iPhone 14", "iPad Air", "iPad Pro"],
+      "orientations": ["portrait", "landscape"]
+    },
+    "android": {
+      "minSdkVersion": 24,
+      "devices": ["Pixel 6", "Samsung Galaxy S21", "OnePlus 9", "Tablet"],
+      "orientations": ["portrait", "landscape"]
+    }
+  },
+  "performanceThresholds": {
+    "appLaunch": 3000,
+    "pageTransition": 500,
+    "apiResponse": 2000,
+    "imageLoad": 1000
+  }
+}
