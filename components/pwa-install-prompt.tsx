@@ -183,8 +183,24 @@ export function PWAInstallPrompt() {
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
       /iPhone|iPad|iPod|iOS/.test(navigator.userAgent))
 
+  console.log("[v0] Rendering PWA prompt with isIOS:", isIOS)
+
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 bg-slate-900 border border-purple-500/20 rounded-lg p-4 shadow-lg animate-in slide-in-from-bottom-2">
+    <div
+      className="fixed bottom-4 left-4 right-4 z-[9999] bg-slate-900 border border-purple-500/20 rounded-lg p-4 shadow-2xl transition-all duration-300 ease-in-out transform translate-y-0"
+      style={{
+        position: "fixed",
+        bottom: "16px",
+        left: "16px",
+        right: "16px",
+        zIndex: 9999,
+        backgroundColor: "rgb(15 23 42)",
+        border: "1px solid rgba(168 85 247 / 0.2)",
+        borderRadius: "8px",
+        padding: "16px",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+      }}
+    >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
           <Download className="h-6 w-6 text-purple-400" />
