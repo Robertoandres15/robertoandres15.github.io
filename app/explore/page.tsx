@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { Search, Filter, Star, Calendar, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
+import { useIsMobile } from "@/components/ui/use-mobile"
 import type { TMDBMovie, TMDBTVShow, TMDBGenre } from "@/lib/tmdb"
 
 interface MediaItem extends TMDBMovie, TMDBTVShow {
@@ -52,6 +54,7 @@ export default function ExplorePage() {
   const [showAddToListDialog, setShowAddToListDialog] = useState(false)
   const [isAddingToList, setIsAddingToList] = useState(false)
   const { toast } = useToast()
+  const isMobile = useIsMobile()
 
   const streamingServices = [
     { id: "8", name: "Netflix" },
@@ -304,42 +307,237 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
-        <nav className="flex items-center justify-center gap-8 mb-8 p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
-          <Link href="/feed" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+        <nav className="flex items-center justify-center gap-4 sm:gap-8 mb-8 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-x-auto">
+          <Link
+            href="/feed"
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+          >
             <span>Feed</span>
           </Link>
-          <Link href="/explore" className="flex items-center gap-2 text-purple-400 font-medium">
+          <Link
+            href="/explore"
+            className="flex items-center gap-2 text-purple-400 font-medium whitespace-nowrap text-sm sm:text-base"
+          >
             <span>Explore</span>
           </Link>
-          <Link href="/friends" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/friends"
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+          >
             <span>Friends</span>
           </Link>
-          <Link href="/lists" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/lists"
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+          >
             <span>Lists</span>
           </Link>
-          <Link href="/profile" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+          <Link
+            href="/profile"
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+          >
             <span>Profile</span>
           </Link>
         </nav>
 
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-white">Explore Movies & TV</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Explore Movies & TV</h1>
           <div className="flex gap-2">
+            {isMobile ? (
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-white/20 text-white hover:bg-white/20 bg-white/10 flex-1 sm:flex-none"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="bg-slate-900 border-slate-700 max-h-[85vh]">
+                  <DrawerHeader>
+                    <DrawerTitle className="text-white">Filters</DrawerTitle>
+                  </DrawerHeader>
+                  <div className="px-4 pb-6 overflow-y-auto">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Type</label>
+                          <Select
+                            value={mediaType}
+                            onValueChange={(value: "all" | "movie" | "tv") => setMediaType(value)}
+                          >
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All</SelectItem>
+                              <SelectItem value="movie">Movies</SelectItem>
+                              <SelectItem value="tv">TV Shows</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Genre</label>
+                          <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">Any Genre</SelectItem>
+                              {genres.map((genre) => (
+                                <SelectItem key={genre.id} value={genre.id.toString()}>
+                                  {genre.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Year</label>
+                          <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">Any Year</SelectItem>
+                              {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Sort By</label>
+                          <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="popularity.desc">Most Popular</SelectItem>
+                              <SelectItem value="vote_average.desc">Highest Rated</SelectItem>
+                              <SelectItem value="release_date.desc">Newest</SelectItem>
+                              <SelectItem value="title.asc">A-Z</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Min Rating</label>
+                          <Select value={minRating} onValueChange={setMinRating}>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">Any Rating</SelectItem>
+                              <SelectItem value="7">7+ Stars</SelectItem>
+                              <SelectItem value="8">8+ Stars</SelectItem>
+                              <SelectItem value="9">9+ Stars</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Duration</label>
+                          <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
+                            <SelectTrigger
+                              className={
+                                mediaType === "tv"
+                                  ? "bg-white/5 border-white/10 text-white/50 cursor-not-allowed"
+                                  : "bg-white/10 border-white/20 text-white"
+                              }
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="any">Any Duration</SelectItem>
+                              <SelectItem value="0-90">Under 90 min</SelectItem>
+                              <SelectItem value="90-120">90-120 min</SelectItem>
+                              <SelectItem value="120-150">120-150 min</SelectItem>
+                              <SelectItem value="150-999">Over 150 min</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-3 block">Streaming Services</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {streamingServices.map((service) => (
+                            <Button
+                              key={service.id}
+                              variant={selectedStreamingServices.includes(service.id) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggleStreamingService(service.id)}
+                              className={
+                                selectedStreamingServices.includes(service.id)
+                                  ? "bg-purple-600 hover:bg-purple-700 text-white text-xs h-10"
+                                  : "border-white/20 text-white hover:bg-white/20 bg-white/10 text-xs h-10"
+                              }
+                            >
+                              {selectedStreamingServices.includes(service.id) ? "✓ " : ""}
+                              {service.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+                        <Button onClick={() => handleSearch()} className="bg-purple-600 hover:bg-purple-700 h-12">
+                          Apply Filters
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedGenre("0")
+                            setSelectedYear("0")
+                            setSortBy("popularity.desc")
+                            setMinRating("0")
+                            setMediaType("all")
+                            setInTheaters(false)
+                            setSelectedStreamingServices([])
+                            setMovieDuration("any")
+                            setRecommendedBy("0")
+                            loadTrending()
+                          }}
+                          className="border-white/20 text-white hover:bg-white/20 bg-white/10 h-12"
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-white/20 text-white hover:bg-white/20 bg-white/10"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            )}
             <Button
               variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="border-white/20 text-white hover:bg-white/20 bg-white/10"
+              asChild
+              className="border-white/20 text-white hover:bg-white/10 bg-transparent flex-1 sm:flex-none"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
-            <Button variant="outline" asChild className="border-white/20 text-white hover:bg-white/10 bg-transparent">
               <Link href="/lists">My Lists</Link>
             </Button>
           </div>
         </div>
 
-        {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -348,11 +546,11 @@ export default function ExplorePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+              className="pl-10 pr-20 bg-white/10 border-white/20 text-white placeholder:text-slate-400 h-12 sm:h-10"
             />
             <Button
               onClick={() => handleSearch()}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700 h-8"
               size="sm"
             >
               Search
@@ -360,8 +558,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Filters */}
-        {showFilters && (
+        {showFilters && !isMobile && (
           <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-6">
             <CardContent className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -554,14 +751,13 @@ export default function ExplorePage() {
           </Card>
         )}
 
-        {/* Results Grid */}
         {isLoading && results.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-white">Loading...</div>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
               {results.map((item) => (
                 <Card
                   key={`${getMediaType(item)}-${item.id}`}
@@ -577,7 +773,7 @@ export default function ExplorePage() {
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute top-2 right-2">
-                          <Badge variant="secondary" className="bg-black/50 text-white">
+                          <Badge variant="secondary" className="bg-black/50 text-white text-xs">
                             {getMediaType(item) === "movie" ? "Movie" : "TV"}
                           </Badge>
                         </div>
@@ -589,23 +785,23 @@ export default function ExplorePage() {
                         </div>
                       </div>
                     </Link>
-                    <div className="p-3">
-                      <h3 className="text-white font-medium text-sm mb-1 line-clamp-2">{getTitle(item)}</h3>
+                    <div className="p-2 sm:p-3">
+                      <h3 className="text-white font-medium text-xs sm:text-sm mb-1 line-clamp-2">{getTitle(item)}</h3>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-slate-400 text-sm">
+                        <div className="flex items-center gap-1 text-slate-400 text-xs">
                           <Calendar className="h-3 w-3" />
                           <span>{getReleaseDate(item)?.split("-")[0] || "TBA"}</span>
                         </div>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 w-6 p-0 text-purple-400 hover:text-purple-300"
+                          className="h-7 w-7 p-0 text-purple-400 hover:text-purple-300 hover:bg-white/10"
                           onClick={() => {
                             setSelectedItem(item)
                             setShowAddToListDialog(true)
                           }}
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -614,10 +810,13 @@ export default function ExplorePage() {
               ))}
             </div>
 
-            {/* Load More Button */}
             {currentPage < totalPages && (
               <div className="text-center">
-                <Button onClick={loadMore} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
+                <Button
+                  onClick={loadMore}
+                  disabled={isLoading}
+                  className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto h-12 sm:h-10"
+                >
                   {isLoading ? "Loading..." : "Load More"}
                 </Button>
               </div>
@@ -625,7 +824,6 @@ export default function ExplorePage() {
           </>
         )}
 
-        {/* Add to List Dialog */}
         <Dialog open={showAddToListDialog} onOpenChange={setShowAddToListDialog}>
           <DialogContent className="bg-slate-900 border-slate-700">
             <DialogHeader>
