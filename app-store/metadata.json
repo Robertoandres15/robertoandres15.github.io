@@ -1,0 +1,15 @@
+{
+  "name": "Reel Friends",
+  "subtitle": "Discover Movies with Friends",
+  "description": "Share recommendations, build wishlists, and discover your next favorite movie through your social circle. Connect with friends, explore trending content, and never miss a great film again.",
+  "keywords": "movies, friends, social, recommendations, watchlist, cinema, films, tv shows",
+  "category": "Entertainment",
+  "contentRating": "4+",
+  "version": "1.0.0",
+  "buildNumber": "1",
+  "supportURL": "https://reelfriends.app/support",
+  "privacyURL": "https://reelfriends.app/privacy",
+  "marketingURL": "https://reelfriends.app",
+  "copyright": "© 2025 Reel Friends. All rights reserved.",
+  "releaseNotes": "Welcome to Reel Friends! Discover movies through your social network, build personalized wishlists, and share recommendations with friends. Features include social feeds, movie exploration, friend connections, and personalized recommendations."
+}

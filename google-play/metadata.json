@@ -1,0 +1,13 @@
+{
+  "packageName": "com.reelfriends.app",
+  "title": "Reel Friends - Movie Discovery",
+  "shortDescription": "Discover movies with friends through social recommendations and wishlists",
+  "fullDescription": "Reel Friends is the ultimate social movie discovery app that connects you with friends to share recommendations, build wishlists, and discover your next favorite film.\n\nKey Features:\n• Social Movie Discovery - See what your friends are watching and recommending\n• Personal Wishlists - Create and manage your movie watchlists\n• Friend Connections - Connect with friends and share your movie tastes\n• Trending Content - Explore what's popular in movies and TV shows\n• Smart Recommendations - Get personalized suggestions based on your preferences\n• Social Feed - Stay updated with your friends' latest movie activities\n\nWhether you're looking for your next binge-watch or want to share a hidden gem with friends, Reel Friends makes movie discovery social and fun.\n\nJoin thousands of movie lovers building their perfect watchlists and sharing recommendations with friends!",
+  "category": "ENTERTAINMENT",
+  "contentRating": "Everyone",
+  "website": "https://reelfriends.app",
+  "email": "support@reelfriends.app",
+  "privacyPolicy": "https://reelfriends.app/privacy",
+  "version": "1.0.0",
+  "versionCode": 1
+}

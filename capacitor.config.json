@@ -1,0 +1,22 @@
+{
+  "appId": "com.reelfriends.app",
+  "appName": "Reel Friends",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#1e293b"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "dark",
+      "resizeOnFullScreen": true
+    },
+    "App": {
+      "launchShowDuration": 2000
+    }
+  }
+}

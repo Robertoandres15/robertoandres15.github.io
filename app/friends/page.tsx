@@ -1,0 +1,344 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+
+export default function FriendsPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState([])
+  const [friends, setFriends] = useState([])
+  const [pendingRequests, setPendingRequests] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const { toast } = useToast()
+
+  const searchUsers = async () => {
+    setIsSearching(true)
+    try {
+      const response = await fetch(`/api/friends/search?q=${encodeURIComponent(searchQuery)}`)
+      const data = await response.json()
+      setSearchResults(data.users || [])
+    } catch (error) {
+      console.error("Failed to search users:", error)
+      toast({
+        title: "Failed to search",
+        description: "An error occurred while searching for users",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  useEffect(() => {
+    // Fetch friends and pending requests on component mount
+    const fetchFriendsAndRequests = async () => {
+      setIsLoading(true)
+      try {
+        const friendsResponse = await fetch("/api/friends/list?type=friends")
+        const friendsData = await friendsResponse.json()
+        setFriends(friendsData.friends || [])
+
+        const requestsResponse = await fetch("/api/friends/list?type=pending")
+        const requestsData = await requestsResponse.json()
+        setPendingRequests(requestsData.requests || [])
+      } catch (error) {
+        console.error("Failed to fetch friends and requests:", error)
+        toast({
+          title: "Failed to load friends and requests",
+          description: "An error occurred while loading your friends and pending requests",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchFriendsAndRequests()
+  }, [])
+
+  const openNativeSMS = () => {
+    // Generate a unique invite link for the user
+    const inviteLink = `${window.location.origin}/signup?ref=${btoa(Date.now().toString())}`
+
+    // Create the invite message
+    const message = `Hey! I'm using Reel Friends to discover and share movies & TV shows with friends. Join me! ${inviteLink}`
+
+    // Use SMS protocol to open native messaging app
+    const smsUrl = `sms:?body=${encodeURIComponent(message)}`
+
+    try {
+      window.open(smsUrl, "_self")
+      toast({
+        title: "SMS app opened",
+        description: "Select contacts and send your invite!",
+      })
+      setShowInviteDialog(false)
+    } catch (error) {
+      console.error("Failed to open SMS app:", error)
+      toast({
+        title: "Unable to open SMS app",
+        description: "Please copy the invite link and share it manually",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const copyInviteLink = async () => {
+    const inviteLink = `${window.location.origin}/signup?ref=${btoa(Date.now().toString())}`
+
+    try {
+      await navigator.clipboard.writeText(
+        `Hey! I'm using Reel Friends to discover and share movies & TV shows with friends. Join me! ${inviteLink}`,
+      )
+      toast({
+        title: "Invite copied",
+        description: "Share this message with your friends!",
+      })
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error)
+      toast({
+        title: "Copy failed",
+        description: "Please manually copy the invite link",
+        variant: "destructive",
+      })
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <nav className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-8">
+              <a href="/feed" className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors">
+                <Users className="h-5 w-5" />
+                <span>Feed</span>
+              </a>
+              <a
+                href="/explore"
+                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
+              >
+                <Search className="h-5 w-5" />
+                <span>Explore</span>
+              </a>
+              <a href="/friends" className="flex items-center space-x-2 text-purple-400 font-medium">
+                <Users className="h-5 w-5" />
+                <span>Friends</span>
+              </a>
+              <a href="/lists" className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors">
+                <Plus className="h-5 w-5" />
+                <span>Lists</span>
+              </a>
+              <a
+                href="/profile"
+                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
+              >
+                <User className="h-5 w-5" />
+                <span>Profile</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold text-white mb-8">Friends</h1>
+
+          <Tabs defaultValue="search" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 bg-white/10">
+              <TabsTrigger value="search" className="data-[state=active]:bg-purple-600">
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </TabsTrigger>
+              <TabsTrigger value="friends" className="data-[state=active]:bg-purple-600">
+                <Users className="h-4 w-4 mr-2" />
+                Friends ({friends.length})
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="data-[state=active]:bg-purple-600">
+                <Clock className="h-4 w-4 mr-2" />
+                Requests ({pendingRequests.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="search" className="space-y-4">
+              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-white">Find Friends</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search by username, name, or phone number..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && searchUsers()}
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                      />
+                    </div>
+                    <Button onClick={searchUsers} disabled={isSearching} className="bg-purple-600 hover:bg-purple-700">
+                      {isSearching ? "Searching..." : "Search"}
+                    </Button>
+                  </div>
+
+                  <div className="border-t border-white/10 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-medium">Invite Friends</h3>
+                      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white bg-transparent"
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Invite Friends
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-slate-900 border-white/10">
+                          <DialogHeader>
+                            <DialogTitle className="text-white">Invite Friends to Reel Friends</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                              <p className="text-white text-sm mb-2">Your invite message:</p>
+                              <p className="text-slate-300 text-sm italic">
+                                "Hey! I'm using Reel Friends to discover and share movies & TV shows with friends. Join
+                                me! [invite link]"
+                              </p>
+                            </div>
+
+                            <div className="space-y-3">
+                              <Button
+                                onClick={openNativeSMS}
+                                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                              >
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Open SMS App
+                              </Button>
+
+                              <Button
+                                onClick={copyInviteLink}
+                                variant="outline"
+                                className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-800/50"
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Copy Invite Message
+                              </Button>
+                            </div>
+
+                            <div className="text-xs text-slate-400 space-y-1">
+                              <p>• SMS app will open with pre-written message</p>
+                              <p>• Select contacts and send from your phone</p>
+                              <p>• No SMS charges from Reel Friends</p>
+                            </div>
+
+                            <div className="flex justify-end">
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowInviteDialog(false)}
+                                className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-800/50"
+                              >
+                                Close
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <p className="text-slate-400 text-sm">
+                      Invite friends using your phone's messaging app. They'll get a personal invite from you!
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Existing search results code */}
+              {searchResults.map((user: any) => (
+                <div key={user.id} className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                    <AvatarFallback>{user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-white font-medium">{user.display_name}</h3>
+                    <p className="text-slate-400 text-sm">@{user.username}</p>
+                  </div>
+                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add Friend
+                  </Button>
+                </div>
+              ))}
+            </TabsContent>
+
+            {/* Existing TabsContent for friends */}
+            <TabsContent value="friends" className="space-y-4">
+              {friends.map((friend: any) => (
+                <div key={friend.id} className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage
+                      src={friend.friend?.avatar_url || "/placeholder.svg"}
+                      alt={friend.friend?.display_name}
+                    />
+                    <AvatarFallback>
+                      {friend.friend?.display_name?.charAt(0) || friend.friend?.username?.charAt(0) || "F"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-white font-medium">{friend.friend?.display_name}</h3>
+                    <p className="text-slate-400 text-sm">@{friend.friend?.username}</p>
+                  </div>
+                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Check className="h-4 w-4 mr-2" />
+                    Confirmed
+                  </Button>
+                </div>
+              ))}
+            </TabsContent>
+
+            {/* Existing TabsContent for requests */}
+            <TabsContent value="requests" className="space-y-4">
+              {pendingRequests.map((request: any) => (
+                <div key={request.id} className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage
+                      src={request.user?.avatar_url || "/placeholder.svg"}
+                      alt={request.user?.display_name}
+                    />
+                    <AvatarFallback>
+                      {request.user?.display_name?.charAt(0) || request.user?.username?.charAt(0) || "R"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-white font-medium">{request.user?.display_name}</h3>
+                    <p className="text-slate-400 text-sm">@{request.user?.username}</p>
+                  </div>
+                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Check className="h-4 w-4 mr-2" />
+                    Accept
+                  </Button>
+                  <Button variant="outline" className="bg-red-600 hover:bg-red-700 text-white">
+                    <X className="h-4 w-4 mr-2" />
+                    Decline
+                  </Button>
+                </div>
+              ))}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  )
+}

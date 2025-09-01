@@ -1,0 +1,47 @@
+{
+  "ios": {
+    "required_sizes": [
+      {
+        "device": "iPhone 6.7\"",
+        "size": "1290x2796",
+        "count": "3-10 screenshots"
+      },
+      {
+        "device": "iPhone 6.5\"",
+        "size": "1242x2688",
+        "count": "3-10 screenshots"
+      },
+      {
+        "device": "iPad Pro 12.9\"",
+        "size": "2048x2732",
+        "count": "3-10 screenshots"
+      }
+    ],
+    "formats": ["PNG", "JPEG"],
+    "color_space": "sRGB or P3"
+  },
+  "android": {
+    "required_sizes": [
+      {
+        "type": "Phone",
+        "min_size": "320x480",
+        "max_size": "3840x2160",
+        "count": "2-8 screenshots"
+      },
+      {
+        "type": "7-inch Tablet",
+        "min_size": "1024x600",
+        "max_size": "3840x2160",
+        "count": "1-8 screenshots"
+      },
+      {
+        "type": "10-inch Tablet",
+        "min_size": "1024x768",
+        "max_size": "3840x2160",
+        "count": "1-8 screenshots"
+      }
+    ],
+    "formats": ["PNG", "JPEG"],
+    "max_file_size": "8MB per screenshot"
+  }
+}
