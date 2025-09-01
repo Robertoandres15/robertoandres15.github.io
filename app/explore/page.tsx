@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Search, Filter, Star, Calendar, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -344,8 +344,8 @@ export default function ExplorePage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Explore Movies & TV</h1>
           <div className="flex gap-2">
             {isMobile ? (
-              <Drawer>
-                <DrawerTrigger asChild>
+              <Sheet>
+                <SheetTrigger asChild>
                   <Button
                     variant="outline"
                     className="border-white/20 text-white hover:bg-white/20 bg-white/10 flex-1 sm:flex-none"
@@ -353,11 +353,11 @@ export default function ExplorePage() {
                     <Filter className="h-4 w-4 mr-2" />
                     Filters
                   </Button>
-                </DrawerTrigger>
-                <DrawerContent className="bg-slate-900 border-slate-700 max-h-[85vh]">
-                  <DrawerHeader>
-                    <DrawerTitle className="text-white">Filters</DrawerTitle>
-                  </DrawerHeader>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="bg-slate-900 border-slate-700 max-h-[85vh]">
+                  <SheetHeader>
+                    <SheetTitle className="text-white">Filters</SheetTitle>
+                  </SheetHeader>
                   <div className="px-4 pb-6 overflow-y-auto">
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 gap-4">
@@ -516,8 +516,8 @@ export default function ExplorePage() {
                       </div>
                     </div>
                   </div>
-                </DrawerContent>
-              </Drawer>
+                </SheetContent>
+              </Sheet>
             ) : (
               <Button
                 variant="outline"
