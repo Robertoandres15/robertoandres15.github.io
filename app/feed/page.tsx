@@ -430,7 +430,7 @@ function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userP
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                  className="border-white/20 text-white hover:bg-white/10 bg-transparent text-xs px-2 sm:px-3 sm:text-sm"
                 >
                   View Details
                 </Button>

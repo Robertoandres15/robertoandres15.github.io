@@ -358,8 +358,8 @@ export default function ExplorePage() {
                   <SheetHeader>
                     <SheetTitle className="text-white">Filters</SheetTitle>
                   </SheetHeader>
-                  <div className="px-4 pb-6 overflow-y-auto">
-                    <div className="space-y-6">
+                  <div className="overflow-y-auto max-h-[calc(85vh-80px)] px-4 pb-6">
+                    <div className="space-y-6 pt-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-white text-sm mb-2 block">Type</label>
@@ -491,7 +491,7 @@ export default function ExplorePage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
+                      <div className="flex flex-col gap-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900 pb-4">
                         <Button onClick={() => handleSearch()} className="bg-purple-600 hover:bg-purple-700 h-12">
                           Apply Filters
                         </Button>
