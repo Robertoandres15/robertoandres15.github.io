@@ -24,13 +24,17 @@
     "@capacitor/keyboard": "latest",
     "@capacitor/status-bar": "latest",
     "@radix-ui/react-avatar": "latest",
+    "@radix-ui/react-checkbox": "^1.1.0",
     "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-label": "latest",
+    "@radix-ui/react-radio-group": "^1.2.0",
+    "@radix-ui/react-scroll-area": "^1.1.0",
     "@radix-ui/react-select": "latest",
+    "@radix-ui/react-switch": "^1.1.0",
     "@radix-ui/react-tabs": "latest",
     "@remix-run/react": "latest",
     "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "latest",
+    "@supabase/supabase-js": "^2.45.0",
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
     "@vercel/blob": "latest",
@@ -55,6 +59,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
 }
