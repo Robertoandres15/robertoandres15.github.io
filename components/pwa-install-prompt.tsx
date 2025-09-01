@@ -15,19 +15,25 @@ export function PWAInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
+    console.log("[v0] PWA Install Prompt component mounted")
+
     const checkIfInstalled = () => {
       // Check if app is already installed
       if (window.matchMedia("(display-mode: standalone)").matches) {
+        console.log("[v0] App detected as installed via display-mode")
         return true
       }
       // Check for iOS standalone mode
       if (window.navigator.standalone === true) {
+        console.log("[v0] App detected as installed via iOS standalone")
         return true
       }
       // Check for Android TWA
       if (document.referrer.includes("android-app://")) {
+        console.log("[v0] App detected as installed via Android TWA")
         return true
       }
+      console.log("[v0] App not detected as installed")
       return false
     }
 
@@ -38,6 +44,7 @@ export function PWAInstallPrompt() {
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log("[v0] beforeinstallprompt event fired")
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
 
@@ -46,11 +53,15 @@ export function PWAInstallPrompt() {
       if (dismissed) {
         const dismissedTime = Number.parseInt(dismissed)
         const dayInMs = 24 * 60 * 60 * 1000
-        if (Date.now() - dismissedTime < dayInMs) {
+        const timeSinceDismissed = Date.now() - dismissedTime
+        console.log("[v0] Prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
+        if (timeSinceDismissed < dayInMs) {
+          console.log("[v0] Prompt dismissed recently, not showing")
           return
         }
       }
 
+      console.log("[v0] Showing prompt via beforeinstallprompt")
       setShowPrompt(true)
     }
 
@@ -63,6 +74,7 @@ export function PWAInstallPrompt() {
       const isAndroid = /Android/.test(navigator.userAgent)
       const isInStandaloneMode = window.navigator.standalone
 
+      console.log("[v0] Mobile detection:", { isIOS, isAndroid, isInStandaloneMode, userAgent: navigator.userAgent })
       return { isIOS, isAndroid, isInStandaloneMode }
     }
 
@@ -74,14 +86,19 @@ export function PWAInstallPrompt() {
       if (dismissed) {
         const dismissedTime = Number.parseInt(dismissed)
         const dayInMs = 24 * 60 * 60 * 1000
-        if (Date.now() - dismissedTime < dayInMs) {
+        const timeSinceDismissed = Date.now() - dismissedTime
+        console.log("[v0] iOS prompt was dismissed", timeSinceDismissed / 1000 / 60, "minutes ago")
+        if (timeSinceDismissed < dayInMs) {
+          console.log("[v0] iOS prompt dismissed recently, not showing")
           return
         }
       }
 
+      console.log("[v0] iOS detected, showing prompt after 1 second")
       setTimeout(() => {
+        console.log("[v0] Showing iOS prompt now")
         setShowPrompt(true)
-      }, 3000)
+      }, 1000)
     }
 
     return () => {
@@ -90,9 +107,11 @@ export function PWAInstallPrompt() {
   }, [])
 
   const handleInstallClick = async () => {
+    console.log("[v0] Install button clicked")
     if (deferredPrompt) {
       deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
+      console.log("[v0] User choice:", outcome)
 
       if (outcome === "accepted") {
         setDeferredPrompt(null)
@@ -102,9 +121,12 @@ export function PWAInstallPrompt() {
   }
 
   const handleDismiss = () => {
+    console.log("[v0] Prompt dismissed by user")
     setShowPrompt(false)
     localStorage.setItem("pwa-prompt-dismissed", Date.now().toString())
   }
+
+  console.log("[v0] PWA Prompt render state:", { isInstalled, showPrompt, hasDeferredPrompt: !!deferredPrompt })
 
   if (isInstalled || !showPrompt) return null
 
