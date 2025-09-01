@@ -145,8 +145,8 @@ export function PWAInstallButton() {
   }
 
   const getButtonText = () => {
-    if (isIOS) return "Install on iPhone"
-    if (isDesktop) return "Install on Desktop"
+    if (isIOS) return "Install App"
+    if (isDesktop) return "Install App"
     return "Install App"
   }
 
