@@ -9,13 +9,23 @@
   "orientation": "portrait",
   "scope": "/",
   "lang": "en",
+  "dir": "ltr",
   "categories": ["entertainment", "social"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "screenshots": [
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "label": "Reel Friends App"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Reel Friends Desktop"
     }
   ],
   "icons": [
@@ -30,6 +40,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore Movies",
+      "short_name": "Explore",
+      "description": "Discover new movies",
+      "url": "/explore",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Lists",
+      "short_name": "Lists",
+      "description": "View your movie lists",
+      "url": "/lists",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
