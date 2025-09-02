@@ -7,12 +7,22 @@ export async function GET(request: NextRequest) {
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get("next") ?? "/onboarding"
 
+  console.log("[v0] Auth callback - Request details:", {
+    url: request.url,
+    origin,
+    code: code ? "present" : "missing",
+    next,
+    headers: Object.fromEntries(request.headers.entries()),
+    timestamp: new Date().toISOString(),
+  })
+
   const getSafeRedirectUrl = () => {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
     const isLocalEnv = process.env.NODE_ENV === "development"
 
     console.log("[v0] Auth callback - Environment check:", {
       siteUrl: siteUrl ? "configured" : "missing",
+      siteUrlValue: siteUrl,
       isLocalEnv,
       origin,
       userAgent: request.headers.get("user-agent"),
