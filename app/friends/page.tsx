@@ -433,7 +433,7 @@ export default function FriendsPage() {
                         </Avatar>
                         <div className="flex-1">
                           <Link
-                            href={`/friends/${friend.friend_id}`}
+                            href={`/friends/${friend.friend.id}`}
                             className="hover:text-purple-300 transition-colors"
                           >
                             <h3 className="text-white font-medium hover:underline">{friend.friend?.display_name}</h3>
