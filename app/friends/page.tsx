@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { MobileNavigation } from "@/components/mobile-navigation"
+import Link from "next/link"
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -431,7 +432,12 @@ export default function FriendsPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <h3 className="text-white font-medium">{friend.friend?.display_name}</h3>
+                          <Link
+                            href={`/friends/${friend.friend_id}`}
+                            className="hover:text-purple-300 transition-colors"
+                          >
+                            <h3 className="text-white font-medium hover:underline">{friend.friend?.display_name}</h3>
+                          </Link>
                           <p className="text-slate-400 text-sm">@{friend.friend?.username}</p>
                         </div>
                         <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white" disabled>
