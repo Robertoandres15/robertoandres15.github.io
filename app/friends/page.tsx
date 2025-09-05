@@ -290,9 +290,9 @@ export default function FriendsPage() {
             </TabsList>
 
             <TabsContent value="search" className="space-y-4">
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-white">Find Friends</CardTitle>
+                  <CardTitle className="text-slate-200">Find Friends</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
@@ -313,7 +313,7 @@ export default function FriendsPage() {
 
                   <div className="border-t border-white/10 pt-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-white font-medium">Invite Friends</h3>
+                      <h3 className="text-slate-200 font-medium">Invite Friends</h3>
                       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
                         <DialogTrigger asChild>
                           <Button
@@ -384,9 +384,9 @@ export default function FriendsPage() {
               </Card>
 
               {searchResults.length > 0 && (
-                <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-white">Search Results</CardTitle>
+                    <CardTitle className="text-slate-200">Search Results</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {searchResults.map((user: any) => (
@@ -410,9 +410,9 @@ export default function FriendsPage() {
             </TabsContent>
 
             <TabsContent value="friends" className="space-y-4">
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-white">Your Friends</CardTitle>
+                  <CardTitle className="text-slate-200">Your Friends</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {friends.length === 0 ? (
@@ -452,9 +452,9 @@ export default function FriendsPage() {
             </TabsContent>
 
             <TabsContent value="requests" className="space-y-4">
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-white">Friend Requests</CardTitle>
+                  <CardTitle className="text-slate-200">Friend Requests</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {pendingRequests.length === 0 ? (

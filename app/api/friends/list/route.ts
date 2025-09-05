@@ -5,6 +5,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not available")
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
+    }
+
     const { data } = await supabase.auth.getUser()
     const user = data?.user
 
