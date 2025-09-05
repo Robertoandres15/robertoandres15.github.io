@@ -17,8 +17,6 @@ export function MobileCamera({ onImageSelected, className }: MobileCameraProps) 
 
   const takePicture = async () => {
     if (!isMobile()) {
-      if (typeof document === "undefined") return
-
       // Fallback for web - use file input
       const input = document.createElement("input")
       input.type = "file"
@@ -58,8 +56,6 @@ export function MobileCamera({ onImageSelected, className }: MobileCameraProps) 
 
   const selectFromGallery = async () => {
     if (!isMobile()) {
-      if (typeof document === "undefined") return
-
       // Fallback for web - use file input
       const input = document.createElement("input")
       input.type = "file"
