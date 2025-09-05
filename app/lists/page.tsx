@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useRouter } from "next/router"
 import {
   Heart,
   BookmarkPlus,
@@ -82,6 +83,7 @@ const createList = async () => {
 }
 
 export default function ListsPage() {
+  const router = useRouter()
   const [lists, setLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
@@ -340,6 +342,11 @@ export default function ListsPage() {
   const wishlists = lists.filter((list) => list.type === "wishlist")
   const recommendations = lists.filter((list) => list.type === "recommendations")
 
+  const viewAllItems = (listId: string, listName: string) => {
+    // Navigate to a detailed list view or expand the current view
+    router.push(`/lists/${listId}`)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -572,6 +579,7 @@ export default function ListsPage() {
                       {list.list_items.length > 6 && (
                         <div className="text-center mt-4">
                           <Button
+                            onClick={() => viewAllItems(list.id, list.name)}
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                           >
@@ -709,6 +717,7 @@ export default function ListsPage() {
                       {list.list_items.length > 6 && (
                         <div className="text-center mt-4">
                           <Button
+                            onClick={() => viewAllItems(list.id, list.name)}
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                           >

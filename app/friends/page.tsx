@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -19,6 +20,7 @@ export default function FriendsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const searchUsers = async () => {
     setIsSearching(true)
@@ -113,38 +115,122 @@ export default function FriendsPage() {
     }
   }
 
+  const acceptFriendRequest = async (requestId: string) => {
+    try {
+      const response = await fetch(`/api/friends/requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept" }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Friend request accepted",
+          description: "You are now friends!",
+        })
+        // Refresh the data
+        const friendsResponse = await fetch("/api/friends/list?type=friends")
+        const friendsData = await friendsResponse.json()
+        setFriends(friendsData.friends || [])
+
+        const requestsResponse = await fetch("/api/friends/list?type=pending")
+        const requestsData = await requestsResponse.json()
+        setPendingRequests(requestsData.requests || [])
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Failed to accept request",
+          description: data.error || "An error occurred",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to accept friend request:", error)
+      toast({
+        title: "Failed to accept request",
+        description: "An error occurred while accepting the friend request",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const declineFriendRequest = async (requestId: string) => {
+    try {
+      const response = await fetch(`/api/friends/requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "decline" }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Friend request declined",
+          description: "Request has been declined",
+        })
+        // Refresh the pending requests
+        const requestsResponse = await fetch("/api/friends/list?type=pending")
+        const requestsData = await requestsResponse.json()
+        setPendingRequests(requestsData.requests || [])
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Failed to decline request",
+          description: data.error || "An error occurred",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to decline friend request:", error)
+      toast({
+        title: "Failed to decline request",
+        description: "An error occurred while declining the friend request",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleNavigation = (path: string) => {
+    router.push(path)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <nav className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <a href="/feed" className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors">
+              <button
+                onClick={() => handleNavigation("/feed")}
+                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
+              >
                 <Users className="h-5 w-5" />
                 <span>Feed</span>
-              </a>
-              <a
-                href="/explore"
+              </button>
+              <button
+                onClick={() => handleNavigation("/explore")}
                 className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
               >
                 <Search className="h-5 w-5" />
                 <span>Explore</span>
-              </a>
-              <a href="/friends" className="flex items-center space-x-2 text-purple-400 font-medium">
+              </button>
+              <button className="flex items-center space-x-2 text-purple-400 font-medium">
                 <Users className="h-5 w-5" />
                 <span>Friends</span>
-              </a>
-              <a href="/lists" className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors">
+              </button>
+              <button
+                onClick={() => handleNavigation("/lists")}
+                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
+              >
                 <Plus className="h-5 w-5" />
                 <span>Lists</span>
-              </a>
-              <a
-                href="/profile"
+              </button>
+              <button
+                onClick={() => handleNavigation("/profile")}
                 className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
               >
                 <User className="h-5 w-5" />
                 <span>Profile</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -325,11 +411,19 @@ export default function FriendsPage() {
                     <h3 className="text-white font-medium">{request.user?.display_name}</h3>
                     <p className="text-slate-400 text-sm">@{request.user?.username}</p>
                   </div>
-                  <Button variant="outline" className="bg-purple-600 hover:bg-purple-700 text-white">
+                  <Button
+                    onClick={() => acceptFriendRequest(request.id)}
+                    variant="outline"
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
                     <Check className="h-4 w-4 mr-2" />
                     Accept
                   </Button>
-                  <Button variant="outline" className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button
+                    onClick={() => declineFriendRequest(request.id)}
+                    variant="outline"
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
                     <X className="h-4 w-4 mr-2" />
                     Decline
                   </Button>
