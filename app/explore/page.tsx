@@ -89,16 +89,22 @@ export default function ExplorePage() {
 
   const loadGenres = async () => {
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
       const [movieResponse, tvResponse] = await Promise.all([
-        fetch("/api/tmdb/genres?type=movie"),
-        fetch("/api/tmdb/genres?type=tv"),
+        fetch("/api/tmdb/genres?type=movie", { signal: controller.signal }),
+        fetch("/api/tmdb/genres?type=tv", { signal: controller.signal }),
       ])
+
+      clearTimeout(timeoutId)
 
       const movieContentType = movieResponse.headers.get("content-type")
       const tvContentType = tvResponse.headers.get("content-type")
 
       if (!movieContentType?.includes("application/json") || !tvContentType?.includes("application/json")) {
         console.error("[v0] Genres API returned non-JSON response")
+        setGenres([])
         return
       }
 
@@ -106,6 +112,7 @@ export default function ExplorePage() {
 
       if (!movieResponse.ok || !tvResponse.ok) {
         console.error("[v0] Genres API error:", movieGenres.error || tvGenres.error)
+        setGenres([])
         return
       }
 
@@ -113,38 +120,72 @@ export default function ExplorePage() {
       const uniqueGenres = allGenres.filter((genre, index, self) => index === self.findIndex((g) => g.id === genre.id))
       setGenres(uniqueGenres)
     } catch (error) {
-      console.error("[v0] Failed to load genres:", error)
+      if (error.name === "AbortError") {
+        console.error("[v0] Genres API request timed out")
+      } else {
+        console.error("[v0] Failed to load genres:", error)
+      }
+      setGenres([])
     }
   }
 
   const loadUserLists = async () => {
     try {
-      const response = await fetch("/api/lists")
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+      const response = await fetch("/api/lists", { signal: controller.signal })
+      clearTimeout(timeoutId)
+
       const data = await response.json()
       if (response.ok) {
         setUserLists(data.lists || [])
+      } else {
+        setUserLists([])
       }
     } catch (error) {
-      console.error("Failed to load user lists:", error)
+      if (error.name === "AbortError") {
+        console.error("User lists API request timed out")
+      } else {
+        console.error("Failed to load user lists:", error)
+      }
+      setUserLists([])
     }
   }
 
   const loadFriends = async () => {
     try {
-      const response = await fetch("/api/friends/list")
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+      const response = await fetch("/api/friends/list", { signal: controller.signal })
+      clearTimeout(timeoutId)
+
       const data = await response.json()
       if (response.ok) {
         setFriends(data.friends || [])
+      } else {
+        setFriends([])
       }
     } catch (error) {
-      console.error("Failed to load friends:", error)
+      if (error.name === "AbortError") {
+        console.error("Friends API request timed out")
+      } else {
+        console.error("Failed to load friends:", error)
+      }
+      setFriends([])
     }
   }
 
   const loadTrending = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/tmdb/trending")
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+      const response = await fetch("/api/tmdb/trending", { signal: controller.signal })
+      clearTimeout(timeoutId)
+
       const contentType = response.headers.get("content-type")
 
       if (!contentType || !contentType.includes("application/json")) {
@@ -162,11 +203,12 @@ export default function ExplorePage() {
       setCurrentPage(1)
     } catch (error) {
       console.error("[v0] Failed to load trending content:", error)
-      toast({
-        title: "Failed to load content",
-        description: "Please check your TMDB API key configuration",
-        variant: "destructive",
-      })
+      if (error.name !== "AbortError") {
+        console.error("[v0] Trending API error:", error.message)
+      }
+      setResults([])
+      setTotalPages(1)
+      setCurrentPage(1)
     } finally {
       setIsLoading(false)
     }
@@ -177,6 +219,9 @@ export default function ExplorePage() {
     setCurrentPage(page)
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout for search
+
       let url = ""
       const params = new URLSearchParams({ page: page.toString() })
 
@@ -198,7 +243,8 @@ export default function ExplorePage() {
         if (recommendedBy !== "0") params.append("recommended_by", recommendedBy)
       }
 
-      const response = await fetch(`${url}?${params}`)
+      const response = await fetch(`${url}?${params}`, { signal: controller.signal })
+      clearTimeout(timeoutId)
 
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
@@ -219,11 +265,13 @@ export default function ExplorePage() {
       setTotalPages(data.total_pages || 1)
     } catch (error) {
       console.error("[v0] Search failed:", error)
-      toast({
-        title: "Search failed",
-        description: "Please check your TMDB API key configuration",
-        variant: "destructive",
-      })
+      if (error.name !== "AbortError") {
+        console.error("[v0] Search API error:", error.message)
+      }
+      if (page === 1) {
+        setResults([])
+        setTotalPages(1)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -332,10 +380,10 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
-        <nav className="hidden md:flex items-center justify-center gap-4 sm:gap-8 mb-8 p-3 sm:p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 overflow-x-auto">
+        <nav className="hidden md:flex items-center justify-center gap-4 sm:gap-8 mb-8 p-3 sm:p-4 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-600 overflow-x-auto">
           <Link
             href="/feed"
-            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+            className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
           >
             <span>Feed</span>
           </Link>
@@ -347,19 +395,19 @@ export default function ExplorePage() {
           </Link>
           <Link
             href="/friends"
-            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+            className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
           >
             <span>Friends</span>
           </Link>
           <Link
             href="/lists"
-            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+            className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
           >
             <span>Lists</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
+            className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors whitespace-nowrap text-sm sm:text-base"
           >
             <span>Profile</span>
           </Link>
@@ -373,7 +421,7 @@ export default function ExplorePage() {
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    className="border-white/20 text-white hover:bg-white/20 bg-white/10 flex-1 sm:flex-none"
+                    className="border-slate-600 text-slate-200 hover:bg-slate-700 bg-slate-800/60 flex-1 sm:flex-none"
                   >
                     <Filter className="h-4 w-4 mr-2" />
                     Filters
@@ -504,46 +552,6 @@ export default function ExplorePage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="text-white text-sm mb-3 block">Availability</label>
-                        <Button
-                          variant={inTheaters ? "default" : "outline"}
-                          onClick={() => setInTheaters(!inTheaters)}
-                          disabled={mediaType === "tv"}
-                          className={
-                            mediaType === "tv"
-                              ? "border-white/10 text-white/50 bg-white/5 cursor-not-allowed w-full h-10"
-                              : inTheaters
-                                ? "bg-purple-600 hover:bg-purple-700 text-white w-full h-10"
-                                : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full h-10"
-                          }
-                        >
-                          {inTheaters ? "✓ " : ""}In Theaters
-                        </Button>
-                      </div>
-
-                      <div>
-                        <label className="text-white text-sm mb-3 block">Streaming Services</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {streamingServices.map((service) => (
-                            <Button
-                              key={service.id}
-                              variant={selectedStreamingServices.includes(service.id) ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => toggleStreamingService(service.id)}
-                              className={
-                                selectedStreamingServices.includes(service.id)
-                                  ? "bg-purple-600 hover:bg-purple-700 text-white text-xs h-10"
-                                  : "border-white/20 text-white hover:bg-white/20 bg-white/10 text-xs h-10"
-                              }
-                            >
-                              {selectedStreamingServices.includes(service.id) ? "✓ " : ""}
-                              {service.name}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-
                       <div className="flex flex-col gap-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900 pb-4">
                         <Button onClick={handleApplyFilters} className="bg-purple-600 hover:bg-purple-700 h-12">
                           Apply Filters
@@ -564,7 +572,7 @@ export default function ExplorePage() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="border-white/20 text-white hover:bg-white/20 bg-white/10"
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 bg-slate-800/60"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
