@@ -183,9 +183,7 @@ export class TMDBClient {
 
     if (params.page) queryParams.page = params.page.toString()
     if (params.genre) queryParams.with_genres = params.genre
-    if (params.year) {
-      queryParams.primary_release_year = params.year
-    }
+    if (params.year) queryParams.year = params.year
     if (params.sort_by) queryParams.sort_by = params.sort_by
     if (params.vote_average_gte) queryParams["vote_average.gte"] = params.vote_average_gte
     if (params.with_watch_providers) queryParams.with_watch_providers = params.with_watch_providers
@@ -194,7 +192,6 @@ export class TMDBClient {
     if (params.release_date_lte) queryParams["release_date.lte"] = params.release_date_lte
     if (params.with_release_type) queryParams.with_release_type = params.with_release_type
 
-    console.log("[v0] Movie discover query params:", queryParams)
     return this.request("/discover/movie", queryParams)
   }
 
@@ -213,15 +210,12 @@ export class TMDBClient {
 
     if (params.page) queryParams.page = params.page.toString()
     if (params.genre) queryParams.with_genres = params.genre
-    if (params.year) {
-      queryParams.first_air_date_year = params.year
-    }
+    if (params.year) queryParams.first_air_date_year = params.year
     if (params.sort_by) queryParams.sort_by = params.sort_by
     if (params.vote_average_gte) queryParams["vote_average.gte"] = params.vote_average_gte
     if (params.with_watch_providers) queryParams.with_watch_providers = params.with_watch_providers
     if (params.watch_region) queryParams.watch_region = params.watch_region
 
-    console.log("[v0] TV discover query params:", queryParams)
     return this.request("/discover/tv", queryParams)
   }
 

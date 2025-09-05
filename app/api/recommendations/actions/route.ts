@@ -17,11 +17,12 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "add_to_wishlist":
+        // Get or create user's wishlist
         let { data: wishlist, error: wishlistQueryError } = await supabase
           .from("lists")
           .select("id")
           .eq("user_id", user.id)
-          .eq("type", "wishlist")
+          .eq("name", "Wishlist")
           .single()
 
         if (wishlistQueryError && wishlistQueryError.code !== "PGRST116") {
@@ -33,9 +34,9 @@ export async function POST(request: NextRequest) {
             .from("lists")
             .insert({
               user_id: user.id,
-              name: "My Wishlist",
+              name: "Wishlist",
               description: "Movies and series I want to watch",
-              type: "wishlist",
+              type: "personal",
             })
             .select("id")
             .single()
@@ -54,8 +55,8 @@ export async function POST(request: NextRequest) {
           media_type,
           title,
           poster_path,
-          release_date: release_date ? new Date(release_date) : null,
-          note: recommended_by ? `Recommended by ${recommended_by}` : null,
+          release_date,
+          metadata: { recommended_by },
         })
 
         if (wishlistError) {

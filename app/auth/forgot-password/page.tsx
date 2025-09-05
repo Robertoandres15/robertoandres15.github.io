@@ -23,11 +23,8 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     try {
-      const redirectUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || window.location.origin
-
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${redirectUrl}/auth/callback?next=/feed`,
+        redirectTo: `${process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || window.location.origin}/auth/callback?next=/feed`,
       })
 
       if (error) throw error
