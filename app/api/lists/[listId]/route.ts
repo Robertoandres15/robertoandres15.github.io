@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: { listId: 
       .from("lists")
       .select(`
         *,
-        user:profiles(id, username, display_name, avatar_url),
+        user:users(id, username, display_name, avatar_url),
         list_items(*)
       `)
       .eq("id", params.listId)
