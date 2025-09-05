@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useRouter } from "next/navigation"
 import {
   Heart,
   BookmarkPlus,
@@ -95,6 +96,7 @@ export default function ListsPage() {
   const [commentText, setCommentText] = useState("")
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     loadLists()
@@ -584,6 +586,7 @@ export default function ListsPage() {
                           <Button
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                            onClick={() => viewAllItems(list.id)}
                           >
                             View All {list.list_items.length} Items
                           </Button>
@@ -727,6 +730,7 @@ export default function ListsPage() {
                           <Button
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                            onClick={() => viewAllItems(list.id)}
                           >
                             View All {list.list_items.length} Items
                           </Button>
@@ -809,4 +813,8 @@ export default function ListsPage() {
       </div>
     </div>
   )
+}
+
+const viewAllItems = (listId: string) => {
+  // Placeholder for viewAllItems function implementation
 }
