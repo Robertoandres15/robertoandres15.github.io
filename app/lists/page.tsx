@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface ListItem {
   id: string
@@ -83,6 +84,7 @@ const createList = async () => {
 
 export default function ListsPage() {
   const [lists, setLists] = useState<List[]>([])
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -584,6 +586,7 @@ export default function ListsPage() {
                           <Button
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                            onClick={() => router.push(`/lists/${list.id}`)}
                           >
                             View All {list.list_items.length} Items
                           </Button>
@@ -727,6 +730,7 @@ export default function ListsPage() {
                           <Button
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                            onClick={() => router.push(`/lists/${list.id}`)}
                           >
                             View All {list.list_items.length} Items
                           </Button>
