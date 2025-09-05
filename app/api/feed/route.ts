@@ -4,6 +4,12 @@ import { type NextRequest, NextResponse } from "next/server"
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not configured")
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -64,6 +70,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Feed API error:", error)
+    if (error instanceof Error && error.message.includes("Network request failed")) {
+      return NextResponse.json({ error: "Network connection issue. Please try again." }, { status: 503 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

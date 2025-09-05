@@ -112,6 +112,16 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadProfile() {
       try {
+        if (!supabase) {
+          console.error("[v0] Supabase client is null - environment variables not configured")
+          toast({
+            title: "Service Unavailable",
+            description: "Authentication service is not available. Please try again later.",
+            variant: "destructive",
+          })
+          return
+        }
+
         const {
           data: { user },
         } = await supabase.auth.getUser()

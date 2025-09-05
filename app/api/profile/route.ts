@@ -4,6 +4,12 @@ import { type NextRequest, NextResponse } from "next/server"
 export async function GET() {
   try {
     const supabase = await createClient()
+
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not configured")
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -36,6 +42,9 @@ export async function GET() {
     return NextResponse.json({ profile, stats })
   } catch (error) {
     console.error("Profile API error:", error)
+    if (error instanceof Error && error.message.includes("Network request failed")) {
+      return NextResponse.json({ error: "Network connection issue. Please try again." }, { status: 503 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -43,6 +52,12 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient()
+
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not configured")
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -74,6 +89,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ profile })
   } catch (error) {
     console.error("Profile update API error:", error)
+    if (error instanceof Error && error.message.includes("Network request failed")) {
+      return NextResponse.json({ error: "Network connection issue. Please try again." }, { status: 503 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
