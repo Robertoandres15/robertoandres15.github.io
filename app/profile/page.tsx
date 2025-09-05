@@ -10,6 +10,14 @@ import Link from "next/link"
 
 async function UserLists({ userId }: { userId: string }) {
   const supabase = await createClient()
+  if (!supabase) {
+    return (
+      <div className="text-center py-8">
+        <List className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+        <p className="text-slate-400">Unable to load lists</p>
+      </div>
+    )
+  }
 
   const { data: lists } = await supabase
     .from("lists")
@@ -85,147 +93,153 @@ async function UserLists({ userId }: { userId: string }) {
 }
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
 
-  if (!user) {
-    redirect("/auth/login")
-  }
+    if (!supabase) {
+      redirect("/auth/login")
+    }
 
-  // Get user profile and stats
-  const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!profile?.username) {
-    redirect("/onboarding")
-  }
+    if (!user) {
+      redirect("/auth/login")
+    }
 
-  // Get user stats
-  const [listsResult, friendsResult, activitiesResult] = await Promise.all([
-    supabase.from("lists").select("id").eq("user_id", user.id),
-    supabase.from("friends").select("id").eq("user_id", user.id).eq("status", "accepted"),
-    supabase.from("feed_activities").select("id").eq("user_id", user.id),
-  ])
+    const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single()
 
-  const stats = {
-    lists: listsResult.data?.length || 0,
-    friends: friendsResult.data?.length || 0,
-    activities: activitiesResult.data?.length || 0,
-  }
+    if (!profile?.username) {
+      redirect("/onboarding")
+    }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        <header className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <Film className="h-8 w-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">Reel Friends</h1>
-          </div>
-          <nav className="flex gap-2">
-            <Button variant="ghost" asChild className="text-white hover:bg-white/10">
-              <Link href="/feed">
-                <Activity className="h-4 w-4 mr-2" />
-                Feed
-              </Link>
-            </Button>
-            <Button variant="ghost" asChild className="text-white hover:bg-white/10">
-              <Link href="/explore">
-                <Search className="h-4 w-4 mr-2" />
-                Explore
-              </Link>
-            </Button>
-            <Button variant="ghost" asChild className="text-white hover:bg-white/10">
-              <Link href="/friends">
-                <Users className="h-4 w-4 mr-2" />
-                Friends
-              </Link>
-            </Button>
-            <Button variant="ghost" asChild className="text-white hover:bg-white/10">
-              <Link href="/settings">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Link>
-            </Button>
-          </nav>
-        </header>
+    const [listsResult, friendsResult, activitiesResult] = await Promise.allSettled([
+      supabase.from("lists").select("id").eq("user_id", user.id),
+      supabase.from("friends").select("id").eq("user_id", user.id).eq("status", "accepted"),
+      supabase.from("feed_activities").select("id").eq("user_id", user.id),
+    ])
 
-        <div className="max-w-4xl mx-auto">
-          {/* Profile Header */}
-          <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-8">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.avatar_url || "/placeholder.svg"} />
-                  <AvatarFallback className="bg-purple-600 text-white text-2xl">
-                    {profile.display_name?.[0] || profile.username?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
+    const stats = {
+      lists: listsResult.status === "fulfilled" ? listsResult.value.data?.length || 0 : 0,
+      friends: friendsResult.status === "fulfilled" ? friendsResult.value.data?.length || 0 : 0,
+      activities: activitiesResult.status === "fulfilled" ? activitiesResult.value.data?.length || 0 : 0,
+    }
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-white">{profile.display_name || profile.username}</h2>
-                    <Button size="sm" asChild className="bg-purple-600 hover:bg-purple-700">
-                      <Link href="/settings">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Profile
-                      </Link>
-                    </Button>
-                  </div>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <header className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+              <Film className="h-8 w-8 text-purple-400" />
+              <h1 className="text-2xl font-bold text-white">Reel Friends</h1>
+            </div>
+            <nav className="flex gap-2">
+              <Button variant="ghost" asChild className="text-white hover:bg-white/10">
+                <Link href="/feed">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Feed
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild className="text-white hover:bg-white/10">
+                <Link href="/explore">
+                  <Search className="h-4 w-4 mr-2" />
+                  Explore
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild className="text-white hover:bg-white/10">
+                <Link href="/friends">
+                  <Users className="h-4 w-4 mr-2" />
+                  Friends
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild className="text-white hover:bg-white/10">
+                <Link href="/settings">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
+              </Button>
+            </nav>
+          </header>
 
-                  <p className="text-slate-400 mb-1">@{profile.username}</p>
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={profile.avatar_url || "/placeholder.svg"} />
+                    <AvatarFallback className="bg-purple-600 text-white text-2xl">
+                      {profile.display_name?.[0] || profile.username?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
 
-                  {profile.bio && <p className="text-slate-300 mb-4">{profile.bio}</p>}
-
-                  <div className="flex gap-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-white">{stats.lists}</div>
-                      <div className="text-sm text-slate-400">Lists</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-2xl font-bold text-white">{profile.display_name || profile.username}</h2>
+                      <Button size="sm" asChild className="bg-purple-600 hover:bg-purple-700">
+                        <Link href="/settings">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </Link>
+                      </Button>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-white">{stats.friends}</div>
-                      <div className="text-sm text-slate-400">Friends</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-white">{stats.activities}</div>
-                      <div className="text-sm text-slate-400">Activities</div>
+
+                    <p className="text-slate-400 mb-1">@{profile.username}</p>
+
+                    {profile.bio && <p className="text-slate-300 mb-4">{profile.bio}</p>}
+
+                    <div className="flex gap-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">{stats.lists}</div>
+                        <div className="text-sm text-slate-400">Lists</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">{stats.friends}</div>
+                        <div className="text-sm text-slate-400">Friends</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-white">{stats.activities}</div>
+                        <div className="text-sm text-slate-400">Activities</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Profile Content */}
-          <Tabs defaultValue="lists" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10">
-              <TabsTrigger value="lists" className="data-[state=active]:bg-purple-600">
-                My Lists
-              </TabsTrigger>
-              <TabsTrigger value="activity" className="data-[state=active]:bg-purple-600">
-                Recent Activity
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="lists" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10">
+                <TabsTrigger value="lists" className="data-[state=active]:bg-purple-600">
+                  My Lists
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="data-[state=active]:bg-purple-600">
+                  Recent Activity
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="lists" className="mt-6">
-              <UserLists userId={user.id} />
-            </TabsContent>
+              <TabsContent value="lists" className="mt-6">
+                <UserLists userId={user.id} />
+              </TabsContent>
 
-            <TabsContent value="activity" className="mt-6">
-              <div className="text-center py-12">
-                <Activity className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-                <h3 className="text-lg font-semibold text-white mb-2">Activity Timeline</h3>
-                <p className="text-slate-400 mb-4">
-                  Your recent activities will appear here as you interact with movies and friends.
-                </p>
-                <Button asChild className="bg-purple-600 hover:bg-purple-700">
-                  <Link href="/explore">Start Exploring</Link>
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="activity" className="mt-6">
+                <div className="text-center py-12">
+                  <Activity className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Activity Timeline</h3>
+                  <p className="text-slate-400 mb-4">
+                    Your recent activities will appear here as you interact with movies and friends.
+                  </p>
+                  <Button asChild className="bg-purple-600 hover:bg-purple-700">
+                    <Link href="/explore">Start Exploring</Link>
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  } catch (error) {
+    console.error("[v0] Profile page error during prerendering:", error)
+    redirect("/auth/login")
+  }
 }
