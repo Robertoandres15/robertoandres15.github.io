@@ -74,7 +74,7 @@ async function ReelClub() {
             Connect with friends and discover movies you both want to watch together.
           </p>
           <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link href="/auth/login">Sign In</Link>
+            <Link href="/auth/sign-in">Sign In</Link>
           </Button>
         </div>
       )

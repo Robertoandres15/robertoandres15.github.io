@@ -63,30 +63,30 @@ export default async function HomePage() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
               <CardHeader>
                 <Users className="h-12 w-12 text-purple-400 mb-4" />
-                <CardTitle className="text-slate-200">Social Discovery</CardTitle>
+                <CardTitle className="text-white">Social Discovery</CardTitle>
                 <CardDescription className="text-slate-300">
                   Connect with friends and discover movies through their recommendations and wishlists.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
               <CardHeader>
                 <Heart className="h-12 w-12 text-pink-400 mb-4" />
-                <CardTitle className="text-slate-200">Personal Lists</CardTitle>
+                <CardTitle className="text-white">Personal Lists</CardTitle>
                 <CardDescription className="text-slate-300">
                   Create and manage your wishlist and share your favorite recommendations with friends.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
               <CardHeader>
                 <Star className="h-12 w-12 text-yellow-400 mb-4" />
-                <CardTitle className="text-slate-200">Smart Feed</CardTitle>
+                <CardTitle className="text-white">Smart Feed</CardTitle>
                 <CardDescription className="text-slate-300">
                   Stay updated with your friends' latest movie activities and discoveries.
                 </CardDescription>
@@ -96,9 +96,9 @@ export default async function HomePage() {
 
           {/* CTA Section */}
           <div className="text-center">
-            <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm max-w-2xl mx-auto">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm max-w-2xl mx-auto">
               <CardContent className="p-8">
-                <h3 className="text-2xl font-bold text-slate-200 mb-4">Ready to start your movie journey?</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">Ready to start your movie journey?</h3>
                 <p className="text-slate-300 mb-6">
                   Join thousands of movie lovers sharing recommendations and building their perfect watchlists.
                 </p>

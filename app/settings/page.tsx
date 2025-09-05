@@ -36,8 +36,6 @@ import {
   Search,
   CheckCircle,
   Loader2,
-  Users,
-  Plus,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -48,7 +46,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import Link from "next/link"
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
@@ -112,16 +109,6 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        if (!supabase) {
-          console.error("[v0] Supabase client is null - environment variables not configured")
-          toast({
-            title: "Service Unavailable",
-            description: "Authentication service is not available. Please try again later.",
-            variant: "destructive",
-          })
-          return
-        }
-
         const {
           data: { user },
         } = await supabase.auth.getUser()
@@ -646,45 +633,27 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <nav className="hidden md:block border-b border-white/10 bg-black/20 backdrop-blur-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <Link
-                href="/feed"
-                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
-              >
-                <Users className="h-5 w-5" />
-                <span>Feed</span>
-              </Link>
-              <Link
-                href="/explore"
-                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
-              >
-                <Search className="h-5 w-5" />
-                <span>Explore</span>
-              </Link>
-              <Link
-                href="/friends"
-                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
-              >
-                <Users className="h-5 w-5" />
-                <span>Friends</span>
-              </Link>
-              <Link
-                href="/lists"
-                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                <span>Lists</span>
-              </Link>
-              <Link href="/settings" className="flex items-center space-x-2 text-purple-400 font-medium">
-                <User className="h-5 w-5" />
-                <span>Settings</span>
-              </Link>
-            </div>
-          </div>
-        </div>
+      <nav className="flex items-center justify-center gap-8 p-4 border-b border-white/10">
+        <a href="/feed" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+          <User className="w-5 h-5" />
+          <span>Feed</span>
+        </a>
+        <a href="/explore" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+          <User className="w-5 h-5" />
+          <span>Explore</span>
+        </a>
+        <a href="/friends" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+          <User className="w-5 h-5" />
+          <span>Friends</span>
+        </a>
+        <a href="/lists" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+          <User className="w-5 h-5" />
+          <span>Lists</span>
+        </a>
+        <a href="/profile" className="flex items-center gap-2 text-purple-400 font-medium">
+          <User className="w-5 h-5" />
+          <span>Profile</span>
+        </a>
       </nav>
 
       <div className="max-w-4xl mx-auto p-6">
