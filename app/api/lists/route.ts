@@ -5,6 +5,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not available")
+      return NextResponse.json({ error: "Database service unavailable" }, { status: 503 })
+    }
+
     const { data } = await supabase.auth.getUser()
     const user = data?.user
 
@@ -65,6 +70,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not available")
+      return NextResponse.json({ error: "Database service unavailable" }, { status: 503 })
+    }
 
     const { data } = await supabase.auth.getUser()
     const user = data?.user

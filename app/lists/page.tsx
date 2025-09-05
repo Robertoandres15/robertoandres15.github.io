@@ -491,10 +491,10 @@ export default function ListsPage() {
 
           <TabsContent value="wishlists" className="space-y-6">
             {wishlists.length === 0 ? (
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                 <CardContent className="p-8 text-center">
                   <BookmarkPlus className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-white font-medium mb-2">No wishlists yet</h3>
+                  <h3 className="text-slate-200 font-medium mb-2">No wishlists yet</h3>
                   <p className="text-slate-400 text-sm mb-4">
                     Create your first wishlist to save movies and shows you want to watch
                   </p>
@@ -506,7 +506,7 @@ export default function ListsPage() {
             ) : (
               <div className="space-y-6">
                 {wishlists.map((list) => (
-                  <Card key={list.id} className="bg-white/5 border-white/10 backdrop-blur-sm">
+                  <Card key={list.id} className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -647,10 +647,10 @@ export default function ListsPage() {
 
           <TabsContent value="recommendations" className="space-y-6">
             {recommendations.length === 0 ? (
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                 <CardContent className="p-8 text-center">
                   <Heart className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-white font-medium mb-2">No recommendation lists yet</h3>
+                  <h3 className="text-slate-200 font-medium mb-2">No recommendation lists yet</h3>
                   <p className="text-slate-400 text-sm mb-4">
                     Create lists to share your favorite movies and shows with friends
                   </p>
@@ -662,7 +662,7 @@ export default function ListsPage() {
             ) : (
               <div className="space-y-6">
                 {recommendations.map((list) => (
-                  <Card key={list.id} className="bg-white/5 border-white/10 backdrop-blur-sm">
+                  <Card key={list.id} className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
