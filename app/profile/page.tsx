@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"
 
 async function UserLists({ userId }: { userId: string }) {
   try {
-    const supabase = await createClient()
+    const supabase = createClient()
     if (!supabase) {
       return (
         <div className="text-center py-8">
@@ -123,7 +123,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const supabase = await createClient()
+        const supabase = createClient()
 
         if (!supabase) {
           router.push("/auth/login")
