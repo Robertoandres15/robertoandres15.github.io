@@ -6,13 +6,26 @@ import { createServerClient } from "@supabase/ssr"
  * it.
  */
 export async function createClient() {
+  console.log("[v0] Environment variable check:")
+  console.log("[v0] NEXT_PUBLIC_SUPABASE_URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+  console.log("[v0] NEXT_PUBLIC_SUPABASE_ANON_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  console.log("[v0] SUPABASE_SERVICE_ROLE_KEY exists:", !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+  console.log(
+    "[v0] All process.env keys:",
+    Object.keys(process.env).filter((key) => key.includes("SUPABASE")),
+  )
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn("[v0] Supabase environment variables not available, returning null client")
+    console.warn("[v0] URL:", supabaseUrl ? "present" : "missing")
+    console.warn("[v0] Anon Key:", supabaseAnonKey ? "present" : "missing")
     return null
   }
+
+  console.log("[v0] Supabase environment variables found, creating client")
 
   try {
     // Check if we're in a server environment that supports next/headers
