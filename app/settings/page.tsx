@@ -188,6 +188,8 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return
+
     console.log("[v0] Dark mode toggled:", darkMode)
     // Apply dark mode class to document element
     if (darkMode) {
@@ -202,6 +204,8 @@ export default function SettingsPage() {
   }, [darkMode])
 
   useEffect(() => {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") return
+
     const savedDarkMode = localStorage.getItem("darkMode")
     if (savedDarkMode === "true") {
       setDarkMode(true)
