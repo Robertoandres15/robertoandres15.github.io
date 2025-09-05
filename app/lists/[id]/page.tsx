@@ -55,18 +55,12 @@ export default function ListDetailPage() {
 
   const loadList = async (listId: string) => {
     try {
-      console.log("[v0] Loading list with ID:", listId)
       const response = await fetch(`/api/lists/${listId}`)
       const data = await response.json()
 
-      console.log("[v0] API response status:", response.status)
-      console.log("[v0] API response data:", data)
-
       if (response.ok) {
         setList(data.list)
-        console.log("[v0] List loaded successfully:", data.list?.name)
       } else {
-        console.log("[v0] Failed to load list:", data.error)
         toast({
           title: "Failed to load list",
           description: data.error || "An error occurred",
@@ -75,7 +69,7 @@ export default function ListDetailPage() {
         router.push("/lists")
       }
     } catch (error) {
-      console.error("[v0] Failed to load list:", error)
+      console.error("Failed to load list:", error)
       toast({
         title: "Failed to load list",
         description: "An error occurred while loading the list",
