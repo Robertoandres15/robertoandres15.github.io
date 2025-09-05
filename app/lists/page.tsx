@@ -586,7 +586,19 @@ export default function ListsPage() {
                           <Button
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
-                            onClick={() => router.push(`/lists/${list.id}`)}
+                            onClick={() => {
+                              console.log("[v0] View All button clicked for list:", list.id)
+                              try {
+                                router.push(`/lists/${list.id}`)
+                              } catch (error) {
+                                console.error("[v0] Navigation error:", error)
+                                toast({
+                                  title: "Navigation Error",
+                                  description: "Failed to navigate to list details",
+                                  variant: "destructive",
+                                })
+                              }
+                            }}
                           >
                             View All {list.list_items.length} Items
                           </Button>
@@ -730,7 +742,19 @@ export default function ListsPage() {
                           <Button
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
-                            onClick={() => router.push(`/lists/${list.id}`)}
+                            onClick={() => {
+                              console.log("[v0] View All button clicked for recommendations list:", list.id)
+                              try {
+                                router.push(`/lists/${list.id}`)
+                              } catch (error) {
+                                console.error("[v0] Navigation error:", error)
+                                toast({
+                                  title: "Navigation Error",
+                                  description: "Failed to navigate to list details",
+                                  variant: "destructive",
+                                })
+                              }
+                            }}
                           >
                             View All {list.list_items.length} Items
                           </Button>
