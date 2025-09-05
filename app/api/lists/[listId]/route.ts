@@ -3,7 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest, { params }: { params: { listId: string } }) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     if (!supabase) {
       return NextResponse.json({ error: "Database connection failed" }, { status: 500 })
