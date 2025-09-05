@@ -1,23 +1,15 @@
-export const isMobile = () => {
-  try {
-    // Check if we're in a browser environment first
-    if (typeof window === "undefined") return false
+import { Capacitor } from "@capacitor/core"
+import { StatusBar, Style } from "@capacitor/status-bar"
+import { Haptics, ImpactStyle } from "@capacitor/haptics"
+import { App } from "@capacitor/app"
+import { Keyboard } from "@capacitor/keyboard"
 
-    // Dynamic import check for Capacitor
-    return window.Capacitor?.isNativePlatform?.() || false
-  } catch (error) {
-    return false
-  }
-}
+export const isMobile = () => Capacitor.isNativePlatform()
 
 export const initializeMobileFeatures = async () => {
   if (!isMobile()) return
 
   try {
-    const { StatusBar, Style } = await import("@capacitor/status-bar")
-    const { App } = await import("@capacitor/app")
-    const { Keyboard } = await import("@capacitor/keyboard")
-
     // Configure status bar
     await StatusBar.setStyle({ style: Style.Dark })
     await StatusBar.setBackgroundColor({ color: "#1e293b" })
@@ -40,14 +32,11 @@ export const initializeMobileFeatures = async () => {
   }
 }
 
-export const triggerHaptic = async (style: "LIGHT" | "MEDIUM" | "HEAVY" = "MEDIUM") => {
+export const triggerHaptic = async (style: ImpactStyle = ImpactStyle.Medium) => {
   if (!isMobile()) return
 
   try {
-    const { Haptics, ImpactStyle } = await import("@capacitor/haptics")
-    const hapticStyle =
-      style === "LIGHT" ? ImpactStyle.Light : style === "HEAVY" ? ImpactStyle.Heavy : ImpactStyle.Medium
-    await Haptics.impact({ style: hapticStyle })
+    await Haptics.impact({ style })
   } catch (error) {
     console.error("[v0] Error triggering haptic:", error)
   }
@@ -57,7 +46,6 @@ export const setStatusBarStyle = async (isDark: boolean) => {
   if (!isMobile()) return
 
   try {
-    const { StatusBar, Style } = await import("@capacitor/status-bar")
     await StatusBar.setStyle({
       style: isDark ? Style.Dark : Style.Light,
     })
@@ -70,7 +58,6 @@ export const hideKeyboard = async () => {
   if (!isMobile()) return
 
   try {
-    const { Keyboard } = await import("@capacitor/keyboard")
     await Keyboard.hide()
   } catch (error) {
     console.error("[v0] Error hiding keyboard:", error)

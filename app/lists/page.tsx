@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useRouter } from "next/navigation"
 import {
   Heart,
   BookmarkPlus,
@@ -83,7 +82,6 @@ const createList = async () => {
 }
 
 export default function ListsPage() {
-  const router = useRouter()
   const [lists, setLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
@@ -339,13 +337,12 @@ export default function ListsPage() {
     return `https://image.tmdb.org/t/p/w300${posterPath}`
   }
 
+  const getItemRoute = (item: ListItem) => {
+    return `/explore/${item.media_type}/${item.tmdb_id}`
+  }
+
   const wishlists = lists.filter((list) => list.type === "wishlist")
   const recommendations = lists.filter((list) => list.type === "recommendations")
-
-  const viewAllItems = (listId: string, listName: string) => {
-    // Navigate to a detailed list view or expand the current view
-    router.push(`/lists/${listId}`)
-  }
 
   if (isLoading) {
     return (
@@ -541,32 +538,38 @@ export default function ListsPage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                           {list.list_items.slice(0, 6).map((item) => (
                             <div key={item.id} className="group relative">
-                              <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
-                                <Image
-                                  src={getPosterUrl(item.poster_path) || "/placeholder.svg"}
-                                  alt={item.title}
-                                  fill
-                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => removeFromList(list.id, item.id)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="absolute bottom-2 left-2 right-2">
-                                  <div className="flex items-center gap-1 text-white text-xs">
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{item.rating?.toFixed(1) || "N/A"}</span>
+                              <Link href={getItemRoute(item)} className="block">
+                                <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
+                                  <Image
+                                    src={getPosterUrl(item.poster_path) || "/placeholder.svg"}
+                                    alt={item.title}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                  <div className="absolute bottom-2 left-2 right-2">
+                                    <div className="flex items-center gap-1 text-white text-xs">
+                                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                      <span>{item.rating?.toFixed(1) || "N/A"}</span>
+                                    </div>
                                   </div>
                                 </div>
+                              </Link>
+                              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeFromList(list.id, item.id)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                               <div className="mt-2">
-                                <h4 className="text-white text-sm font-medium line-clamp-2">{item.title}</h4>
+                                <Link href={getItemRoute(item)} className="hover:text-purple-300 transition-colors">
+                                  <h4 className="text-white text-sm font-medium line-clamp-2 hover:underline">
+                                    {item.title}
+                                  </h4>
+                                </Link>
                                 <div className="flex items-center gap-1 text-slate-400 text-xs mt-1">
                                   <Calendar className="h-3 w-3" />
                                   <span>{item.release_date?.split("-")[0] || "TBA"}</span>
@@ -579,7 +582,6 @@ export default function ListsPage() {
                       {list.list_items.length > 6 && (
                         <div className="text-center mt-4">
                           <Button
-                            onClick={() => viewAllItems(list.id, list.name)}
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                           >
@@ -679,32 +681,38 @@ export default function ListsPage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                           {list.list_items.slice(0, 6).map((item) => (
                             <div key={item.id} className="group relative">
-                              <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
-                                <Image
-                                  src={getPosterUrl(item.poster_path) || "/placeholder.svg"}
-                                  alt={item.title}
-                                  fill
-                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => removeFromList(list.id, item.id)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="absolute bottom-2 left-2 right-2">
-                                  <div className="flex items-center gap-1 text-white text-xs">
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{item.rating?.toFixed(1) || "N/A"}</span>
+                              <Link href={getItemRoute(item)} className="block">
+                                <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
+                                  <Image
+                                    src={getPosterUrl(item.poster_path) || "/placeholder.svg"}
+                                    alt={item.title}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                  <div className="absolute bottom-2 left-2 right-2">
+                                    <div className="flex items-center gap-1 text-white text-xs">
+                                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                      <span>{item.rating?.toFixed(1) || "N/A"}</span>
+                                    </div>
                                   </div>
                                 </div>
+                              </Link>
+                              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeFromList(list.id, item.id)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                               <div className="mt-2">
-                                <h4 className="text-white text-sm font-medium line-clamp-2">{item.title}</h4>
+                                <Link href={getItemRoute(item)} className="hover:text-purple-300 transition-colors">
+                                  <h4 className="text-white text-sm font-medium line-clamp-2 hover:underline">
+                                    {item.title}
+                                  </h4>
+                                </Link>
                                 <div className="flex items-center gap-1 text-slate-400 text-xs mt-1">
                                   <Calendar className="h-3 w-3" />
                                   <span>{item.release_date?.split("-")[0] || "TBA"}</span>
@@ -717,7 +725,6 @@ export default function ListsPage() {
                       {list.list_items.length > 6 && (
                         <div className="text-center mt-4">
                           <Button
-                            onClick={() => viewAllItems(list.id, list.name)}
                             variant="outline"
                             className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                           >

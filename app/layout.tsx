@@ -4,7 +4,6 @@ import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { MobileInitializer } from "@/components/mobile-initializer"
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import "./globals.css"
 
 const inter = Inter({
@@ -39,7 +38,6 @@ export default function RootLayout({
       <body className={`font-sans ${inter.variable}`}>
         <MobileInitializer />
         <Suspense fallback={null}>{children}</Suspense>
-        <PWAInstallPrompt />
         <Analytics />
         <script
           dangerouslySetInnerHTML={{

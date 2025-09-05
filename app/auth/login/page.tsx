@@ -25,6 +25,13 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
+    // Added null check for Supabase client
+    if (!supabase) {
+      setError("Authentication service is not available. Please check your configuration.")
+      setIsLoading(false)
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,

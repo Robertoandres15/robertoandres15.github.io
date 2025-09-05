@@ -5,6 +5,7 @@ import Link from "next/link"
 import { FriendRecommendations } from "@/components/friend-recommendations"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { MobileNavigation } from "@/components/mobile-navigation"
 
 async function ReelClub() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -430,7 +431,7 @@ function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userP
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                  className="border-white/20 text-white hover:bg-white/10 bg-transparent text-xs px-2 sm:px-3 sm:text-sm"
                 >
                   View Details
                 </Button>
@@ -482,13 +483,13 @@ export default async function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
             <Film className="h-8 w-8 text-purple-400" />
             <h1 className="text-2xl font-bold text-white">Reel Friends</h1>
           </div>
-          <nav className="flex gap-2">
+          <nav className="hidden md:flex gap-2">
             <Button variant="ghost" asChild className="text-white hover:bg-white/10">
               <Link href="/explore">
                 <Search className="h-4 w-4 mr-2" />
@@ -544,6 +545,8 @@ export default async function FeedPage() {
           </Tabs>
         </div>
       </div>
+
+      <MobileNavigation />
     </div>
   )
 }

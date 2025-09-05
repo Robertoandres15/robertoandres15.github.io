@@ -68,12 +68,17 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
+          emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL
+            ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+            : process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
+          data: {
+            email_confirm: false, // Disable email confirmation
+          },
         },
       })
       if (error) throw error
-      router.push("/auth/check-email")
+
+      router.push("/onboarding")
     } catch (error: unknown) {
       if (error instanceof Error && error.message.includes("Your project's URL and API key are required")) {
         setError("Authentication service is currently unavailable. Please contact support.")
