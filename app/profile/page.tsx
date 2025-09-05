@@ -1,3 +1,5 @@
+"use client"
+
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -6,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Film, Users, Search, Settings, Edit, List, Activity } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 async function UserLists({ userId }: { userId: string }) {
   try {
@@ -100,10 +104,6 @@ async function UserLists({ userId }: { userId: string }) {
     )
   }
 }
-;("use client")
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 
 interface ProfileData {
   user: any
