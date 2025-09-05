@@ -238,32 +238,38 @@ export default function FriendsPage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <a href="/feed" className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors">
+              <Link
+                href="/feed"
+                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
+              >
                 <Users className="h-5 w-5" />
                 <span>Feed</span>
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/explore"
                 className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
               >
                 <Search className="h-5 w-5" />
                 <span>Explore</span>
-              </a>
-              <a href="/friends" className="flex items-center space-x-2 text-purple-400 font-medium">
+              </Link>
+              <Link href="/friends" className="flex items-center space-x-2 text-purple-400 font-medium">
                 <Users className="h-5 w-5" />
                 <span>Friends</span>
-              </a>
-              <a href="/lists" className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors">
+              </Link>
+              <Link
+                href="/lists"
+                className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
+              >
                 <Plus className="h-5 w-5" />
                 <span>Lists</span>
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/profile"
                 className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
               >
                 <User className="h-5 w-5" />
                 <span>Profile</span>
-              </a>
+              </Link>
             </div>
           </div>
         </div>
