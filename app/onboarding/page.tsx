@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Film, User, ArrowRight, MapPin, Popcorn } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+
+export const dynamic = "force-dynamic"
 
 export default function OnboardingPage() {
   const [user, setUser] = useState<any>(null)
@@ -33,12 +34,26 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1)
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
+    const initializeSupabase = async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase/client")
+        const client = createClient()
+        setSupabase(client)
+        return client
+      } catch (error) {
+        console.log("[v0] Failed to create Supabase client:", error)
+        return null
+      }
+    }
+
     const getUser = async () => {
       try {
-        if (!supabase) {
+        const client = await initializeSupabase()
+
+        if (!client) {
           console.log("[v0] Supabase client not available, using fallback user")
           const mockUser = {
             id: "temp-user-" + Date.now(),
@@ -51,7 +66,7 @@ export default function OnboardingPage() {
 
         const {
           data: { user },
-        } = await supabase.auth.getUser()
+        } = await client.auth.getUser()
         if (!user) {
           console.log("[v0] No authenticated user found, using fallback for onboarding")
           const mockUser = {

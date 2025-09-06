@@ -402,20 +402,24 @@ function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userP
 
       {suggestions.map((movie: any) => (
         <div key={movie.id} className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors">
-          <div className="flex gap-4">
-            <img
-              src={
-                movie.poster_path
-                  ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
-                  : `/placeholder.svg?height=120&width=80&query=${movie.title} poster`
-              }
-              alt={movie.title}
-              className="w-20 h-30 rounded-lg object-cover flex-shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-white font-semibold mb-2 truncate">{movie.title}</h3>
-              <p className="text-slate-400 text-sm mb-3 line-clamp-2">{movie.overview}</p>
-              <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-shrink-0 mx-auto sm:mx-0">
+              <img
+                src={
+                  movie.poster_path
+                    ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
+                    : `/placeholder.svg?height=120&width=80&query=${movie.title} poster`
+                }
+                alt={movie.title}
+                className="w-24 h-36 sm:w-20 sm:h-30 rounded-lg object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0 text-center sm:text-left">
+              <h3 className="text-white font-semibold mb-2 text-lg sm:text-base leading-tight">{movie.title}</h3>
+              <p className="text-slate-400 text-sm mb-3 line-clamp-3 sm:line-clamp-2 leading-relaxed">
+                {movie.overview}
+              </p>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 text-yellow-400 fill-current" />
                   <span className="text-sm text-slate-300">{movie.vote_average?.toFixed(1)}</span>
@@ -423,15 +427,18 @@ function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userP
                 <span className="text-slate-500">•</span>
                 <span className="text-sm text-slate-400">{new Date(movie.release_date).getFullYear()}</span>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+                <Button
+                  size="sm"
+                  className="bg-purple-600 hover:bg-purple-700 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add to Wishlist
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent text-xs px-2 sm:px-3 sm:text-sm"
+                  className="border-white/20 text-white hover:bg-white/10 bg-transparent min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
                 >
                   View Details
                 </Button>
@@ -483,11 +490,11 @@ export default async function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8 pb-20 md:pb-8">
-        <header className="flex items-center justify-between mb-8">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-20 md:pb-8">
+        <header className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-2">
-            <Film className="h-8 w-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-white">Reel Friends</h1>
+            <Film className="h-7 w-7 sm:h-8 sm:w-8 text-purple-400" />
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Reel Friends</h1>
           </div>
           <nav className="hidden md:flex gap-2">
             <Button variant="ghost" asChild className="text-white hover:bg-white/10">
@@ -519,14 +526,23 @@ export default async function FeedPage() {
 
         <div className="max-w-2xl mx-auto">
           <Tabs defaultValue="following" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-white/5 border-white/10">
-              <TabsTrigger value="following" className="data-[state=active]:bg-purple-600">
+            <TabsList className="grid w-full grid-cols-3 bg-white/5 border-white/10 h-12 sm:h-10">
+              <TabsTrigger
+                value="following"
+                className="data-[state=active]:bg-purple-600 text-xs sm:text-sm min-h-[44px] sm:min-h-[36px]"
+              >
                 Following
               </TabsTrigger>
-              <TabsTrigger value="reel-club" className="data-[state=active]:bg-purple-600">
+              <TabsTrigger
+                value="reel-club"
+                className="data-[state=active]:bg-purple-600 text-xs sm:text-sm min-h-[44px] sm:min-h-[36px]"
+              >
                 Reel Club
               </TabsTrigger>
-              <TabsTrigger value="recommendations" className="data-[state=active]:bg-purple-600">
+              <TabsTrigger
+                value="recommendations"
+                className="data-[state=active]:bg-purple-600 text-xs sm:text-sm min-h-[44px] sm:min-h-[36px]"
+              >
                 For You
               </TabsTrigger>
             </TabsList>
