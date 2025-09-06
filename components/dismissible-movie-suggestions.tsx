@@ -87,12 +87,17 @@ export function DismissibleMovieSuggestions({
 
       if (response.ok) {
         const data = await response.json()
-        const newSuggestions = data.results?.filter((movie: Movie) => !dismissedIds.has(movie.id)) || []
+        const currentIds = new Set(suggestions.map((s) => s.id))
+        const newSuggestions =
+          data.results?.filter((movie: Movie) => !dismissedIds.has(movie.id) && !currentIds.has(movie.id)) || []
 
         console.log("[v0] Fetched new suggestions:", newSuggestions.length)
 
         if (newSuggestions.length > 0) {
-          setSuggestions(newSuggestions.slice(0, 5))
+          const uniqueMovies = new Map()
+          suggestions.forEach((movie) => uniqueMovies.set(movie.id, movie))
+          newSuggestions.slice(0, 5).forEach((movie) => uniqueMovies.set(movie.id, movie))
+          setSuggestions(Array.from(uniqueMovies.values()).slice(0, 5))
         }
       } else {
         console.error("[v0] API response not ok:", response.status, response.statusText)
@@ -119,7 +124,8 @@ export function DismissibleMovieSuggestions({
 
     try {
       const genreIds = movieGenres.join(",")
-      const excludeIds = [...dismissedIds, movieId, ...suggestions.map((s) => s.id)].join(",")
+      const currentIds = suggestions.map((s) => s.id)
+      const excludeIds = [...dismissedIds, movieId, ...currentIds].join(",")
 
       const response = await fetch(
         `/api/tmdb/discover?with_genres=${genreIds}&exclude_ids=${excludeIds}&page=${Math.floor(Math.random() * 5) + 1}`,
@@ -129,11 +135,15 @@ export function DismissibleMovieSuggestions({
         const data = await response.json()
         const newSuggestions =
           data.results?.filter(
-            (movie: Movie) => !dismissedIds.has(movie.id) && !suggestions.some((s) => s.id === movie.id),
+            (movie: Movie) => !dismissedIds.has(movie.id) && !currentIds.includes(movie.id) && movie.id !== movieId,
           ) || []
 
         if (newSuggestions.length > 0) {
-          setSuggestions((prev) => [...prev, newSuggestions[0]])
+          setSuggestions((prev) => {
+            const existingIds = new Set(prev.map((s) => s.id))
+            const replacement = newSuggestions.find((movie) => !existingIds.has(movie.id))
+            return replacement ? [...prev, replacement] : prev
+          })
         }
       } else {
         console.error("[v0] Failed to fetch replacement - API response not ok:", response.status)
@@ -336,7 +346,10 @@ export function DismissibleMovieSuggestions({
       </div>
 
       {suggestions.map((movie: Movie) => (
-        <div key={movie.id} className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors relative">
+        <div
+          key={`${movie.id}-${movie.title}`}
+          className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors relative"
+        >
           <Button
             size="sm"
             variant="ghost"
