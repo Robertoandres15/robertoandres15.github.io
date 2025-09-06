@@ -8,23 +8,27 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Server auth - Processing login request")
 
-    const supabase = createServerClient(
-      "https://decmqllofkinlbtxczhu.supabase.com",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlY21xbGxvZmtpbmxidHhjemh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1ODMwNjksImV4cCI6MjA3MjE1OTA2OX0.p1Gu9B3BbMq-_5NxsT69F22hqU-6dVkCGUZV_ZOc5ng",
-      {
-        cookies: {
-          get(name: string) {
-            return cookies().get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookies().set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookies().set({ name, value: "", ...options })
-          },
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("[v0] Server auth - Missing Supabase environment variables")
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
+    }
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name: string) {
+          return cookies().get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookies().set({ name, value, ...options })
+        },
+        remove(name: string, options: any) {
+          cookies().set({ name, value: "", ...options })
         },
       },
-    )
+    })
 
     console.log("[v0] Server auth - Attempting authentication")
 

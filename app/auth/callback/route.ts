@@ -54,10 +54,14 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://decmqllofkinlbtxczhu.supabase.com"
-      const supabaseAnonKey =
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlY21xbGxvZmtpbmxidHhjemh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1ODMwNjksImV4cCI6MjA3MjE1OTA2OX0.p1Gu9B3BbMq-_5NxsT69F22hqU-6dVkCGUZV_ZOc5ng"
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error("[v0] Auth callback - Missing Supabase environment variables")
+        const redirectUrl = getSafeRedirectUrl()
+        return NextResponse.redirect(`${redirectUrl}/auth/auth-code-error`)
+      }
 
       console.log("[v0] Auth callback - Using Supabase credentials:", {
         url: supabaseUrl ? "available" : "missing",
