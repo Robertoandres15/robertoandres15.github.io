@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -38,8 +37,9 @@ export default function OnboardingPage() {
   const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
-    const initializeSupabase = () => {
+    const initializeSupabase = async () => {
       try {
+        const { createClient } = await import("@/lib/supabase/client")
         const client = createClient()
         setSupabase(client)
         return client
@@ -51,7 +51,7 @@ export default function OnboardingPage() {
 
     const getUser = async () => {
       try {
-        const client = initializeSupabase()
+        const client = await initializeSupabase()
 
         if (!client) {
           console.log("[v0] Supabase client not available, using fallback user")
