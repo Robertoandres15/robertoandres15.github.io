@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const friendId = searchParams.get("friend_id")
+
     const { data: friendships } = await supabase
       .from("friends")
       .select(`
@@ -28,7 +31,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ recommendations: [] })
     }
 
-    const friendIds = friendships.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id))
+    let friendIds = friendships.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id))
+
+    if (friendId) {
+      // If specific friend is selected, only get recommendations from that friend
+      const isValidFriend = friendIds.includes(friendId)
+      if (!isValidFriend) {
+        return NextResponse.json({ error: "Friend not found or not connected" }, { status: 404 })
+      }
+      friendIds = [friendId]
+    }
 
     const { data: friendRecommendations } = await supabase
       .from("list_items")

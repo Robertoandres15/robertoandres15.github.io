@@ -57,6 +57,8 @@ export default function ExplorePage() {
   const [isAddingToList, setIsAddingToList] = useState(false)
   const { toast } = useToast()
   const isMobile = useIsMobile()
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
 
   const streamingServices = [
     { id: "8", name: "Netflix" },
@@ -251,12 +253,14 @@ export default function ExplorePage() {
   }
 
   const handleSearch = async (page = 1) => {
+    if (isLoading) return
+
     setIsLoading(true)
-    setCurrentPage(page)
+    setError(null)
 
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout for search
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
 
       let url = ""
       const params = new URLSearchParams({ page: page.toString() })
@@ -264,6 +268,9 @@ export default function ExplorePage() {
       if (searchQuery.trim()) {
         url = "/api/tmdb/search"
         params.append("q", searchQuery.trim())
+      } else if (recommendedBy !== "0") {
+        url = "/api/recommendations"
+        params.append("friend_id", recommendedBy)
       } else {
         url = "/api/tmdb/discover"
         if (mediaType !== "all") params.append("type", mediaType)
@@ -276,7 +283,6 @@ export default function ExplorePage() {
           params.append("streaming_services", selectedStreamingServices.join(","))
         }
         if (movieDuration !== "any") params.append("duration", movieDuration)
-        if (recommendedBy !== "0") params.append("recommended_by", recommendedBy)
       }
 
       const response = await fetch(`${url}?${params}`, { signal: controller.signal })
@@ -290,23 +296,46 @@ export default function ExplorePage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || `Search failed: ${response.status}`)
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      let results = []
+      if (recommendedBy !== "0") {
+        // Recommendations API returns { recommendations: [...] }
+        results = data.recommendations || []
+        // Transform recommendations to match expected format
+        results = results.map((rec: any) => ({
+          id: rec.tmdb_id,
+          title: rec.title,
+          name: rec.title,
+          media_type: rec.media_type,
+          poster_path: rec.poster_path,
+          backdrop_path: rec.backdrop_path,
+          overview: rec.overview,
+          release_date: rec.release_date,
+          first_air_date: rec.first_air_date,
+          vote_average: rec.vote_average,
+          genre_ids: rec.genre_ids || [],
+          recommending_friends: rec.recommending_friends || [],
+        }))
+      } else {
+        // Discover/Search APIs return { results: [...] }
+        results = data.results || []
       }
 
       if (page === 1) {
-        setResults(data.results || [])
+        setResults(results)
       } else {
-        setResults((prev) => [...prev, ...(data.results || [])])
+        setResults((prev) => [...prev, ...results])
       }
-      setTotalPages(data.total_pages || 1)
-    } catch (error) {
-      console.error("[v0] Search failed:", error)
-      if (error.name !== "AbortError") {
-        console.error("[v0] Search API error:", error.message)
-      }
-      if (page === 1) {
-        setResults([])
-        setTotalPages(1)
+
+      setHasMore(results.length === 20)
+    } catch (error: any) {
+      console.error("Search error:", error)
+      if (error.name === "AbortError") {
+        setError("Search request timed out. Please try again.")
+      } else {
+        setError(error.message || "An error occurred while searching. Please try again.")
       }
     } finally {
       setIsLoading(false)
