@@ -29,46 +29,39 @@ export function DismissibleMovieSuggestions({
   const [dismissedIds, setDismissedIds] = useState<Set<number>>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("dismissedMovies")
-      const dismissed = stored ? new Set(JSON.parse(stored)) : new Set()
-      console.log("[v0] Loaded dismissed movies from localStorage:", dismissed.size, [...dismissed])
-      return dismissed
+      return stored ? new Set(JSON.parse(stored)) : new Set()
     }
     return new Set()
   })
 
   const [suggestions, setSuggestions] = useState<Movie[]>([])
   const [hasInitialized, setHasInitialized] = useState(false)
-  const [hasEverLoaded, setHasEverLoaded] = useState(false)
+  const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
+  const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
+  const [addedToWishlist, setAddedToWishlist] = useState<Set<number>>(new Set())
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   useEffect(() => {
     const initializeComponent = async () => {
-      try {
-        if (!hasInitialized && !hasEverLoaded) {
-          const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
-          console.log("[v0] First load - Initial suggestions:", initialSuggestions.length)
-          console.log("[v0] First load - Dismissed movies:", dismissedIds.size, [...dismissedIds])
-          console.log("[v0] First load - Filtered suggestions:", filtered.length)
-          setSuggestions(filtered)
-          setHasInitialized(true)
-          setHasEverLoaded(true)
-          if (typeof window !== "undefined") {
-            localStorage.setItem("hasLoadedSuggestions", "true")
-          }
-        } else if (!hasInitialized && hasEverLoaded) {
-          console.log("[v0] Returning user - fetching fresh suggestions instead of using parent data")
-          setHasInitialized(true)
-          try {
-            await fetchMoreSuggestions()
-          } catch (error) {
-            console.error("[v0] Failed to fetch fresh suggestions for returning user:", error)
-            // Fallback to filtered initial suggestions if API fails
-            const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
-            setSuggestions(filtered)
-          }
+      if (hasInitialized) return
+
+      console.log("[v0] Initializing component...")
+      console.log("[v0] Dismissed movies count:", dismissedIds.size)
+
+      // If user has dismissed movies before, ignore server suggestions completely
+      if (dismissedIds.size > 0) {
+        console.log("[v0] User has dismissed movies before, fetching fresh suggestions")
+        setHasInitialized(true)
+        try {
+          await fetchMoreSuggestions()
+        } catch (error) {
+          console.error("[v0] Failed to fetch fresh suggestions:", error)
+          // Fallback to empty state rather than showing dismissed movies
+          setSuggestions([])
         }
-      } catch (error) {
-        console.error("[v0] Error during component initialization:", error)
-        // Fallback to basic initialization
+      } else {
+        // First time user - use server suggestions but filter them
+        console.log("[v0] First time user, using server suggestions")
         const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
         setSuggestions(filtered)
         setHasInitialized(true)
@@ -76,43 +69,21 @@ export function DismissibleMovieSuggestions({
     }
 
     initializeComponent()
-  }, [initialSuggestions, dismissedIds, hasInitialized, hasEverLoaded])
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasLoaded = localStorage.getItem("hasLoadedSuggestions") === "true"
-      setHasEverLoaded(hasLoaded)
-      console.log("[v0] Has ever loaded suggestions:", hasLoaded)
-    }
-  }, [])
-
-  const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
-  const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
-  const [addedToWishlist, setAddedToWishlist] = useState<Set<number>>(new Set())
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  }, []) // Remove dependencies to prevent re-initialization
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("dismissedMovies", JSON.stringify([...dismissedIds]))
-      console.log("[v0] Saved dismissed movies to localStorage:", dismissedIds.size, [...dismissedIds])
+      console.log("[v0] Saved dismissed movies to localStorage:", [...dismissedIds])
     }
   }, [dismissedIds])
 
   useEffect(() => {
-    const autoFetchSuggestions = async () => {
-      if (hasInitialized && suggestions.length === 0) {
-        console.log("[v0] All suggestions dismissed, fetching new ones")
-        try {
-          await fetchMoreSuggestions()
-        } catch (error) {
-          console.error("[v0] Failed to fetch more suggestions on initialization:", error)
-          // Don't crash the app, just log the error
-        }
-      }
+    if (hasInitialized && suggestions.length === 0 && !isLoadingMore) {
+      console.log("[v0] No suggestions available, fetching more...")
+      fetchMoreSuggestions().catch(console.error)
     }
-
-    autoFetchSuggestions()
-  }, [suggestions.length, hasInitialized])
+  }, [suggestions.length, hasInitialized, isLoadingMore])
 
   const fetchMoreSuggestions = async () => {
     setIsLoadingMore(true)
@@ -121,7 +92,7 @@ export function DismissibleMovieSuggestions({
       const excludeIds = [...dismissedIds].join(",")
       const randomPage = Math.floor(Math.random() * 10) + 1
 
-      console.log("[v0] Fetching more suggestions, excluding:", excludeIds)
+      console.log("[v0] Fetching suggestions, excluding:", excludeIds)
 
       const response = await fetch(
         `/api/tmdb/discover?with_genres=${genreIds}&exclude_ids=${excludeIds}&page=${randomPage}`,
@@ -136,18 +107,15 @@ export function DismissibleMovieSuggestions({
         console.log("[v0] Fetched new suggestions:", newSuggestions.length)
 
         if (newSuggestions.length > 0) {
-          const uniqueMovies = new Map()
-          suggestions.forEach((movie) => uniqueMovies.set(movie.id, movie))
-          newSuggestions.slice(0, 5).forEach((movie) => uniqueMovies.set(movie.id, movie))
-          setSuggestions(Array.from(uniqueMovies.values()).slice(0, 5))
+          setSuggestions(newSuggestions.slice(0, 5))
         }
       } else {
-        console.error("[v0] API response not ok:", response.status, response.statusText)
+        console.error("[v0] API response not ok:", response.status)
         throw new Error(`API request failed with status ${response.status}`)
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch more suggestions:", error)
-      throw error // Re-throw to let caller handle it
+      console.error("[v0] Failed to fetch suggestions:", error)
+      throw error
     } finally {
       setIsLoadingMore(false)
     }
@@ -162,7 +130,6 @@ export function DismissibleMovieSuggestions({
 
     const newDismissedIds = new Set([...dismissedIds, movieId])
     setDismissedIds(newDismissedIds)
-    console.log("[v0] Updated dismissed movies:", newDismissedIds.size, [...newDismissedIds])
 
     try {
       const genreIds = movieGenres.join(",")
@@ -185,11 +152,9 @@ export function DismissibleMovieSuggestions({
             return replacement ? [...prev, replacement] : prev
           })
         }
-      } else {
-        console.error("[v0] Failed to fetch replacement - API response not ok:", response.status)
       }
     } catch (error) {
-      console.error("Failed to fetch replacement suggestion:", error)
+      console.error("[v0] Failed to fetch replacement:", error)
     } finally {
       setIsLoadingReplacement(null)
     }
@@ -395,13 +360,13 @@ export function DismissibleMovieSuggestions({
             variant="ghost"
             onClick={() => handleDismiss(movie.id)}
             disabled={isLoadingReplacement === movie.id}
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-slate-900/90 text-white hover:text-white hover:bg-red-600/90 z-20 border border-slate-500 shadow-xl backdrop-blur-sm"
-            title="Already watched this"
+            className="absolute top-2 right-2 h-10 w-10 p-0 bg-slate-900 text-white hover:text-white hover:bg-red-600 z-30 border-2 border-slate-400 shadow-2xl rounded-full"
+            title="Already watched this - dismiss"
           >
             {isLoadingReplacement === movie.id ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             )}
           </Button>
 
@@ -417,7 +382,7 @@ export function DismissibleMovieSuggestions({
                 className="w-24 h-36 sm:w-20 sm:h-30 rounded-lg object-cover"
               />
             </div>
-            <div className="flex-1 min-w-0 text-center sm:text-left pr-8">
+            <div className="flex-1 min-w-0 text-center sm:text-left pr-12">
               <h3 className="text-white font-semibold mb-2 text-lg sm:text-base leading-tight">{movie.title}</h3>
               <p className="text-slate-400 text-sm mb-3 line-clamp-3 sm:line-clamp-2 leading-relaxed">
                 {movie.overview}
