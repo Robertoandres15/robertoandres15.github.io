@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Star, Plus, X } from "lucide-react"
+import { Star, Plus, X, Check } from "lucide-react"
 
 interface Movie {
   id: number
@@ -26,20 +26,35 @@ export function DismissibleMovieSuggestions({
   userProfile,
   isPersonalized,
 }: DismissibleMovieSuggestionsProps) {
-  const [suggestions, setSuggestions] = useState<Movie[]>(initialSuggestions)
-  const [dismissedIds, setDismissedIds] = useState<Set<number>>(new Set())
+  const [dismissedIds, setDismissedIds] = useState<Set<number>>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("dismissedMovies")
+      return stored ? new Set(JSON.parse(stored)) : new Set()
+    }
+    return new Set()
+  })
+
+  const [suggestions, setSuggestions] = useState<Movie[]>(() =>
+    initialSuggestions.filter((movie) => !dismissedIds.has(movie.id)),
+  )
   const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
+  const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
+  const [addedToWishlist, setAddedToWishlist] = useState<Set<number>>(new Set())
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dismissedMovies", JSON.stringify([...dismissedIds]))
+    }
+  }, [dismissedIds])
 
   const handleDismiss = async (movieId: number) => {
     setIsLoadingReplacement(movieId)
 
-    // Remove the dismissed movie from current suggestions
     const updatedSuggestions = suggestions.filter((movie) => movie.id !== movieId)
     setSuggestions(updatedSuggestions)
     setDismissedIds((prev) => new Set([...prev, movieId]))
 
     try {
-      // Fetch a replacement suggestion
       const genreIds = movieGenres.join(",")
       const excludeIds = [...dismissedIds, movieId, ...suggestions.map((s) => s.id)].join(",")
 
@@ -55,7 +70,6 @@ export function DismissibleMovieSuggestions({
           ) || []
 
         if (newSuggestions.length > 0) {
-          // Add the first new suggestion to replace the dismissed one
           setSuggestions((prev) => [...prev, newSuggestions[0]])
         }
       }
@@ -63,6 +77,72 @@ export function DismissibleMovieSuggestions({
       console.error("Failed to fetch replacement suggestion:", error)
     } finally {
       setIsLoadingReplacement(null)
+    }
+  }
+
+  const handleAddToWishlist = async (movie: Movie) => {
+    setAddingToWishlist((prev) => new Set([...prev, movie.id]))
+
+    try {
+      const listsResponse = await fetch("/api/lists?type=wishlist")
+      if (!listsResponse.ok) {
+        throw new Error("Failed to fetch wishlists")
+      }
+
+      const { lists } = await listsResponse.json()
+      let wishlist = lists.find((list: any) => list.type === "wishlist")
+
+      if (!wishlist) {
+        const createResponse = await fetch("/api/lists", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "My Wishlist",
+            description: "Movies and shows I want to watch",
+            type: "wishlist",
+            is_public: true,
+          }),
+        })
+
+        if (!createResponse.ok) {
+          throw new Error("Failed to create wishlist")
+        }
+
+        const { list } = await createResponse.json()
+        wishlist = list
+      }
+
+      const addResponse = await fetch(`/api/lists/${wishlist.id}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tmdb_id: movie.id,
+          media_type: "movie",
+          title: movie.title,
+          poster_path: movie.poster_path,
+          overview: movie.overview,
+          release_date: movie.release_date,
+        }),
+      })
+
+      if (!addResponse.ok) {
+        const error = await addResponse.json()
+        if (error.error === "Item already exists in this list") {
+          setAddedToWishlist((prev) => new Set([...prev, movie.id]))
+          return
+        }
+        throw new Error(error.error || "Failed to add to wishlist")
+      }
+
+      setAddedToWishlist((prev) => new Set([...prev, movie.id]))
+    } catch (error) {
+      console.error("Failed to add to wishlist:", error)
+    } finally {
+      setAddingToWishlist((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(movie.id)
+        return newSet
+      })
     }
   }
 
@@ -161,10 +241,30 @@ export function DismissibleMovieSuggestions({
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                 <Button
                   size="sm"
-                  className="bg-purple-600 hover:bg-purple-700 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
+                  onClick={() => handleAddToWishlist(movie)}
+                  disabled={addingToWishlist.has(movie.id) || addedToWishlist.has(movie.id)}
+                  className={`min-h-[44px] sm:min-h-[36px] w-full sm:w-auto ${
+                    addedToWishlist.has(movie.id)
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-purple-600 hover:bg-purple-700"
+                  }`}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add to Wishlist
+                  {addingToWishlist.has(movie.id) ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                      Adding...
+                    </>
+                  ) : addedToWishlist.has(movie.id) ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Added to Wishlist
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add to Wishlist
+                    </>
+                  )}
                 </Button>
                 <Button
                   size="sm"
