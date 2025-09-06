@@ -13,8 +13,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import { useIsMobile } from "@/components/ui/use-mobile"
-import { MobileNavigation } from "@/components/mobile-navigation"
 import type { TMDBMovie, TMDBTVShow, TMDBGenre } from "@/lib/tmdb"
+import MobileNavigation from "@/components/MobileNavigation"
 
 interface MediaItem extends TMDBMovie, TMDBTVShow {
   media_type?: "movie" | "tv"
@@ -675,6 +675,72 @@ export default function ExplorePage() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Recommended By</label>
+                        <Select value={recommendedBy} onValueChange={setRecommendedBy}>
+                          <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                            <SelectItem
+                              value="0"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              Anyone
+                            </SelectItem>
+                            {friends.map((friend) => (
+                              <SelectItem
+                                key={friend.id}
+                                value={friend.id}
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                {friend.display_name || friend.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Availability</label>
+                        <Button
+                          variant={inTheaters ? "default" : "outline"}
+                          onClick={() => setInTheaters(!inTheaters)}
+                          disabled={mediaType === "tv"}
+                          className={
+                            mediaType === "tv"
+                              ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                              : inTheaters
+                                ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                                : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                          }
+                        >
+                          {inTheaters ? "✓ " : ""}In Theaters
+                        </Button>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Streaming Services</label>
+                        <div className="flex flex-wrap gap-2">
+                          {streamingServices.map((service) => (
+                            <Button
+                              key={service.id}
+                              variant={selectedStreamingServices.includes(service.id) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggleStreamingService(service.id)}
+                              className={
+                                selectedStreamingServices.includes(service.id)
+                                  ? "bg-purple-600 hover:bg-purple-700 text-white text-xs h-8"
+                                  : "border-white/20 text-white hover:bg-white/20 bg-white/10 text-xs h-8"
+                              }
+                            >
+                              {selectedStreamingServices.includes(service.id) ? "✓ " : ""}
+                              {service.name}
+                            </Button>
+                          ))}
                         </div>
                       </div>
 
