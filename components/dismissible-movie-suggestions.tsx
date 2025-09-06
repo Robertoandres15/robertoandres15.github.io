@@ -29,18 +29,30 @@ export function DismissibleMovieSuggestions({
   const [dismissedIds, setDismissedIds] = useState<Set<number>>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("dismissedMovies")
-      return stored ? new Set(JSON.parse(stored)) : new Set()
+      const dismissed = stored ? new Set(JSON.parse(stored)) : new Set()
+      console.log("[v0] Loaded dismissed movies from localStorage:", dismissed.size, [...dismissed])
+      return dismissed
     }
     return new Set()
   })
 
-  const [suggestions, setSuggestions] = useState<Movie[]>(() => {
+  const [suggestions, setSuggestions] = useState<Movie[]>([])
+
+  useEffect(() => {
     const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
     console.log("[v0] Initial suggestions:", initialSuggestions.length)
-    console.log("[v0] Dismissed movies:", dismissedIds.size)
+    console.log("[v0] Dismissed movies:", dismissedIds.size, [...dismissedIds])
     console.log("[v0] Filtered suggestions:", filtered.length)
-    return filtered
-  })
+    console.log(
+      "[v0] Initial suggestion IDs:",
+      initialSuggestions.map((m) => m.id),
+    )
+    console.log(
+      "[v0] Filtered suggestion IDs:",
+      filtered.map((m) => m.id),
+    )
+    setSuggestions(filtered)
+  }, [initialSuggestions, dismissedIds])
 
   const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
   const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
@@ -50,6 +62,7 @@ export function DismissibleMovieSuggestions({
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("dismissedMovies", JSON.stringify([...dismissedIds]))
+      console.log("[v0] Saved dismissed movies to localStorage:", dismissedIds.size, [...dismissedIds])
     }
   }, [dismissedIds])
 
@@ -91,11 +104,17 @@ export function DismissibleMovieSuggestions({
   }
 
   const handleDismiss = async (movieId: number) => {
+    console.log("[v0] Dismissing movie:", movieId)
     setIsLoadingReplacement(movieId)
 
     const updatedSuggestions = suggestions.filter((movie) => movie.id !== movieId)
     setSuggestions(updatedSuggestions)
-    setDismissedIds((prev) => new Set([...prev, movieId]))
+
+    setDismissedIds((prev) => {
+      const newDismissed = new Set([...prev, movieId])
+      console.log("[v0] Updated dismissed movies:", newDismissed.size, [...newDismissed])
+      return newDismissed
+    })
 
     try {
       const genreIds = movieGenres.join(",")
