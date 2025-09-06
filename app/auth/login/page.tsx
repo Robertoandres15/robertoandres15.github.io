@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { createClient } from "@/lib/supabase/client"
 import { Film } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -24,25 +25,45 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const response = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      console.log("[v0] Starting direct client-side authentication")
+      const supabase = createClient()
+
+      console.log("[v0] Attempting sign in with email:", email)
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed")
+      if (authError) {
+        console.error("[v0] Authentication error:", authError)
+        throw new Error(authError.message)
       }
 
-      console.log("[v0] Authentication successful, redirecting to feed")
-      router.push("/feed")
+      if (data.user) {
+        console.log("[v0] Authentication successful, user:", data.user.id)
+        console.log("[v0] Redirecting to feed")
+        router.push("/feed")
+      } else {
+        throw new Error("No user data returned")
+      }
     } catch (error: unknown) {
       console.error("[v0] Login error:", error)
-      setError(error instanceof Error ? error.message : "An error occurred")
+
+      if (error instanceof Error) {
+        if (error.message.includes("CORS Error")) {
+          setError(
+            "Configuration Error: Please add this domain to your Supabase Site URL settings. Check the browser console for detailed instructions.",
+          )
+        } else if (error.message.includes("Failed to fetch") || error.message.includes("Network request failed")) {
+          setError(
+            "Connection Error: Unable to reach authentication server. Please check your internet connection or try again later.",
+          )
+        } else {
+          setError(error.message)
+        }
+      } else {
+        setError("An unexpected error occurred during sign in")
+      }
     } finally {
       setIsLoading(false)
     }
