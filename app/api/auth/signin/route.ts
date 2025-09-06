@@ -17,22 +17,48 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Attempting server-side authentication...")
 
-    let authResult
     try {
-      authResult = await supabase.auth.signInWithPassword({
+      const authResult = await supabase.auth.signInWithPassword({
         email,
         password,
+      })
+
+      const { data, error } = authResult
+
+      if (error) {
+        console.log("[v0] Server auth error:", error.message)
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
+
+      if (!data.session) {
+        return NextResponse.json({ error: "No session created" }, { status: 400 })
+      }
+
+      console.log("[v0] Server auth success for user:", data.user?.email)
+
+      return NextResponse.json({
+        user: data.user,
+        session: data.session,
       })
     } catch (authError: any) {
       console.error("[v0] Supabase auth threw error:", authError)
 
-      // Check if this is a JSON parsing error (CORS/network issue)
-      if (authError.message && authError.message.includes("Unexpected token")) {
-        console.error("[v0] JSON parsing error detected - likely CORS/Site URL issue")
+      const errorMessage = authError.message || authError.toString()
+      const isJsonError =
+        errorMessage.includes("Unexpected token") ||
+        errorMessage.includes("is not valid JSON") ||
+        errorMessage.includes("Invalid response")
+
+      if (isJsonError) {
+        console.error("[v0] JSON parsing error detected - CORS/Site URL configuration issue")
         return NextResponse.json(
           {
-            error: "Authentication service unavailable. Please check Supabase Site URL configuration.",
-            details: "The Supabase project may not be configured to allow requests from this domain.",
+            error: "Supabase Site URL Configuration Required",
+            details: `Your Supabase project needs to be configured to allow requests from this domain. 
+                     Go to your Supabase Dashboard → Authentication → URL Configuration and add: 
+                     ${request.headers.get("origin") || "this domain"} to the Site URL field.`,
+            action: "Update Supabase Site URL Configuration",
+            corsIssue: true,
           },
           { status: 503 },
         )
@@ -41,37 +67,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Authentication request failed",
-          details: authError.message || "Unknown error",
+          details: errorMessage,
         },
         { status: 500 },
       )
     }
-
-    const { data, error } = authResult
-
-    if (error) {
-      console.log("[v0] Server auth error:", error.message)
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-
-    if (!data.session) {
-      return NextResponse.json({ error: "No session created" }, { status: 400 })
-    }
-
-    console.log("[v0] Server auth success for user:", data.user?.email)
-
-    return NextResponse.json({
-      user: data.user,
-      session: data.session,
-    })
   } catch (error: any) {
     console.error("[v0] Server auth error:", error)
 
-    if (error.message && error.message.includes("Unexpected token")) {
+    const errorMessage = error.message || error.toString()
+    if (errorMessage.includes("Unexpected token") || errorMessage.includes("is not valid JSON")) {
       return NextResponse.json(
         {
           error: "Invalid response from authentication service",
-          details: "This is likely a CORS or Site URL configuration issue in Supabase",
+          details:
+            "This is a CORS or Site URL configuration issue in Supabase. Please add your domain to the Supabase Site URL configuration.",
+          corsIssue: true,
         },
         { status: 503 },
       )
