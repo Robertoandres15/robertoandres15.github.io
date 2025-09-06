@@ -1,8 +1,20 @@
-import { updateSession } from "@/lib/supabase/middleware"
-import type { NextRequest } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  // Skip middleware for static files, API routes, and auth pages
+  if (
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.startsWith("/api") ||
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/_vercel") ||
+    request.nextUrl.pathname.includes(".") ||
+    request.nextUrl.pathname === "/"
+  ) {
+    return NextResponse.next()
+  }
+
+  // For now, allow all requests through - authentication will be handled at page level
+  return NextResponse.next()
 }
 
 export const config = {
