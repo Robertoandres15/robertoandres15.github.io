@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,25 +20,28 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
-    // Added null check for Supabase client
-    if (!supabase) {
-      setError("Authentication service is not available. Please check your configuration.")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       })
-      if (error) throw error
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Authentication failed")
+      }
+
+      console.log("[v0] Authentication successful, redirecting to feed")
       router.push("/feed")
     } catch (error: unknown) {
+      console.error("[v0] Login error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)
