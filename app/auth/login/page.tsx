@@ -2,6 +2,7 @@
 
 import type React from "react"
 
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,41 +21,22 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      console.log("[v0] Using server-side authentication")
-
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/feed`,
         },
-        body: JSON.stringify({ email, password }),
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed")
-      }
-
-      if (data.success && data.user) {
-        console.log("[v0] Authentication successful, user:", data.user.id)
-        console.log("[v0] Redirecting to feed")
-        router.push("/feed")
-      } else {
-        throw new Error("Authentication failed")
-      }
+      if (error) throw error
+      router.push("/feed")
     } catch (error: unknown) {
-      console.error("[v0] Login error:", error)
-
-      if (error instanceof Error) {
-        setError(error.message)
-      } else {
-        setError("An unexpected error occurred during sign in")
-      }
+      setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)
     }
