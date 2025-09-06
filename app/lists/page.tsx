@@ -525,7 +525,7 @@ export default function ListsPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name" className="text-white">
+                  <Label htmlFor="name" className="text-white font-medium mb-2 block">
                     Name *
                   </Label>
                   <Input
@@ -533,11 +533,11 @@ export default function ListsPage() {
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
                     placeholder="My Awesome List"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                    className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="description" className="text-white">
+                  <Label htmlFor="description" className="text-white font-medium mb-2 block">
                     Description
                   </Label>
                   <Textarea
@@ -545,38 +545,49 @@ export default function ListsPage() {
                     value={newListDescription}
                     onChange={(e) => setNewListDescription(e.target.value)}
                     placeholder="Describe your list..."
-                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                    className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
                     rows={3}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="type" className="text-white">
+                  <Label htmlFor="type" className="text-white font-medium mb-2 block">
                     Type
                   </Label>
                   <Select
                     value={newListType}
                     onValueChange={(value: "wishlist" | "recommendations") => setNewListType(value)}
                   >
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white hover:bg-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="wishlist">Wishlist</SelectItem>
-                      <SelectItem value="recommendations">Recommendations</SelectItem>
+                    <SelectContent className="bg-slate-800 border-slate-600">
+                      <SelectItem
+                        value="wishlist"
+                        className="text-white hover:bg-slate-700 focus:bg-purple-600 focus:text-white"
+                      >
+                        Wishlist
+                      </SelectItem>
+                      <SelectItem
+                        value="recommendations"
+                        className="text-white hover:bg-slate-700 focus:bg-purple-600 focus:text-white"
+                      >
+                        Recommendations
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-slate-800/50 border border-slate-700">
                   <Checkbox
                     id="public"
                     checked={newListPublic}
                     onCheckedChange={(checked) => setNewListPublic(checked as boolean)}
+                    className="border-slate-500 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 focus:ring-2 focus:ring-purple-500/20"
                   />
-                  <Label htmlFor="public" className="text-white">
+                  <Label htmlFor="public" className="text-white font-medium cursor-pointer">
                     Make this list public
                   </Label>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3 pt-2">
                   <Button
                     onClick={() =>
                       createList(
@@ -592,14 +603,14 @@ export default function ListsPage() {
                       )
                     }
                     disabled={isCreating}
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2 transition-colors disabled:opacity-50"
                   >
                     {isCreating ? "Creating..." : "Create List"}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setShowCreateDialog(false)}
-                    className="bg-slate-800/50 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                    className="bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500 font-medium px-6 py-2 transition-all"
                   >
                     Cancel
                   </Button>
