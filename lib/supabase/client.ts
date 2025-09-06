@@ -5,6 +5,7 @@ export async function testSupabaseConnectivity() {
 
   try {
     console.log("[v0] Testing Supabase connectivity to:", supabaseUrl)
+    console.log("[v0] Current origin:", window.location.origin)
 
     // Test basic connectivity to Supabase project
     const response = await fetch(`${supabaseUrl}/rest/v1/`, {
@@ -29,6 +30,14 @@ export async function testSupabaseConnectivity() {
     }
   } catch (error) {
     console.error("[v0] Supabase connectivity test failed:", error)
+    if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+      console.error("[v0] CORS Error Detected - This is likely a Site URL configuration issue")
+      console.error("[v0] Current URL:", window.location.origin)
+      console.error("[v0] Please add this URL to your Supabase project's Site URL configuration:")
+      console.error("[v0] 1. Go to Supabase Dashboard → Authentication → URL Configuration")
+      console.error("[v0] 2. Add this URL to Site URL:", window.location.origin)
+      console.error("[v0] 3. Also add it to Redirect URLs if needed")
+    }
     return false
   }
 }
@@ -54,6 +63,22 @@ export function createClient() {
           signal: AbortSignal.timeout(15000), // 15 second timeout
         }).catch((error) => {
           console.error("[v0] Supabase fetch error:", error)
+
+          if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+            console.error("[v0] AUTHENTICATION FAILED - CORS/Site URL Issue Detected")
+            console.error("[v0] Current origin:", window.location.origin)
+            console.error("[v0] SOLUTION: Add this URL to your Supabase project configuration:")
+            console.error(
+              "[v0] 1. Go to https://supabase.com/dashboard/project/decmqllofkinlbtxczhu/auth/url-configuration",
+            )
+            console.error("[v0] 2. Add to Site URL:", window.location.origin)
+            console.error("[v0] 3. Add to Redirect URLs:", `${window.location.origin}/**`)
+
+            throw new Error(
+              `CORS Error: Please add ${window.location.origin} to your Supabase Site URL configuration. Visit: https://supabase.com/dashboard/project/decmqllofkinlbtxczhu/auth/url-configuration`,
+            )
+          }
+
           throw new Error(`Network request failed: ${error.message}`)
         })
       },
