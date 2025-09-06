@@ -609,7 +609,7 @@ export default function ExplorePage() {
         </div>
 
         {showFilters && !isMobile && (
-          <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-6">
+          <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-6">
             <CardContent className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
@@ -775,7 +775,7 @@ export default function ExplorePage() {
               </div>
 
               <div className="flex gap-2 mt-4">
-                <Button onClick={() => handleSearch()} className="bg-purple-600 hover:bg-purple-700">
+                <Button onClick={handleSearch()} className="bg-purple-600 hover:bg-purple-700">
                   Apply Filters
                 </Button>
                 <Button
@@ -811,7 +811,7 @@ export default function ExplorePage() {
               {results.map((item) => (
                 <Card
                   key={`${getMediaType(item)}-${item.id}`}
-                  className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors group"
+                  className="bg-slate-800/80 border-slate-600 backdrop-blur-sm hover:bg-slate-700/80 transition-colors group"
                 >
                   <CardContent className="p-0">
                     <Link href={`/explore/${getMediaType(item)}/${item.id}`}>
@@ -836,7 +836,9 @@ export default function ExplorePage() {
                       </div>
                     </Link>
                     <div className="p-2 sm:p-3">
-                      <h3 className="text-white font-medium text-xs sm:text-sm mb-1 line-clamp-2">{getTitle(item)}</h3>
+                      <h3 className="text-slate-200 font-medium text-xs sm:text-sm mb-1 line-clamp-2">
+                        {getTitle(item)}
+                      </h3>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-slate-400 text-xs">
                           <Calendar className="h-3 w-3" />
