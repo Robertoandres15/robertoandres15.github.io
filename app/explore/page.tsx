@@ -79,7 +79,6 @@ export default function ExplorePage() {
   }, [])
 
   useEffect(() => {
-    // Only reset these values when mediaType changes, not when the values themselves change
     if (mediaType === "tv") {
       if (inTheaters) {
         setInTheaters(false)
@@ -89,6 +88,29 @@ export default function ExplorePage() {
       }
     }
   }, [mediaType]) // Only depend on mediaType, not on the values we're setting
+
+  useEffect(() => {
+    // Don't trigger search on initial load or when search query is being used
+    if (searchQuery.trim()) return
+
+    // Only trigger search if we have results already (not on initial load)
+    if (results.length > 0) {
+      const timeoutId = setTimeout(() => {
+        handleSearch()
+      }, 300) // Debounce filter changes
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [
+    selectedGenre,
+    selectedYear,
+    sortBy,
+    minRating,
+    selectedStreamingServices,
+    movieDuration,
+    recommendedBy,
+    inTheaters,
+  ])
 
   const loadGenres = async () => {
     try {
@@ -281,7 +303,8 @@ export default function ExplorePage() {
   }
 
   const handleApplyFilters = async () => {
-    await handleSearch()
+    setCurrentPage(1) // Reset to first page
+    await handleSearch(1)
     if (isMobile) {
       setShowMobileFilters(false)
     }
@@ -297,7 +320,9 @@ export default function ExplorePage() {
     setSelectedStreamingServices([])
     setMovieDuration("any")
     setRecommendedBy("0")
-    loadTrending()
+    setCurrentPage(1)
+    setResults([]) // Clear results first
+    setTimeout(() => loadTrending(), 100) // Delay to prevent race condition
     if (isMobile) {
       setShowMobileFilters(false)
     }
@@ -778,7 +803,7 @@ export default function ExplorePage() {
               </div>
 
               <div className="flex gap-2 mt-4">
-                <Button onClick={handleSearch()} className="bg-purple-600 hover:bg-purple-700">
+                <Button onClick={handleApplyFilters} className="bg-purple-600 hover:bg-purple-700">
                   Apply Filters
                 </Button>
                 <Button
