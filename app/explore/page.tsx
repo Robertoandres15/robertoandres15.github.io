@@ -482,9 +482,24 @@ export default function ExplorePage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                              <SelectItem value="all">All</SelectItem>
-                              <SelectItem value="movie">Movies</SelectItem>
-                              <SelectItem value="tv">TV Shows</SelectItem>
+                              <SelectItem
+                                value="all"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                All
+                              </SelectItem>
+                              <SelectItem
+                                value="movie"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Movies
+                              </SelectItem>
+                              <SelectItem
+                                value="tv"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                TV Shows
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -496,9 +511,18 @@ export default function ExplorePage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                              <SelectItem value="0">Any Genre</SelectItem>
+                              <SelectItem
+                                value="0"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Any Genre
+                              </SelectItem>
                               {genres.map((genre) => (
-                                <SelectItem key={genre.id} value={genre.id.toString()}>
+                                <SelectItem
+                                  key={genre.id}
+                                  value={genre.id.toString()}
+                                  className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                                >
                                   {genre.name}
                                 </SelectItem>
                               ))}
@@ -515,9 +539,18 @@ export default function ExplorePage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                              <SelectItem value="0">Any Year</SelectItem>
+                              <SelectItem
+                                value="0"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Any Year
+                              </SelectItem>
                               {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                                <SelectItem key={year} value={year.toString()}>
+                                <SelectItem
+                                  key={year}
+                                  value={year.toString()}
+                                  className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                                >
                                   {year}
                                 </SelectItem>
                               ))}
@@ -532,10 +565,30 @@ export default function ExplorePage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                              <SelectItem value="popularity.desc">Most Popular</SelectItem>
-                              <SelectItem value="vote_average.desc">Highest Rated</SelectItem>
-                              <SelectItem value="release_date.desc">Newest</SelectItem>
-                              <SelectItem value="title.asc">A-Z</SelectItem>
+                              <SelectItem
+                                value="popularity.desc"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Most Popular
+                              </SelectItem>
+                              <SelectItem
+                                value="vote_average.desc"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Highest Rated
+                              </SelectItem>
+                              <SelectItem
+                                value="release_date.desc"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Newest
+                              </SelectItem>
+                              <SelectItem
+                                value="title.asc"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                A-Z
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -549,10 +602,30 @@ export default function ExplorePage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                              <SelectItem value="0">Any Rating</SelectItem>
-                              <SelectItem value="7">7+ Stars</SelectItem>
-                              <SelectItem value="8">8+ Stars</SelectItem>
-                              <SelectItem value="9">9+ Stars</SelectItem>
+                              <SelectItem
+                                value="0"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Any Rating
+                              </SelectItem>
+                              <SelectItem
+                                value="7"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                7+ Stars
+                              </SelectItem>
+                              <SelectItem
+                                value="8"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                8+ Stars
+                              </SelectItem>
+                              <SelectItem
+                                value="9"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                9+ Stars
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -570,11 +643,36 @@ export default function ExplorePage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                              <SelectItem value="any">Any Duration</SelectItem>
-                              <SelectItem value="0-90">Under 90 min</SelectItem>
-                              <SelectItem value="90-120">90-120 min</SelectItem>
-                              <SelectItem value="120-150">120-150 min</SelectItem>
-                              <SelectItem value="150-999">Over 150 min</SelectItem>
+                              <SelectItem
+                                value="any"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Any Duration
+                              </SelectItem>
+                              <SelectItem
+                                value="0-90"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Under 90 min
+                              </SelectItem>
+                              <SelectItem
+                                value="90-120"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                90-120 min
+                              </SelectItem>
+                              <SelectItem
+                                value="120-150"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                120-150 min
+                              </SelectItem>
+                              <SelectItem
+                                value="150-999"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Over 150 min
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -647,9 +745,24 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="movie">Movies</SelectItem>
-                      <SelectItem value="tv">TV Shows</SelectItem>
+                      <SelectItem
+                        value="all"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        All
+                      </SelectItem>
+                      <SelectItem
+                        value="movie"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Movies
+                      </SelectItem>
+                      <SelectItem
+                        value="tv"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        TV Shows
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -661,9 +774,18 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                      <SelectItem value="0">Any Genre</SelectItem>
+                      <SelectItem
+                        value="0"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Any Genre
+                      </SelectItem>
                       {genres.map((genre) => (
-                        <SelectItem key={genre.id} value={genre.id.toString()}>
+                        <SelectItem
+                          key={genre.id}
+                          value={genre.id.toString()}
+                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                        >
                           {genre.name}
                         </SelectItem>
                       ))}
@@ -678,9 +800,18 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                      <SelectItem value="0">Any Year</SelectItem>
+                      <SelectItem
+                        value="0"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Any Year
+                      </SelectItem>
                       {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
+                        <SelectItem
+                          key={year}
+                          value={year.toString()}
+                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                        >
                           {year}
                         </SelectItem>
                       ))}
@@ -695,10 +826,30 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                      <SelectItem value="popularity.desc">Most Popular</SelectItem>
-                      <SelectItem value="vote_average.desc">Highest Rated</SelectItem>
-                      <SelectItem value="release_date.desc">Newest</SelectItem>
-                      <SelectItem value="title.asc">A-Z</SelectItem>
+                      <SelectItem
+                        value="popularity.desc"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Most Popular
+                      </SelectItem>
+                      <SelectItem
+                        value="vote_average.desc"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Highest Rated
+                      </SelectItem>
+                      <SelectItem
+                        value="release_date.desc"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Newest
+                      </SelectItem>
+                      <SelectItem
+                        value="title.asc"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        A-Z
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -710,10 +861,30 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                      <SelectItem value="0">Any Rating</SelectItem>
-                      <SelectItem value="7">7+ Stars</SelectItem>
-                      <SelectItem value="8">8+ Stars</SelectItem>
-                      <SelectItem value="9">9+ Stars</SelectItem>
+                      <SelectItem
+                        value="0"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Any Rating
+                      </SelectItem>
+                      <SelectItem
+                        value="7"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        7+ Stars
+                      </SelectItem>
+                      <SelectItem
+                        value="8"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        8+ Stars
+                      </SelectItem>
+                      <SelectItem
+                        value="9"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        9+ Stars
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -731,11 +902,36 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                      <SelectItem value="any">Any Duration</SelectItem>
-                      <SelectItem value="0-90">Under 90 min</SelectItem>
-                      <SelectItem value="90-120">90-120 min</SelectItem>
-                      <SelectItem value="120-150">120-150 min</SelectItem>
-                      <SelectItem value="150-999">Over 150 min</SelectItem>
+                      <SelectItem
+                        value="any"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Any Duration
+                      </SelectItem>
+                      <SelectItem
+                        value="0-90"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Under 90 min
+                      </SelectItem>
+                      <SelectItem
+                        value="90-120"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        90-120 min
+                      </SelectItem>
+                      <SelectItem
+                        value="120-150"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        120-150 min
+                      </SelectItem>
+                      <SelectItem
+                        value="150-999"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Over 150 min
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -749,9 +945,18 @@ export default function ExplorePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                      <SelectItem value="0">Anyone</SelectItem>
+                      <SelectItem
+                        value="0"
+                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                      >
+                        Anyone
+                      </SelectItem>
                       {friends.map((friend) => (
-                        <SelectItem key={friend.id} value={friend.id}>
+                        <SelectItem
+                          key={friend.id}
+                          value={friend.id}
+                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                        >
                           {friend.display_name || friend.username}
                         </SelectItem>
                       ))}
