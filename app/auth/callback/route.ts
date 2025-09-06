@@ -58,10 +58,15 @@ export async function GET(request: NextRequest) {
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (!supabaseUrl || !supabaseAnonKey) {
-        console.error("[v0] Supabase environment variables not available in auth callback")
+        console.error("[v0] Auth callback - Missing Supabase environment variables")
         const redirectUrl = getSafeRedirectUrl()
-        return NextResponse.redirect(`${redirectUrl}${next}`)
+        return NextResponse.redirect(`${redirectUrl}/auth/auth-code-error`)
       }
+
+      console.log("[v0] Auth callback - Using Supabase credentials:", {
+        url: supabaseUrl ? "available" : "missing",
+        key: supabaseAnonKey ? "available" : "missing",
+      })
 
       const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
         cookies: {

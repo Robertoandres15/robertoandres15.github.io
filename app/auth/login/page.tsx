@@ -25,17 +25,13 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    // Added null check for Supabase client
-    if (!supabase) {
-      setError("Authentication service is not available. Please check your configuration.")
-      setIsLoading(false)
-      return
-    }
-
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/feed`,
+        },
       })
       if (error) throw error
       router.push("/feed")
@@ -57,9 +53,9 @@ export default function LoginPage() {
           <p className="text-slate-300">Welcome back to your movie community</p>
         </div>
 
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+        <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-white text-center">Sign In</CardTitle>
+            <CardTitle className="text-slate-200 text-center">Sign In</CardTitle>
             <CardDescription className="text-slate-300 text-center">
               Enter your credentials to access your account
             </CardDescription>
@@ -67,7 +63,7 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
+                <Label htmlFor="email" className="text-slate-200">
                   Email
                 </Label>
                 <Input
@@ -81,7 +77,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">
+                <Label htmlFor="password" className="text-slate-200">
                   Password
                 </Label>
                 <Input

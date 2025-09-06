@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera"
 import { Button } from "@/components/ui/button"
 import { CameraIcon, ImageIcon } from "lucide-react"
@@ -14,6 +14,23 @@ interface MobileCameraProps {
 
 export function MobileCamera({ onImageSelected, className }: MobileCameraProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const blobUrlsRef = useRef<string[]>([])
+
+  useEffect(() => {
+    return () => {
+      blobUrlsRef.current.forEach((url) => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url)
+        }
+      })
+    }
+  }, [])
+
+  const createAndTrackBlobUrl = (file: File): string => {
+    const url = URL.createObjectURL(file)
+    blobUrlsRef.current.push(url)
+    return url
+  }
 
   const takePicture = async () => {
     if (!isMobile()) {
@@ -24,7 +41,7 @@ export function MobileCamera({ onImageSelected, className }: MobileCameraProps) 
       input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0]
         if (file) {
-          const url = URL.createObjectURL(file)
+          const url = createAndTrackBlobUrl(file)
           onImageSelected(url)
         }
       }
@@ -63,7 +80,7 @@ export function MobileCamera({ onImageSelected, className }: MobileCameraProps) 
       input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0]
         if (file) {
-          const url = URL.createObjectURL(file)
+          const url = createAndTrackBlobUrl(file)
           onImageSelected(url)
         }
       }

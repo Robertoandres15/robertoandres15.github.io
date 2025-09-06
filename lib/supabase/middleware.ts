@@ -6,16 +6,10 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.log("[v0] Supabase environment variables not available, skipping auth")
-    return supabaseResponse
-  }
-
-  try {
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -28,40 +22,31 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
-    })
+    },
+  )
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  // Do not run code between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
 
-    console.log("[v0] Auth check - Path:", request.nextUrl.pathname, "User:", !!user)
+  // IMPORTANT: If you remove getUser() and you use server-side rendering
+  // with the Supabase client, your users may be randomly logged out.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-    // Allow access to auth pages, home page, public assets, and Vercel internal paths
-    const isAuthPage = request.nextUrl.pathname.startsWith("/auth")
-    const isHomePage = request.nextUrl.pathname === "/"
-    const isPublicAsset =
-      request.nextUrl.pathname.startsWith("/_next") ||
-      request.nextUrl.pathname.startsWith("/api") ||
-      request.nextUrl.pathname.startsWith("/_vercel") ||
-      request.nextUrl.pathname.includes(".")
-
-    if (!user && !isAuthPage && !isHomePage && !isPublicAsset) {
-      console.log("[v0] Redirecting to login - no user and not on auth page")
-      const url = request.nextUrl.clone()
-      url.pathname = "/auth/login"
-      return NextResponse.redirect(url)
-    }
-
-    // If user is authenticated and on auth pages, redirect to feed
-    if (user && isAuthPage) {
-      console.log("[v0] Redirecting authenticated user to feed")
-      const url = request.nextUrl.clone()
-      url.pathname = "/feed"
-      return NextResponse.redirect(url)
-    }
-  } catch (error) {
-    console.log("[v0] Supabase middleware error:", error)
-    // Continue without authentication rather than crashing
+  if (
+    request.nextUrl.pathname !== "/" &&
+    !user &&
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/_next") &&
+    !request.nextUrl.pathname.startsWith("/api") &&
+    !request.nextUrl.pathname.startsWith("/_vercel") &&
+    !request.nextUrl.pathname.includes(".")
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    return NextResponse.redirect(url)
   }
 
   return supabaseResponse

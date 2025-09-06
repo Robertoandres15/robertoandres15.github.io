@@ -5,6 +5,11 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not available")
+      return NextResponse.json({ error: "Database service unavailable" }, { status: 503 })
+    }
+
     const { data } = await supabase.auth.getUser()
     const user = data?.user
 
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest) {
         is_public,
         created_at,
         updated_at,
-        user:users(id, username, display_name, avatar_url),
+        users!lists_user_id_fkey(id, username, display_name, avatar_url),
         list_items(
           id,
           tmdb_id,
@@ -52,10 +57,17 @@ export async function GET(request: NextRequest) {
     const { data: lists, error } = await query
 
     if (error) {
+      console.error("[v0] Database query error:", error)
       return NextResponse.json({ error: "Failed to fetch lists" }, { status: 500 })
     }
 
-    return NextResponse.json({ lists })
+    const transformedLists =
+      lists?.map((list) => ({
+        ...list,
+        user: list.users,
+      })) || []
+
+    return NextResponse.json({ lists: transformedLists })
   } catch (error) {
     console.error("Lists API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -65,6 +77,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not available")
+      return NextResponse.json({ error: "Database service unavailable" }, { status: 503 })
+    }
 
     const { data } = await supabase.auth.getUser()
     const user = data?.user
