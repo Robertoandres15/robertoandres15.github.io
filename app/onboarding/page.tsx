@@ -33,12 +33,25 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1)
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
+    const initializeSupabase = () => {
+      try {
+        const client = createClient()
+        setSupabase(client)
+        return client
+      } catch (error) {
+        console.log("[v0] Failed to create Supabase client:", error)
+        return null
+      }
+    }
+
     const getUser = async () => {
       try {
-        if (!supabase) {
+        const client = initializeSupabase()
+
+        if (!client) {
           console.log("[v0] Supabase client not available, using fallback user")
           const mockUser = {
             id: "temp-user-" + Date.now(),
@@ -51,7 +64,7 @@ export default function OnboardingPage() {
 
         const {
           data: { user },
-        } = await supabase.auth.getUser()
+        } = await client.auth.getUser()
         if (!user) {
           console.log("[v0] No authenticated user found, using fallback for onboarding")
           const mockUser = {
