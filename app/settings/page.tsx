@@ -1,9 +1,9 @@
-"use client"
+export const dynamic = "force-dynamic"
+;("use client")
 
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -102,11 +102,27 @@ export default function SettingsPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
 
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
+    async function initializeSupabase() {
+      try {
+        const { createClient } = await import("@/lib/supabase/client")
+        const client = createClient()
+        setSupabase(client)
+      } catch (error) {
+        console.error("[v0] Failed to initialize Supabase client:", error)
+      }
+    }
+
+    initializeSupabase()
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+
     async function loadProfile() {
       try {
         const {
