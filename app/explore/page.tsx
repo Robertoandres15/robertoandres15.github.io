@@ -259,6 +259,20 @@ export default function ExplorePage() {
     setError(null)
 
     try {
+      console.log("[v0] handleSearch called with:", {
+        page,
+        searchQuery: searchQuery.trim(),
+        recommendedBy,
+        mediaType,
+        selectedGenre,
+        selectedYear,
+        sortBy,
+        minRating,
+        inTheaters,
+        selectedStreamingServices,
+        movieDuration,
+      })
+
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
@@ -268,11 +282,14 @@ export default function ExplorePage() {
       if (searchQuery.trim()) {
         url = "/api/tmdb/search"
         params.append("q", searchQuery.trim())
+        console.log("[v0] Using search API")
       } else if (recommendedBy !== "0") {
         url = "/api/recommendations"
         params.append("friend_id", recommendedBy)
+        console.log("[v0] Using recommendations API for friend:", recommendedBy)
       } else {
         url = "/api/tmdb/discover"
+        console.log("[v0] Using discover API")
         if (mediaType !== "all") params.append("type", mediaType)
         if (selectedGenre !== "0") params.append("genre", selectedGenre)
         if (selectedYear !== "0") params.append("year", selectedYear)
@@ -285,6 +302,8 @@ export default function ExplorePage() {
         if (movieDuration !== "any") params.append("duration", movieDuration)
       }
 
+      console.log("[v0] Making API call to:", `${url}?${params}`)
+
       const response = await fetch(`${url}?${params}`, { signal: controller.signal })
       clearTimeout(timeoutId)
 
@@ -294,6 +313,7 @@ export default function ExplorePage() {
       }
 
       const data = await response.json()
+      console.log("[v0] API response:", { status: response.status, dataKeys: Object.keys(data) })
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
@@ -303,6 +323,7 @@ export default function ExplorePage() {
       if (recommendedBy !== "0") {
         // Recommendations API returns { recommendations: [...] }
         results = data.recommendations || []
+        console.log("[v0] Friend recommendations received:", results.length)
         // Transform recommendations to match expected format
         results = results.map((rec: any) => ({
           id: rec.tmdb_id,
@@ -321,6 +342,7 @@ export default function ExplorePage() {
       } else {
         // Discover/Search APIs return { results: [...] }
         results = data.results || []
+        console.log("[v0] Discover/Search results received:", results.length)
       }
 
       if (page === 1) {
@@ -331,7 +353,7 @@ export default function ExplorePage() {
 
       setHasMore(results.length === 20)
     } catch (error: any) {
-      console.error("Search error:", error)
+      console.error("[v0] Search error:", error)
       if (error.name === "AbortError") {
         setError("Search request timed out. Please try again.")
       } else {
@@ -343,6 +365,7 @@ export default function ExplorePage() {
   }
 
   const handleApplyFilters = async () => {
+    console.log("[v0] Applying filters with recommendedBy:", recommendedBy)
     setCurrentPage(1) // Reset to first page
     await handleSearch(1)
     if (isMobile) {
@@ -736,8 +759,9 @@ export default function ExplorePage() {
                                 key={friend.id}
                                 value={friend.id}
                                 className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                                onClick={() => console.log("[v0] Friend selected:", friend.display_name, friend.id)}
                               >
-                                {friend.display_name || friend.username}
+                                {friend.display_name} (@{friend.username})
                               </SelectItem>
                             ))}
                           </SelectContent>
