@@ -37,22 +37,18 @@ export function DismissibleMovieSuggestions({
   })
 
   const [suggestions, setSuggestions] = useState<Movie[]>([])
+  const [hasInitialized, setHasInitialized] = useState(false)
 
   useEffect(() => {
-    const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
-    console.log("[v0] Initial suggestions:", initialSuggestions.length)
-    console.log("[v0] Dismissed movies:", dismissedIds.size, [...dismissedIds])
-    console.log("[v0] Filtered suggestions:", filtered.length)
-    console.log(
-      "[v0] Initial suggestion IDs:",
-      initialSuggestions.map((m) => m.id),
-    )
-    console.log(
-      "[v0] Filtered suggestion IDs:",
-      filtered.map((m) => m.id),
-    )
-    setSuggestions(filtered)
-  }, [initialSuggestions, dismissedIds])
+    if (!hasInitialized) {
+      const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
+      console.log("[v0] First load - Initial suggestions:", initialSuggestions.length)
+      console.log("[v0] First load - Dismissed movies:", dismissedIds.size, [...dismissedIds])
+      console.log("[v0] First load - Filtered suggestions:", filtered.length)
+      setSuggestions(filtered)
+      setHasInitialized(true)
+    }
+  }, [initialSuggestions, dismissedIds, hasInitialized])
 
   const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
   const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
@@ -67,11 +63,11 @@ export function DismissibleMovieSuggestions({
   }, [dismissedIds])
 
   useEffect(() => {
-    if (suggestions.length === 0 && initialSuggestions.length > 0) {
+    if (hasInitialized && suggestions.length === 0) {
       console.log("[v0] All suggestions dismissed, fetching new ones")
       fetchMoreSuggestions()
     }
-  }, [suggestions.length, initialSuggestions.length])
+  }, [suggestions.length, hasInitialized])
 
   const fetchMoreSuggestions = async () => {
     setIsLoadingMore(true)
