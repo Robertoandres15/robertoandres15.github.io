@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Star, Plus, X, Check } from "lucide-react"
+import { Star, Plus, X, Check, RefreshCw } from "lucide-react"
 
 interface Movie {
   id: number
@@ -34,18 +34,61 @@ export function DismissibleMovieSuggestions({
     return new Set()
   })
 
-  const [suggestions, setSuggestions] = useState<Movie[]>(() =>
-    initialSuggestions.filter((movie) => !dismissedIds.has(movie.id)),
-  )
+  const [suggestions, setSuggestions] = useState<Movie[]>(() => {
+    const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
+    console.log("[v0] Initial suggestions:", initialSuggestions.length)
+    console.log("[v0] Dismissed movies:", dismissedIds.size)
+    console.log("[v0] Filtered suggestions:", filtered.length)
+    return filtered
+  })
+
   const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
   const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
   const [addedToWishlist, setAddedToWishlist] = useState<Set<number>>(new Set())
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("dismissedMovies", JSON.stringify([...dismissedIds]))
     }
   }, [dismissedIds])
+
+  useEffect(() => {
+    if (suggestions.length === 0 && initialSuggestions.length > 0) {
+      console.log("[v0] All suggestions dismissed, fetching new ones")
+      fetchMoreSuggestions()
+    }
+  }, [suggestions.length, initialSuggestions.length])
+
+  const fetchMoreSuggestions = async () => {
+    setIsLoadingMore(true)
+    try {
+      const genreIds = movieGenres.join(",")
+      const excludeIds = [...dismissedIds].join(",")
+      const randomPage = Math.floor(Math.random() * 10) + 1
+
+      console.log("[v0] Fetching more suggestions, excluding:", excludeIds)
+
+      const response = await fetch(
+        `/api/tmdb/discover?with_genres=${genreIds}&exclude_ids=${excludeIds}&page=${randomPage}`,
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        const newSuggestions = data.results?.filter((movie: Movie) => !dismissedIds.has(movie.id)) || []
+
+        console.log("[v0] Fetched new suggestions:", newSuggestions.length)
+
+        if (newSuggestions.length > 0) {
+          setSuggestions(newSuggestions.slice(0, 5))
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch more suggestions:", error)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
 
   const handleDismiss = async (movieId: number) => {
     setIsLoadingReplacement(movieId)
@@ -166,6 +209,80 @@ export function DismissibleMovieSuggestions({
     "53": "Thriller",
     "10752": "War",
     "37": "Western",
+  }
+
+  if (isLoadingMore && suggestions.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-white mb-2">
+            {isPersonalized
+              ? "Personalized Recommendations"
+              : userProfile
+                ? "AI Recommendations for You"
+                : "Popular Movies You Might Like"}
+          </h2>
+          <p className="text-slate-400 text-sm">
+            {isPersonalized
+              ? "Based on movies in your Recommendations List"
+              : userProfile
+                ? "Based on your preferences: "
+                : "Based on popular genres: "}
+            {!isPersonalized && movieGenres.map((id) => genreMap[id.toString()] || "Unknown").join(", ")}
+          </p>
+        </div>
+
+        <div className="text-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-400 border-t-transparent mx-auto mb-4" />
+          <p className="text-slate-400">Loading fresh recommendations...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (suggestions.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-white mb-2">
+            {isPersonalized
+              ? "Personalized Recommendations"
+              : userProfile
+                ? "AI Recommendations for You"
+                : "Popular Movies You Might Like"}
+          </h2>
+          <p className="text-slate-400 text-sm">
+            {isPersonalized
+              ? "Based on movies in your Recommendations List"
+              : userProfile
+                ? "Based on your preferences: "
+                : "Based on popular genres: "}
+            {!isPersonalized && movieGenres.map((id) => genreMap[id.toString()] || "Unknown").join(", ")}
+          </p>
+        </div>
+
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/10 flex items-center justify-center">
+            <RefreshCw className="h-8 w-8 text-purple-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">No more suggestions</h3>
+          <p className="text-slate-400 mb-4">You've seen all our current recommendations for your taste!</p>
+          <Button onClick={fetchMoreSuggestions} disabled={isLoadingMore} className="bg-purple-600 hover:bg-purple-700">
+            {isLoadingMore ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Get More Suggestions
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
