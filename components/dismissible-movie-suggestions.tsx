@@ -38,17 +38,36 @@ export function DismissibleMovieSuggestions({
 
   const [suggestions, setSuggestions] = useState<Movie[]>([])
   const [hasInitialized, setHasInitialized] = useState(false)
+  const [hasEverLoaded, setHasEverLoaded] = useState(false)
 
   useEffect(() => {
-    if (!hasInitialized) {
+    if (!hasInitialized && !hasEverLoaded) {
       const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
       console.log("[v0] First load - Initial suggestions:", initialSuggestions.length)
       console.log("[v0] First load - Dismissed movies:", dismissedIds.size, [...dismissedIds])
       console.log("[v0] First load - Filtered suggestions:", filtered.length)
       setSuggestions(filtered)
       setHasInitialized(true)
+      setHasEverLoaded(true)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("hasLoadedSuggestions", "true")
+      }
+    } else if (!hasInitialized && hasEverLoaded) {
+      console.log("[v0] Returning user - fetching fresh suggestions instead of using parent data")
+      setHasInitialized(true)
+      fetchMoreSuggestions().catch((error) => {
+        console.error("[v0] Failed to fetch fresh suggestions for returning user:", error)
+      })
     }
-  }, [initialSuggestions, dismissedIds, hasInitialized])
+  }, [initialSuggestions, dismissedIds, hasInitialized, hasEverLoaded])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasLoaded = localStorage.getItem("hasLoadedSuggestions") === "true"
+      setHasEverLoaded(hasLoaded)
+      console.log("[v0] Has ever loaded suggestions:", hasLoaded)
+    }
+  }, [])
 
   const [isLoadingReplacement, setIsLoadingReplacement] = useState<number | null>(null)
   const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
@@ -67,7 +86,6 @@ export function DismissibleMovieSuggestions({
       console.log("[v0] All suggestions dismissed, fetching new ones")
       fetchMoreSuggestions().catch((error) => {
         console.error("[v0] Failed to fetch more suggestions on initialization:", error)
-        // Don't crash the app, just log the error
       })
     }
   }, [suggestions.length, hasInitialized])
@@ -116,16 +134,14 @@ export function DismissibleMovieSuggestions({
     const updatedSuggestions = suggestions.filter((movie) => movie.id !== movieId)
     setSuggestions(updatedSuggestions)
 
-    setDismissedIds((prev) => {
-      const newDismissed = new Set([...prev, movieId])
-      console.log("[v0] Updated dismissed movies:", newDismissed.size, [...newDismissed])
-      return newDismissed
-    })
+    const newDismissedIds = new Set([...dismissedIds, movieId])
+    setDismissedIds(newDismissedIds)
+    console.log("[v0] Updated dismissed movies:", newDismissedIds.size, [...newDismissedIds])
 
     try {
       const genreIds = movieGenres.join(",")
-      const currentIds = suggestions.map((s) => s.id)
-      const excludeIds = [...dismissedIds, movieId, ...currentIds].join(",")
+      const currentIds = updatedSuggestions.map((s) => s.id)
+      const excludeIds = [...newDismissedIds, ...currentIds].join(",")
 
       const response = await fetch(
         `/api/tmdb/discover?with_genres=${genreIds}&exclude_ids=${excludeIds}&page=${Math.floor(Math.random() * 5) + 1}`,
@@ -134,9 +150,7 @@ export function DismissibleMovieSuggestions({
       if (response.ok) {
         const data = await response.json()
         const newSuggestions =
-          data.results?.filter(
-            (movie: Movie) => !dismissedIds.has(movie.id) && !currentIds.includes(movie.id) && movie.id !== movieId,
-          ) || []
+          data.results?.filter((movie: Movie) => !newDismissedIds.has(movie.id) && !currentIds.includes(movie.id)) || []
 
         if (newSuggestions.length > 0) {
           setSuggestions((prev) => {
@@ -355,7 +369,7 @@ export function DismissibleMovieSuggestions({
             variant="ghost"
             onClick={() => handleDismiss(movie.id)}
             disabled={isLoadingReplacement === movie.id}
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-slate-800/80 text-white hover:text-white hover:bg-red-600/80 z-10 border border-slate-600 shadow-lg"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-slate-900/90 text-white hover:text-white hover:bg-red-600/90 z-20 border border-slate-500 shadow-xl backdrop-blur-sm"
             title="Already watched this"
           >
             {isLoadingReplacement === movie.id ? (
