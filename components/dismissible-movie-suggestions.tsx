@@ -335,11 +335,11 @@ export function DismissibleMovieSuggestions({
             variant="ghost"
             onClick={() => handleDismiss(movie.id)}
             disabled={isLoadingReplacement === movie.id}
-            className="absolute top-2 right-2 h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-white/10 z-10"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-slate-800/80 text-white hover:text-white hover:bg-red-600/80 z-10 border border-slate-600 shadow-lg"
             title="Already watched this"
           >
             {isLoadingReplacement === movie.id ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
               <X className="h-4 w-4" />
             )}
