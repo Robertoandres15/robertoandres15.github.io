@@ -29,7 +29,9 @@ export function DismissibleMovieSuggestions({
   const [dismissedIds, setDismissedIds] = useState<Set<number>>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("dismissedMovies")
-      return stored ? new Set(JSON.parse(stored)) : new Set()
+      const dismissed = stored ? new Set(JSON.parse(stored)) : new Set()
+      console.log("[v0] Loaded dismissed movies from localStorage:", [...dismissed])
+      return dismissed
     }
     return new Set()
   })
@@ -45,31 +47,36 @@ export function DismissibleMovieSuggestions({
     const initializeComponent = async () => {
       if (hasInitialized) return
 
-      console.log("[v0] Initializing component...")
-      console.log("[v0] Dismissed movies count:", dismissedIds.size)
+      console.log("[v0] Component mounting - dismissed movies count:", dismissedIds.size)
+      console.log(
+        "[v0] Initial suggestions from server:",
+        initialSuggestions.map((m) => m.title),
+      )
 
-      // If user has dismissed movies before, ignore server suggestions completely
       if (dismissedIds.size > 0) {
-        console.log("[v0] User has dismissed movies before, fetching fresh suggestions")
+        console.log("[v0] User has dismissed movies before - fetching completely fresh suggestions")
         setHasInitialized(true)
         try {
           await fetchMoreSuggestions()
         } catch (error) {
           console.error("[v0] Failed to fetch fresh suggestions:", error)
-          // Fallback to empty state rather than showing dismissed movies
           setSuggestions([])
         }
-      } else {
-        // First time user - use server suggestions but filter them
-        console.log("[v0] First time user, using server suggestions")
-        const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
-        setSuggestions(filtered)
-        setHasInitialized(true)
+        return
       }
+
+      console.log("[v0] First time user - using filtered server suggestions")
+      const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
+      console.log(
+        "[v0] Filtered suggestions:",
+        filtered.map((m) => m.title),
+      )
+      setSuggestions(filtered)
+      setHasInitialized(true)
     }
 
     initializeComponent()
-  }, []) // Remove dependencies to prevent re-initialization
+  }, []) // No dependencies to prevent re-initialization
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -122,14 +129,19 @@ export function DismissibleMovieSuggestions({
   }
 
   const handleDismiss = async (movieId: number) => {
-    console.log("[v0] Dismissing movie:", movieId)
+    console.log("[v0] Dismissing movie ID:", movieId)
     setIsLoadingReplacement(movieId)
-
-    const updatedSuggestions = suggestions.filter((movie) => movie.id !== movieId)
-    setSuggestions(updatedSuggestions)
 
     const newDismissedIds = new Set([...dismissedIds, movieId])
     setDismissedIds(newDismissedIds)
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dismissedMovies", JSON.stringify([...newDismissedIds]))
+      console.log("[v0] Immediately saved to localStorage:", [...newDismissedIds])
+    }
+
+    const updatedSuggestions = suggestions.filter((movie) => movie.id !== movieId)
+    setSuggestions(updatedSuggestions)
 
     try {
       const genreIds = movieGenres.join(",")
@@ -360,17 +372,17 @@ export function DismissibleMovieSuggestions({
             variant="ghost"
             onClick={() => handleDismiss(movie.id)}
             disabled={isLoadingReplacement === movie.id}
-            className="absolute top-2 right-2 h-10 w-10 p-0 bg-slate-900 text-white hover:text-white hover:bg-red-600 z-30 border-2 border-slate-400 shadow-2xl rounded-full"
+            className="absolute top-3 right-3 h-12 w-12 p-0 bg-slate-900/90 text-white hover:text-white hover:bg-red-600/90 z-40 border-2 border-slate-300 shadow-2xl rounded-full backdrop-blur-sm"
             title="Already watched this - dismiss"
           >
             {isLoadingReplacement === movie.id ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             )}
           </Button>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 pr-16">
             <div className="flex-shrink-0 mx-auto sm:mx-0">
               <img
                 src={
@@ -382,7 +394,7 @@ export function DismissibleMovieSuggestions({
                 className="w-24 h-36 sm:w-20 sm:h-30 rounded-lg object-cover"
               />
             </div>
-            <div className="flex-1 min-w-0 text-center sm:text-left pr-12">
+            <div className="flex-1 min-w-0 text-center sm:text-left">
               <h3 className="text-white font-semibold mb-2 text-lg sm:text-base leading-tight">{movie.title}</h3>
               <p className="text-slate-400 text-sm mb-3 line-clamp-3 sm:line-clamp-2 leading-relaxed">
                 {movie.overview}
