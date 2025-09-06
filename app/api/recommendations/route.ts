@@ -13,6 +13,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const friendId = searchParams.get("friend_id")
+
+    console.log("[v0] Recommendations API - Friend ID requested:", friendId)
+
     const { data: friendships } = await supabase
       .from("friends")
       .select(`
@@ -25,10 +30,41 @@ export async function GET(request: NextRequest) {
       .eq("status", "accepted")
 
     if (!friendships || friendships.length === 0) {
+      console.log("[v0] Recommendations API - No friendships found")
       return NextResponse.json({ recommendations: [] })
     }
 
-    const friendIds = friendships.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id))
+    let friendIds = friendships.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id))
+    console.log("[v0] Recommendations API - All friend IDs:", friendIds)
+
+    if (friendId) {
+      // If specific friend is selected, only get recommendations from that friend
+      const isValidFriend = friendIds.includes(friendId)
+      if (!isValidFriend) {
+        console.log("[v0] Recommendations API - Friend not found in friendships:", friendId)
+        return NextResponse.json({ error: "Friend not found or not connected" }, { status: 404 })
+      }
+      friendIds = [friendId]
+      console.log("[v0] Recommendations API - Filtering to specific friend:", friendId)
+    }
+
+    const { data: friendLists } = await supabase
+      .from("lists")
+      .select("id, user_id, name, type")
+      .eq("type", "recommendations")
+      .in("user_id", friendIds)
+
+    console.log("[v0] Recommendations API - Friend recommendation lists found:", friendLists?.length || 0)
+    if (friendLists) {
+      friendLists.forEach((list) => {
+        console.log("[v0] Recommendations API - List:", {
+          id: list.id,
+          user_id: list.user_id,
+          name: list.name,
+          type: list.type,
+        })
+      })
+    }
 
     const { data: friendRecommendations } = await supabase
       .from("list_items")
@@ -39,7 +75,20 @@ export async function GET(request: NextRequest) {
       .eq("lists.type", "recommendations")
       .in("lists.user_id", friendIds)
 
+    console.log("[v0] Recommendations API - Friend recommendation items found:", friendRecommendations?.length || 0)
+    if (friendRecommendations) {
+      friendRecommendations.forEach((item) => {
+        console.log("[v0] Recommendations API - Item:", {
+          tmdb_id: item.tmdb_id,
+          title: item.title,
+          media_type: item.media_type,
+          list_user: item.lists.user_id,
+        })
+      })
+    }
+
     if (!friendRecommendations || friendRecommendations.length === 0) {
+      console.log("[v0] Recommendations API - No recommendations found for friend(s)")
       return NextResponse.json({ recommendations: [] })
     }
 
@@ -66,15 +115,26 @@ export async function GET(request: NextRequest) {
     const notInterestedSet = new Set(userNotInterested?.map((item) => `${item.tmdb_id}-${item.media_type}`) || [])
     const wishlistSet = new Set(userWishlist?.map((item) => `${item.tmdb_id}-${item.media_type}`) || [])
 
+    console.log("[v0] Applying filters with recommendedBy:", friendId)
+
     // Group recommendations by movie/series and filter out unwanted items
     const groupedRecommendations = new Map()
 
     for (const rec of friendRecommendations) {
       const key = `${rec.tmdb_id}-${rec.media_type}`
 
-      // Skip if user has seen, not interested, or already in wishlist
-      if (seenSet.has(key) || notInterestedSet.has(key) || wishlistSet.has(key)) {
-        continue
+      // Allow seen and wishlist items to show since user specifically wants to see this friend's recommendations
+      if (friendId) {
+        // For specific friend recommendations, only skip items user marked as not interested
+        if (notInterestedSet.has(key)) {
+          console.log("[v0] Skipping not interested item:", rec.title)
+          continue
+        }
+      } else {
+        // For general recommendations, skip if user has seen, not interested, or already in wishlist
+        if (seenSet.has(key) || notInterestedSet.has(key) || wishlistSet.has(key)) {
+          continue
+        }
       }
 
       if (!groupedRecommendations.has(key)) {

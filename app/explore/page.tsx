@@ -13,8 +13,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { useToast } from "@/hooks/use-toast"
 import { useIsMobile } from "@/components/ui/use-mobile"
-import { MobileNavigation } from "@/components/mobile-navigation"
 import type { TMDBMovie, TMDBTVShow, TMDBGenre } from "@/lib/tmdb"
+import MobileNavigation from "@/components/MobileNavigation"
 
 interface MediaItem extends TMDBMovie, TMDBTVShow {
   media_type?: "movie" | "tv"
@@ -57,6 +57,8 @@ export default function ExplorePage() {
   const [isAddingToList, setIsAddingToList] = useState(false)
   const { toast } = useToast()
   const isMobile = useIsMobile()
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
 
   const streamingServices = [
     { id: "8", name: "Netflix" },
@@ -180,6 +182,7 @@ export default function ExplorePage() {
 
   const loadFriends = async () => {
     try {
+      console.log("[v0] Loading friends for Recommended By filter")
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
@@ -187,16 +190,26 @@ export default function ExplorePage() {
       clearTimeout(timeoutId)
 
       const data = await response.json()
+      console.log("[v0] Friends API response:", data)
+
       if (response.ok) {
-        setFriends(data.friends || [])
+        const formattedFriends =
+          data.friends?.map((friendship: any) => ({
+            id: friendship.friend.id,
+            display_name: friendship.friend.display_name,
+            username: friendship.friend.username,
+          })) || []
+        console.log("[v0] Formatted friends:", formattedFriends)
+        setFriends(formattedFriends)
       } else {
+        console.error("[v0] Friends API error:", data.error)
         setFriends([])
       }
     } catch (error) {
       if (error.name === "AbortError") {
-        console.error("Friends API request timed out")
+        console.error("[v0] Friends API request timed out")
       } else {
-        console.error("Failed to load friends:", error)
+        console.error("[v0] Failed to load friends:", error)
       }
       setFriends([])
     }
@@ -240,12 +253,28 @@ export default function ExplorePage() {
   }
 
   const handleSearch = async (page = 1) => {
+    if (isLoading) return
+
     setIsLoading(true)
-    setCurrentPage(page)
+    setError(null)
 
     try {
+      console.log("[v0] handleSearch called with:", {
+        page,
+        searchQuery: searchQuery.trim(),
+        recommendedBy,
+        mediaType,
+        selectedGenre,
+        selectedYear,
+        sortBy,
+        minRating,
+        inTheaters,
+        selectedStreamingServices,
+        movieDuration,
+      })
+
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout for search
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
 
       let url = ""
       const params = new URLSearchParams({ page: page.toString() })
@@ -253,8 +282,14 @@ export default function ExplorePage() {
       if (searchQuery.trim()) {
         url = "/api/tmdb/search"
         params.append("q", searchQuery.trim())
+        console.log("[v0] Using search API")
+      } else if (recommendedBy !== "0") {
+        url = "/api/recommendations"
+        params.append("friend_id", recommendedBy)
+        console.log("[v0] Using recommendations API for friend:", recommendedBy)
       } else {
         url = "/api/tmdb/discover"
+        console.log("[v0] Using discover API")
         if (mediaType !== "all") params.append("type", mediaType)
         if (selectedGenre !== "0") params.append("genre", selectedGenre)
         if (selectedYear !== "0") params.append("year", selectedYear)
@@ -265,8 +300,9 @@ export default function ExplorePage() {
           params.append("streaming_services", selectedStreamingServices.join(","))
         }
         if (movieDuration !== "any") params.append("duration", movieDuration)
-        if (recommendedBy !== "0") params.append("recommended_by", recommendedBy)
       }
+
+      console.log("[v0] Making API call to:", `${url}?${params}`)
 
       const response = await fetch(`${url}?${params}`, { signal: controller.signal })
       clearTimeout(timeoutId)
@@ -277,25 +313,51 @@ export default function ExplorePage() {
       }
 
       const data = await response.json()
+      console.log("[v0] API response:", { status: response.status, dataKeys: Object.keys(data) })
 
       if (!response.ok) {
-        throw new Error(data.error || `Search failed: ${response.status}`)
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      let results = []
+      if (recommendedBy !== "0") {
+        // Recommendations API returns { recommendations: [...] }
+        results = data.recommendations || []
+        console.log("[v0] Friend recommendations received:", results.length)
+        // Transform recommendations to match expected format
+        results = results.map((rec: any) => ({
+          id: rec.tmdb_id,
+          title: rec.title,
+          name: rec.title,
+          media_type: rec.media_type,
+          poster_path: rec.poster_path,
+          backdrop_path: rec.backdrop_path,
+          overview: rec.overview,
+          release_date: rec.release_date,
+          first_air_date: rec.first_air_date,
+          vote_average: rec.vote_average,
+          genre_ids: rec.genre_ids || [],
+          recommending_friends: rec.recommending_friends || [],
+        }))
+      } else {
+        // Discover/Search APIs return { results: [...] }
+        results = data.results || []
+        console.log("[v0] Discover/Search results received:", results.length)
       }
 
       if (page === 1) {
-        setResults(data.results || [])
+        setResults(results)
       } else {
-        setResults((prev) => [...prev, ...(data.results || [])])
+        setResults((prev) => [...prev, ...results])
       }
-      setTotalPages(data.total_pages || 1)
-    } catch (error) {
-      console.error("[v0] Search failed:", error)
-      if (error.name !== "AbortError") {
-        console.error("[v0] Search API error:", error.message)
-      }
-      if (page === 1) {
-        setResults([])
-        setTotalPages(1)
+
+      setHasMore(results.length === 20)
+    } catch (error: any) {
+      console.error("[v0] Search error:", error)
+      if (error.name === "AbortError") {
+        setError("Search request timed out. Please try again.")
+      } else {
+        setError(error.message || "An error occurred while searching. Please try again.")
       }
     } finally {
       setIsLoading(false)
@@ -303,6 +365,7 @@ export default function ExplorePage() {
   }
 
   const handleApplyFilters = async () => {
+    console.log("[v0] Applying filters with recommendedBy:", recommendedBy)
     setCurrentPage(1) // Reset to first page
     await handleSearch(1)
     if (isMobile) {
@@ -675,6 +738,73 @@ export default function ExplorePage() {
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Recommended By</label>
+                        <Select value={recommendedBy} onValueChange={setRecommendedBy}>
+                          <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                            <SelectItem
+                              value="0"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              Anyone
+                            </SelectItem>
+                            {friends.map((friend) => (
+                              <SelectItem
+                                key={friend.id}
+                                value={friend.id}
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                                onClick={() => console.log("[v0] Friend selected:", friend.display_name, friend.id)}
+                              >
+                                {friend.display_name} (@{friend.username})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Availability</label>
+                        <Button
+                          variant={inTheaters ? "default" : "outline"}
+                          onClick={() => setInTheaters(!inTheaters)}
+                          disabled={mediaType === "tv"}
+                          className={
+                            mediaType === "tv"
+                              ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                              : inTheaters
+                                ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                                : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                          }
+                        >
+                          {inTheaters ? "✓ " : ""}In Theaters
+                        </Button>
+                      </div>
+
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Streaming Services</label>
+                        <div className="flex flex-wrap gap-2">
+                          {streamingServices.map((service) => (
+                            <Button
+                              key={service.id}
+                              variant={selectedStreamingServices.includes(service.id) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => toggleStreamingService(service.id)}
+                              className={
+                                selectedStreamingServices.includes(service.id)
+                                  ? "bg-purple-600 hover:bg-purple-700 text-white text-xs h-8"
+                                  : "border-white/20 text-white hover:bg-white/20 bg-white/10 text-xs h-8"
+                              }
+                            >
+                              {selectedStreamingServices.includes(service.id) ? "✓ " : ""}
+                              {service.name}
+                            </Button>
+                          ))}
                         </div>
                       </div>
 
