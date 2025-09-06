@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const friendId = searchParams.get("friend_id")
 
+    console.log("[v0] Recommendations API - Friend ID requested:", friendId)
+
     const { data: friendships } = await supabase
       .from("friends")
       .select(`
@@ -28,18 +30,40 @@ export async function GET(request: NextRequest) {
       .eq("status", "accepted")
 
     if (!friendships || friendships.length === 0) {
+      console.log("[v0] Recommendations API - No friendships found")
       return NextResponse.json({ recommendations: [] })
     }
 
     let friendIds = friendships.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id))
+    console.log("[v0] Recommendations API - All friend IDs:", friendIds)
 
     if (friendId) {
       // If specific friend is selected, only get recommendations from that friend
       const isValidFriend = friendIds.includes(friendId)
       if (!isValidFriend) {
+        console.log("[v0] Recommendations API - Friend not found in friendships:", friendId)
         return NextResponse.json({ error: "Friend not found or not connected" }, { status: 404 })
       }
       friendIds = [friendId]
+      console.log("[v0] Recommendations API - Filtering to specific friend:", friendId)
+    }
+
+    const { data: friendLists } = await supabase
+      .from("lists")
+      .select("id, user_id, name, type")
+      .eq("type", "recommendations")
+      .in("user_id", friendIds)
+
+    console.log("[v0] Recommendations API - Friend recommendation lists found:", friendLists?.length || 0)
+    if (friendLists) {
+      friendLists.forEach((list) => {
+        console.log("[v0] Recommendations API - List:", {
+          id: list.id,
+          user_id: list.user_id,
+          name: list.name,
+          type: list.type,
+        })
+      })
     }
 
     const { data: friendRecommendations } = await supabase
@@ -51,7 +75,20 @@ export async function GET(request: NextRequest) {
       .eq("lists.type", "recommendations")
       .in("lists.user_id", friendIds)
 
+    console.log("[v0] Recommendations API - Friend recommendation items found:", friendRecommendations?.length || 0)
+    if (friendRecommendations) {
+      friendRecommendations.forEach((item) => {
+        console.log("[v0] Recommendations API - Item:", {
+          tmdb_id: item.tmdb_id,
+          title: item.title,
+          media_type: item.media_type,
+          list_user: item.lists.user_id,
+        })
+      })
+    }
+
     if (!friendRecommendations || friendRecommendations.length === 0) {
+      console.log("[v0] Recommendations API - No recommendations found for friend(s)")
       return NextResponse.json({ recommendations: [] })
     }
 
