@@ -115,15 +115,26 @@ export async function GET(request: NextRequest) {
     const notInterestedSet = new Set(userNotInterested?.map((item) => `${item.tmdb_id}-${item.media_type}`) || [])
     const wishlistSet = new Set(userWishlist?.map((item) => `${item.tmdb_id}-${item.media_type}`) || [])
 
+    console.log("[v0] Applying filters with recommendedBy:", friendId)
+
     // Group recommendations by movie/series and filter out unwanted items
     const groupedRecommendations = new Map()
 
     for (const rec of friendRecommendations) {
       const key = `${rec.tmdb_id}-${rec.media_type}`
 
-      // Skip if user has seen, not interested, or already in wishlist
-      if (seenSet.has(key) || notInterestedSet.has(key) || wishlistSet.has(key)) {
-        continue
+      // Allow seen and wishlist items to show since user specifically wants to see this friend's recommendations
+      if (friendId) {
+        // For specific friend recommendations, only skip items user marked as not interested
+        if (notInterestedSet.has(key)) {
+          console.log("[v0] Skipping not interested item:", rec.title)
+          continue
+        }
+      } else {
+        // For general recommendations, skip if user has seen, not interested, or already in wishlist
+        if (seenSet.has(key) || notInterestedSet.has(key) || wishlistSet.has(key)) {
+          continue
+        }
       }
 
       if (!groupedRecommendations.has(key)) {
