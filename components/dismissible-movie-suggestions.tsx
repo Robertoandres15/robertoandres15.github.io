@@ -65,7 +65,10 @@ export function DismissibleMovieSuggestions({
   useEffect(() => {
     if (hasInitialized && suggestions.length === 0) {
       console.log("[v0] All suggestions dismissed, fetching new ones")
-      fetchMoreSuggestions()
+      fetchMoreSuggestions().catch((error) => {
+        console.error("[v0] Failed to fetch more suggestions on initialization:", error)
+        // Don't crash the app, just log the error
+      })
     }
   }, [suggestions.length, hasInitialized])
 
@@ -91,6 +94,8 @@ export function DismissibleMovieSuggestions({
         if (newSuggestions.length > 0) {
           setSuggestions(newSuggestions.slice(0, 5))
         }
+      } else {
+        console.error("[v0] API response not ok:", response.status, response.statusText)
       }
     } catch (error) {
       console.error("[v0] Failed to fetch more suggestions:", error)
@@ -130,6 +135,8 @@ export function DismissibleMovieSuggestions({
         if (newSuggestions.length > 0) {
           setSuggestions((prev) => [...prev, newSuggestions[0]])
         }
+      } else {
+        console.error("[v0] Failed to fetch replacement - API response not ok:", response.status)
       }
     } catch (error) {
       console.error("Failed to fetch replacement suggestion:", error)
