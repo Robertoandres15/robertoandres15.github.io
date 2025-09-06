@@ -41,24 +41,41 @@ export function DismissibleMovieSuggestions({
   const [hasEverLoaded, setHasEverLoaded] = useState(false)
 
   useEffect(() => {
-    if (!hasInitialized && !hasEverLoaded) {
-      const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
-      console.log("[v0] First load - Initial suggestions:", initialSuggestions.length)
-      console.log("[v0] First load - Dismissed movies:", dismissedIds.size, [...dismissedIds])
-      console.log("[v0] First load - Filtered suggestions:", filtered.length)
-      setSuggestions(filtered)
-      setHasInitialized(true)
-      setHasEverLoaded(true)
-      if (typeof window !== "undefined") {
-        localStorage.setItem("hasLoadedSuggestions", "true")
+    const initializeComponent = async () => {
+      try {
+        if (!hasInitialized && !hasEverLoaded) {
+          const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
+          console.log("[v0] First load - Initial suggestions:", initialSuggestions.length)
+          console.log("[v0] First load - Dismissed movies:", dismissedIds.size, [...dismissedIds])
+          console.log("[v0] First load - Filtered suggestions:", filtered.length)
+          setSuggestions(filtered)
+          setHasInitialized(true)
+          setHasEverLoaded(true)
+          if (typeof window !== "undefined") {
+            localStorage.setItem("hasLoadedSuggestions", "true")
+          }
+        } else if (!hasInitialized && hasEverLoaded) {
+          console.log("[v0] Returning user - fetching fresh suggestions instead of using parent data")
+          setHasInitialized(true)
+          try {
+            await fetchMoreSuggestions()
+          } catch (error) {
+            console.error("[v0] Failed to fetch fresh suggestions for returning user:", error)
+            // Fallback to filtered initial suggestions if API fails
+            const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
+            setSuggestions(filtered)
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Error during component initialization:", error)
+        // Fallback to basic initialization
+        const filtered = initialSuggestions.filter((movie) => !dismissedIds.has(movie.id))
+        setSuggestions(filtered)
+        setHasInitialized(true)
       }
-    } else if (!hasInitialized && hasEverLoaded) {
-      console.log("[v0] Returning user - fetching fresh suggestions instead of using parent data")
-      setHasInitialized(true)
-      fetchMoreSuggestions().catch((error) => {
-        console.error("[v0] Failed to fetch fresh suggestions for returning user:", error)
-      })
     }
+
+    initializeComponent()
   }, [initialSuggestions, dismissedIds, hasInitialized, hasEverLoaded])
 
   useEffect(() => {
@@ -82,12 +99,19 @@ export function DismissibleMovieSuggestions({
   }, [dismissedIds])
 
   useEffect(() => {
-    if (hasInitialized && suggestions.length === 0) {
-      console.log("[v0] All suggestions dismissed, fetching new ones")
-      fetchMoreSuggestions().catch((error) => {
-        console.error("[v0] Failed to fetch more suggestions on initialization:", error)
-      })
+    const autoFetchSuggestions = async () => {
+      if (hasInitialized && suggestions.length === 0) {
+        console.log("[v0] All suggestions dismissed, fetching new ones")
+        try {
+          await fetchMoreSuggestions()
+        } catch (error) {
+          console.error("[v0] Failed to fetch more suggestions on initialization:", error)
+          // Don't crash the app, just log the error
+        }
+      }
     }
+
+    autoFetchSuggestions()
   }, [suggestions.length, hasInitialized])
 
   const fetchMoreSuggestions = async () => {
@@ -119,9 +143,11 @@ export function DismissibleMovieSuggestions({
         }
       } else {
         console.error("[v0] API response not ok:", response.status, response.statusText)
+        throw new Error(`API request failed with status ${response.status}`)
       }
     } catch (error) {
       console.error("[v0] Failed to fetch more suggestions:", error)
+      throw error // Re-throw to let caller handle it
     } finally {
       setIsLoadingMore(false)
     }
