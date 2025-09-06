@@ -1,5 +1,4 @@
-export const dynamic = "force-dynamic"
-;("use client")
+"use client"
 
 import type React from "react"
 
