@@ -221,7 +221,7 @@ export default function ProfilePage() {
         </header>
 
         <div className="max-w-4xl mx-auto">
-          <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-8">
+          <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-8">
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
                 <Avatar className="h-24 w-24">
@@ -233,7 +233,7 @@ export default function ProfilePage() {
 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-white">{profile.display_name || profile.username}</h2>
+                    <h2 className="text-2xl font-bold text-slate-200">{profile.display_name || profile.username}</h2>
                     <Button size="sm" asChild className="bg-purple-600 hover:bg-purple-700">
                       <Link href="/settings">
                         <Edit className="h-4 w-4 mr-2" />
@@ -248,15 +248,15 @@ export default function ProfilePage() {
 
                   <div className="flex gap-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">{stats.lists}</div>
+                      <div className="text-2xl font-bold text-slate-200">{stats.lists}</div>
                       <div className="text-sm text-slate-400">Lists</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">{stats.friends}</div>
+                      <div className="text-2xl font-bold text-slate-200">{stats.friends}</div>
                       <div className="text-sm text-slate-400">Friends</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">{stats.activities}</div>
+                      <div className="text-2xl font-bold text-slate-200">{stats.activities}</div>
                       <div className="text-sm text-slate-400">Activities</div>
                     </div>
                   </div>
@@ -266,11 +266,17 @@ export default function ProfilePage() {
           </Card>
 
           <Tabs defaultValue="lists" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10">
-              <TabsTrigger value="lists" className="data-[state=active]:bg-purple-600">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800/80 border-slate-600 text-slate-200">
+              <TabsTrigger
+                value="lists"
+                className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-slate-200"
+              >
                 My Lists
               </TabsTrigger>
-              <TabsTrigger value="activity" className="data-[state=active]:bg-purple-600">
+              <TabsTrigger
+                value="activity"
+                className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-slate-200"
+              >
                 Recent Activity
               </TabsTrigger>
             </TabsList>

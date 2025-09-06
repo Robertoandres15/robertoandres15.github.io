@@ -563,7 +563,7 @@ export default function ExplorePage() {
                             <SelectTrigger
                               className={
                                 mediaType === "tv"
-                                  ? "bg-white/5 border-white/10 text-white/50 cursor-not-allowed"
+                                  ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
                                   : "bg-white/10 border-white/20 text-white"
                               }
                             >
@@ -724,7 +724,7 @@ export default function ExplorePage() {
                     <SelectTrigger
                       className={
                         mediaType === "tv"
-                          ? "bg-white/5 border-white/10 text-white/50 cursor-not-allowed"
+                          ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
                           : "bg-white/10 border-white/20 text-white"
                       }
                     >
@@ -769,7 +769,7 @@ export default function ExplorePage() {
                     disabled={mediaType === "tv"}
                     className={
                       mediaType === "tv"
-                        ? "border-white/10 text-white/50 bg-white/5 cursor-not-allowed"
+                        ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed"
                         : inTheaters
                           ? "bg-purple-600 hover:bg-purple-700 text-white"
                           : "border-white/20 text-white hover:bg-white/20 bg-white/10"
