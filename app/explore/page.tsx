@@ -180,6 +180,7 @@ export default function ExplorePage() {
 
   const loadFriends = async () => {
     try {
+      console.log("[v0] Loading friends for Recommended By filter")
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
@@ -187,16 +188,26 @@ export default function ExplorePage() {
       clearTimeout(timeoutId)
 
       const data = await response.json()
+      console.log("[v0] Friends API response:", data)
+
       if (response.ok) {
-        setFriends(data.friends || [])
+        const formattedFriends =
+          data.friends?.map((friendship: any) => ({
+            id: friendship.friend.id,
+            display_name: friendship.friend.display_name,
+            username: friendship.friend.username,
+          })) || []
+        console.log("[v0] Formatted friends:", formattedFriends)
+        setFriends(formattedFriends)
       } else {
+        console.error("[v0] Friends API error:", data.error)
         setFriends([])
       }
     } catch (error) {
       if (error.name === "AbortError") {
-        console.error("Friends API request timed out")
+        console.error("[v0] Friends API request timed out")
       } else {
-        console.error("Failed to load friends:", error)
+        console.error("[v0] Failed to load friends:", error)
       }
       setFriends([])
     }
