@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Heart,
   BookmarkPlus,
@@ -23,6 +24,7 @@ import {
   Search,
   Users,
   User,
+  Send,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
@@ -78,8 +80,76 @@ interface ListSocialSignals {
   shares: SocialSignal[]
 }
 
-const createList = async () => {
-  // Placeholder for createList function implementation
+interface Friend {
+  id: string
+  friend: {
+    id: string
+    username: string
+    display_name: string
+    avatar_url?: string
+  }
+  created_at: string
+}
+
+const createList = async (
+  name: string,
+  description: string,
+  type: "wishlist" | "recommendations",
+  isPublic: boolean,
+  setIsCreating: (loading: boolean) => void,
+  setShowCreateDialog: (show: boolean) => void,
+  loadLists: () => void,
+  toast: any,
+  resetForm: () => void,
+) => {
+  if (!name.trim()) {
+    toast({
+      title: "Name required",
+      description: "Please enter a name for your list",
+      variant: "destructive",
+    })
+    return
+  }
+
+  setIsCreating(true)
+  try {
+    const response = await fetch("/api/lists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        description: description.trim() || null,
+        type,
+        is_public: isPublic,
+      }),
+    })
+
+    if (response.ok) {
+      toast({
+        title: "List created!",
+        description: `Your ${type} "${name}" has been created successfully`,
+      })
+      setShowCreateDialog(false)
+      resetForm()
+      loadLists()
+    } else {
+      const data = await response.json()
+      toast({
+        title: "Failed to create list",
+        description: data.error || "An error occurred",
+        variant: "destructive",
+      })
+    }
+  } catch (error) {
+    console.error("Failed to create list:", error)
+    toast({
+      title: "Failed to create list",
+      description: "An error occurred while creating your list",
+      variant: "destructive",
+    })
+  } finally {
+    setIsCreating(false)
+  }
 }
 
 export default function ListsPage() {
@@ -96,6 +166,11 @@ export default function ListsPage() {
   const [showCommentDialog, setShowCommentDialog] = useState<string | null>(null)
   const [commentText, setCommentText] = useState("")
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState<string | null>(null)
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([])
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
+  const [isSharingWithFriends, setIsSharingWithFriends] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -259,21 +334,42 @@ export default function ListsPage() {
   }
 
   const handleShare = async (listId: string) => {
+    setShowShareDialog(listId)
+    setSelectedFriends([])
+    await loadFriends()
+  }
+
+  const shareWithFriends = async (listId: string) => {
+    if (selectedFriends.length === 0) {
+      toast({
+        title: "No friends selected",
+        description: "Please select at least one friend to share with",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSharingWithFriends(true)
     try {
-      const response = await fetch("/api/social-signals", {
+      const response = await fetch("/api/lists/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          target_type: "list",
-          target_id: listId,
-          signal_type: "share",
+          list_id: listId,
+          friend_ids: selectedFriends,
         }),
       })
 
       if (response.ok) {
         const data = await response.json()
+        toast({
+          title: "List shared!",
+          description: `Shared with ${selectedFriends.length} friend${selectedFriends.length > 1 ? "s" : ""}`,
+        })
+        setShowShareDialog(null)
+        setSelectedFriends([])
 
-        // Update local state
+        // Update social signals
         setSocialSignals((prev) => {
           const current = prev[listId] || { likes: [], comments: [], shares: [] }
           return {
@@ -284,23 +380,23 @@ export default function ListsPage() {
             },
           }
         })
-
-        // Copy list URL to clipboard
-        const listUrl = `${window.location.origin}/lists/${listId}`
-        await navigator.clipboard.writeText(listUrl)
-
+      } else {
+        const data = await response.json()
         toast({
-          title: "List shared!",
-          description: "Link copied to clipboard",
+          title: "Failed to share",
+          description: data.error || "An error occurred",
+          variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Failed to share:", error)
+      console.error("Failed to share with friends:", error)
       toast({
         title: "Failed to share",
-        description: "An error occurred",
+        description: "An error occurred while sharing",
         variant: "destructive",
       })
+    } finally {
+      setIsSharingWithFriends(false)
     }
   }
 
@@ -334,6 +430,21 @@ export default function ListsPage() {
     }
   }
 
+  const loadFriends = async () => {
+    setIsLoadingFriends(true)
+    try {
+      const response = await fetch("/api/friends/list?type=friends")
+      if (response.ok) {
+        const data = await response.json()
+        setFriends(data.friends || [])
+      }
+    } catch (error) {
+      console.error("Failed to load friends:", error)
+    } finally {
+      setIsLoadingFriends(false)
+    }
+  }
+
   const getPosterUrl = (posterPath: string | null) => {
     if (!posterPath) return "/placeholder.svg?height=300&width=200"
     return `https://image.tmdb.org/t/p/w300${posterPath}`
@@ -345,6 +456,13 @@ export default function ListsPage() {
 
   const wishlists = lists.filter((list) => list.type === "wishlist")
   const recommendations = lists.filter((list) => list.type === "recommendations")
+
+  const resetCreateForm = () => {
+    setNewListName("")
+    setNewListDescription("")
+    setNewListType("wishlist")
+    setNewListPublic(true)
+  }
 
   if (isLoading) {
     return (
@@ -449,19 +567,33 @@ export default function ListsPage() {
                   </Select>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="public"
                     checked={newListPublic}
-                    onChange={(e) => setNewListPublic(e.target.checked)}
-                    className="rounded"
+                    onCheckedChange={(checked) => setNewListPublic(checked as boolean)}
                   />
                   <Label htmlFor="public" className="text-white">
                     Make this list public
                   </Label>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={createList} disabled={isCreating} className="bg-purple-600 hover:bg-purple-700">
+                  <Button
+                    onClick={() =>
+                      createList(
+                        newListName,
+                        newListDescription,
+                        newListType,
+                        newListPublic,
+                        setIsCreating,
+                        setShowCreateDialog,
+                        loadLists,
+                        toast,
+                        resetCreateForm,
+                      )
+                    }
+                    disabled={isCreating}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
                     {isCreating ? "Creating..." : "Create List"}
                   </Button>
                   <Button
@@ -831,6 +963,91 @@ export default function ListsPage() {
                   Cancel
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!showShareDialog} onOpenChange={() => setShowShareDialog(null)}>
+          <DialogContent className="bg-slate-900 border-slate-700 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Share with Friends</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {isLoadingFriends ? (
+                <div className="text-center py-4">
+                  <div className="text-slate-400">Loading friends...</div>
+                </div>
+              ) : friends.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="text-slate-400">No friends to share with</div>
+                  <Link href="/friends">
+                    <Button
+                      variant="outline"
+                      className="mt-2 border-white/20 text-white hover:bg-white/10 bg-transparent"
+                    >
+                      Add Friends
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {friends.map((friend) => (
+                    <div key={friend.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5">
+                      <Checkbox
+                        id={friend.id}
+                        checked={selectedFriends.includes(friend.friend.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedFriends([...selectedFriends, friend.friend.id])
+                          } else {
+                            setSelectedFriends(selectedFriends.filter((id) => id !== friend.friend.id))
+                          }
+                        }}
+                      />
+                      <div className="flex items-center space-x-2 flex-1">
+                        {friend.friend.avatar_url ? (
+                          <Image
+                            src={friend.friend.avatar_url || "/placeholder.svg"}
+                            alt={friend.friend.display_name}
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                            <User className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-white text-sm font-medium">{friend.friend.display_name}</div>
+                          <div className="text-slate-400 text-xs">@{friend.friend.username}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {friends.length > 0 && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => showShareDialog && shareWithFriends(showShareDialog)}
+                    disabled={isSharingWithFriends || selectedFriends.length === 0}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {isSharingWithFriends
+                      ? "Sharing..."
+                      : `Share with ${selectedFriends.length} friend${selectedFriends.length !== 1 ? "s" : ""}`}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowShareDialog(null)}
+                    className="border-white/20 text-white hover:bg-white/10"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
