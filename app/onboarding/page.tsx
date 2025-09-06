@@ -14,6 +14,8 @@ import { Film, User, ArrowRight, MapPin, Popcorn } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 
+export const dynamic = "force-dynamic"
+
 export default function OnboardingPage() {
   const [user, setUser] = useState<any>(null)
   const [username, setUsername] = useState("")
