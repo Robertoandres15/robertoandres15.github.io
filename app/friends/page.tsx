@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User } from "lucide-react"
+import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { MobileNavigation } from "@/components/mobile-navigation"
 import Link from "next/link"
@@ -15,6 +15,11 @@ import Link from "next/link"
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState([])
+  const [autoSuggestResults, setAutoSuggestResults] = useState([])
+  const [showAutoSuggest, setShowAutoSuggest] = useState(false)
+  const [isAutoSuggesting, setIsAutoSuggesting] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [friends, setFriends] = useState([])
   const [pendingRequests, setPendingRequests] = useState([])
   const [isSearching, setIsSearching] = useState(false)
@@ -22,12 +27,75 @@ export default function FriendsPage() {
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const { toast } = useToast()
 
+  const handleAutoSuggest = async (query: string) => {
+    if (query.trim().length < 2) {
+      setAutoSuggestResults([])
+      setShowAutoSuggest(false)
+      return
+    }
+
+    setIsAutoSuggesting(true)
+    try {
+      const response = await fetch(`/api/friends/search?q=${encodeURIComponent(query)}`)
+      const data = await response.json()
+      setAutoSuggestResults(data.users || [])
+      setShowAutoSuggest(true)
+    } catch (error) {
+      console.error("Auto-suggest failed:", error)
+      setAutoSuggestResults([])
+      setShowAutoSuggest(false)
+    } finally {
+      setIsAutoSuggesting(false)
+    }
+  }
+
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value)
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      handleAutoSuggest(value)
+    }, 300)
+  }
+
+  const selectSuggestion = (user: any) => {
+    setSearchQuery(user.username)
+    setSearchResults([user])
+    setShowAutoSuggest(false)
+    setAutoSuggestResults([])
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setShowAutoSuggest(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const searchUsers = async () => {
     setIsSearching(true)
     try {
       const response = await fetch(`/api/friends/search?q=${encodeURIComponent(searchQuery)}`)
       const data = await response.json()
       setSearchResults(data.users || [])
+      setShowAutoSuggest(false)
     } catch (error) {
       console.error("Failed to search users:", error)
       toast({
@@ -58,8 +126,10 @@ export default function FriendsPage() {
           description: "Your friend request has been sent successfully",
         })
 
-        // Update the search results to reflect the new status
         setSearchResults((prev) =>
+          prev.map((user: any) => (user.id === friendId ? { ...user, friendship_status: "pending_sent" } : user)),
+        )
+        setAutoSuggestResults((prev) =>
           prev.map((user: any) => (user.id === friendId ? { ...user, friendship_status: "pending_sent" } : user)),
         )
       } else {
@@ -97,10 +167,8 @@ export default function FriendsPage() {
           description: `You have ${action === "accept" ? "accepted" : "declined"} the friend request`,
         })
 
-        // Remove the request from pending requests
         setPendingRequests((prev) => prev.filter((request: any) => request.id !== friendshipId))
 
-        // If accepted, refresh the friends list
         if (action === "accept") {
           fetchFriendsAndRequests()
         }
@@ -148,13 +216,10 @@ export default function FriendsPage() {
   }, [])
 
   const openNativeSMS = () => {
-    // Generate a unique invite link for the user
     const inviteLink = `${window.location.origin}/signup?ref=${btoa(Date.now().toString())}`
 
-    // Create the invite message
     const message = `Hey! I'm using Reel Friends to discover and share movies & TV shows with friends. Join me! ${inviteLink}`
 
-    // Use SMS protocol to open native messaging app
     const smsUrl = `sms:?body=${encodeURIComponent(message)}`
 
     try {
@@ -296,15 +361,61 @@ export default function FriendsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <div className="relative flex-1" ref={searchInputRef}>
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4 z-10" />
                       <Input
                         placeholder="Search by username, name, or phone number..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => handleSearchInputChange(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && searchUsers()}
+                        onFocus={() => searchQuery.length >= 2 && setShowAutoSuggest(true)}
                         className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-slate-400"
                       />
+
+                      {showAutoSuggest && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-md shadow-lg z-20 max-h-60 overflow-y-auto">
+                          {isAutoSuggesting ? (
+                            <div className="flex items-center justify-center p-4">
+                              <Loader2 className="h-4 w-4 animate-spin text-slate-400 mr-2" />
+                              <span className="text-slate-400 text-sm">Searching...</span>
+                            </div>
+                          ) : autoSuggestResults.length > 0 ? (
+                            autoSuggestResults.map((user: any) => (
+                              <div
+                                key={user.id}
+                                className="flex items-center gap-3 p-3 hover:bg-slate-700 cursor-pointer border-b border-slate-700 last:border-b-0"
+                                onClick={() => selectSuggestion(user)}
+                              >
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                                  <AvatarFallback className="text-xs">
+                                    {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white text-sm font-medium truncate">{user.display_name}</p>
+                                  <p className="text-slate-400 text-xs truncate">@{user.username}</p>
+                                </div>
+                                <div className="flex-shrink-0">
+                                  {user.friendship_status === "friends" ? (
+                                    <Check className="h-4 w-4 text-green-400" />
+                                  ) : user.friendship_status === "pending_sent" ? (
+                                    <Clock className="h-4 w-4 text-yellow-400" />
+                                  ) : user.friendship_status === "pending_received" ? (
+                                    <Clock className="h-4 w-4 text-blue-400" />
+                                  ) : (
+                                    <UserPlus className="h-4 w-4 text-purple-400" />
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center">
+                              <p className="text-slate-400 text-sm">No users found</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <Button onClick={searchUsers} disabled={isSearching} className="bg-purple-600 hover:bg-purple-700">
                       {isSearching ? "Searching..." : "Search"}

@@ -122,3 +122,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    if (!supabase) {
+      console.error("[v0] Supabase client is null - environment variables not available")
+      return NextResponse.json({ error: "Database service unavailable" }, { status: 503 })
+    }
+
+    const { data } = await supabase.auth.getUser()
+    const user = data?.user
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const listId = searchParams.get("list_id")
+
+    if (!listId) {
+      return NextResponse.json({ error: "List ID is required" }, { status: 400 })
+    }
+
+    // First verify the list belongs to the user
+    const { data: list, error: fetchError } = await supabase
+      .from("lists")
+      .select("id, user_id")
+      .eq("id", listId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (fetchError || !list) {
+      return NextResponse.json({ error: "List not found or unauthorized" }, { status: 404 })
+    }
+
+    // Delete the list (this will cascade delete list_items due to foreign key constraints)
+    const { error: deleteError } = await supabase.from("lists").delete().eq("id", listId).eq("user_id", user.id)
+
+    if (deleteError) {
+      console.error("[v0] Delete list error:", deleteError)
+      return NextResponse.json({ error: "Failed to delete list" }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Delete list API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

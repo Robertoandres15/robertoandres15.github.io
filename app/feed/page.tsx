@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Film, Users, Search, User, Star, Plus } from "lucide-react"
+import { Film, Users, Search, User, Plus } from "lucide-react"
 import Link from "next/link"
 import { FriendRecommendations } from "@/components/friend-recommendations"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
+import { DismissibleMovieSuggestions } from "@/components/dismissible-movie-suggestions"
 
 async function ReelClub() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -225,12 +226,93 @@ async function AIMovieSuggestions() {
             `)
             .eq("id", user.id)
             .single()
+
           userProfile = profile
         }
       }
     } catch (error) {
       // Silently handle Supabase errors and use fallback
       supabase = null
+    }
+  }
+
+  let userRecommendations = []
+  if (supabase && user) {
+    try {
+      const { data: recommendationsList } = await supabase
+        .from("list_items")
+        .select(`
+          tmdb_id,
+          media_type,
+          title,
+          poster_path,
+          overview,
+          release_date,
+          rating,
+          lists!inner(type, user_id)
+        `)
+        .eq("lists.user_id", user.id)
+        .eq("lists.type", "recommendations")
+        .limit(10)
+
+      userRecommendations = recommendationsList || []
+    } catch (error) {
+      console.log("[v0] Error fetching user recommendations:", error)
+    }
+  }
+
+  if (userRecommendations.length > 0) {
+    try {
+      // Get genres from user's recommendations to find similar content
+      const recommendationGenres = new Set()
+      const recommendationIds = userRecommendations.map((item) => item.tmdb_id)
+
+      // Extract genres from user's existing recommendations
+      for (const item of userRecommendations) {
+        if (item.media_type === "movie") {
+          // Use TMDB API to get movie details and extract genres
+          const movieResponse = await fetch(
+            `https://api.themoviedb.org/3/movie/${item.tmdb_id}?api_key=${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            },
+          )
+          if (movieResponse.ok) {
+            const movieData = await movieResponse.json()
+            movieData.genres?.forEach((genre) => recommendationGenres.add(genre.id.toString()))
+          }
+        }
+      }
+
+      // If we have genres from recommendations, use them for discovery
+      if (recommendationGenres.size > 0) {
+        const genreIds = Array.from(recommendationGenres).slice(0, 4).join(",")
+
+        const discoverUrl = `https://api.themoviedb.org/3/discover/movie?with_genres=${genreIds}&sort_by=popularity.desc&page=1`
+        const headers = {
+          Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        }
+
+        console.log("[v0] Fetching personalized recommendations based on user's list")
+
+        const response = await fetch(discoverUrl, { headers })
+
+        if (response.ok) {
+          const data = await response.json()
+          const suggestions = data.results?.filter((movie) => !recommendationIds.includes(movie.id)).slice(0, 10) || []
+
+          if (suggestions.length > 0) {
+            console.log("[v0] Found", suggestions.length, "personalized suggestions based on recommendations list")
+            return renderMovieSuggestions(suggestions, Array.from(recommendationGenres), userProfile, true)
+          }
+        }
+      }
+    } catch (error) {
+      console.log("[v0] Error generating personalized recommendations:", error)
     }
   }
 
@@ -268,7 +350,7 @@ async function AIMovieSuggestions() {
   try {
     if (!process.env.TMDB_API_READ_ACCESS_TOKEN && !process.env.TMDB_API_KEY) {
       console.log("[v0] No TMDB API credentials configured, using fallback movies")
-      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
     }
 
     const genreIds = movieGenres.join(",")
@@ -327,9 +409,9 @@ async function AIMovieSuggestions() {
         const suggestions = data.results?.slice(0, 10) || []
         if (suggestions.length === 0) {
           console.log("[v0] No movies returned from TMDB fallback, using local fallback")
-          return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+          return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
         }
-        return renderMovieSuggestions(suggestions, movieGenres, userProfile)
+        return renderMovieSuggestions(suggestions, movieGenres, userProfile, false)
       }
     }
 
@@ -337,7 +419,7 @@ async function AIMovieSuggestions() {
       const errorText = await response.text()
       console.log("[v0] TMDB API error response:", errorText)
       console.log("[v0] Using fallback movies due to API error")
-      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
     }
 
     const data = await response.json()
@@ -347,107 +429,26 @@ async function AIMovieSuggestions() {
 
     if (suggestions.length === 0) {
       console.log("[v0] No movies returned from TMDB, using fallback")
-      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
     }
 
-    return renderMovieSuggestions(suggestions, movieGenres, userProfile)
+    return renderMovieSuggestions(suggestions, movieGenres, userProfile, false)
   } catch (error) {
     console.log("[v0] TMDB API fetch failed:", error.message)
     console.log("[v0] Using fallback movies due to network error")
 
-    return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+    return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
   }
 }
 
-function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userProfile: any) {
+function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userProfile: any, isPersonalized = false) {
   return (
-    <div className="space-y-4">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white mb-2">
-          {userProfile ? "AI Recommendations for You" : "Popular Movies You Might Like"}
-        </h2>
-        <p className="text-slate-400 text-sm">
-          {userProfile ? "Based on your preferences: " : "Based on popular genres: "}
-          {movieGenres
-            .map((id) => {
-              const genreMap: { [key: string]: string } = {
-                "28": "Action",
-                "12": "Adventure",
-                "16": "Animation",
-                "35": "Comedy",
-                "80": "Crime",
-                "99": "Documentary",
-                "18": "Drama",
-                "10751": "Family",
-                "14": "Fantasy",
-                "36": "History",
-                "27": "Horror",
-                "10402": "Music",
-                "9648": "Mystery",
-                "10749": "Romance",
-                "878": "Sci-Fi",
-                "10770": "TV Movie",
-                "53": "Thriller",
-                "10752": "War",
-                "37": "Western",
-              }
-              return genreMap[id.toString()] || "Unknown"
-            })
-            .join(", ")}
-          {!userProfile && (
-            <span className="block mt-1 text-xs">Complete your profile to get personalized recommendations!</span>
-          )}
-        </p>
-      </div>
-
-      {suggestions.map((movie: any) => (
-        <div key={movie.id} className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-shrink-0 mx-auto sm:mx-0">
-              <img
-                src={
-                  movie.poster_path
-                    ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
-                    : `/placeholder.svg?height=120&width=80&query=${movie.title} poster`
-                }
-                alt={movie.title}
-                className="w-24 h-36 sm:w-20 sm:h-30 rounded-lg object-cover"
-              />
-            </div>
-            <div className="flex-1 min-w-0 text-center sm:text-left">
-              <h3 className="text-white font-semibold mb-2 text-lg sm:text-base leading-tight">{movie.title}</h3>
-              <p className="text-slate-400 text-sm mb-3 line-clamp-3 sm:line-clamp-2 leading-relaxed">
-                {movie.overview}
-              </p>
-              <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                  <span className="text-sm text-slate-300">{movie.vote_average?.toFixed(1)}</span>
-                </div>
-                <span className="text-slate-500">•</span>
-                <span className="text-sm text-slate-400">{new Date(movie.release_date).getFullYear()}</span>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
-                <Button
-                  size="sm"
-                  className="bg-purple-600 hover:bg-purple-700 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add to Wishlist
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
-                >
-                  View Details
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+    <DismissibleMovieSuggestions
+      initialSuggestions={suggestions}
+      movieGenres={movieGenres}
+      userProfile={userProfile}
+      isPersonalized={isPersonalized}
+    />
   )
 }
 

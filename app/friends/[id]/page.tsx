@@ -85,7 +85,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
           </div>
 
           {/* Profile Header */}
-          <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-8">
+          <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-8">
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
                 <Avatar className="h-24 w-24">
@@ -96,7 +96,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
                 </Avatar>
 
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-white mb-2">
+                  <h1 className="text-2xl font-bold text-slate-200 mb-2">
                     {friendProfile.display_name || friendProfile.username}
                   </h1>
                   <p className="text-slate-400 mb-4">@{friendProfile.username}</p>
@@ -115,16 +115,16 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
 
           {/* Recommendations List */}
           {recommendationsList && recommendationsList.list_items && recommendationsList.list_items.length > 0 && (
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-6">
+            <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-6">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-slate-200 flex items-center gap-2">
                   <Film className="h-5 w-5 text-purple-400" />
                   Recommendations ({recommendationsList.list_items.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {recommendationsList.list_items.map((item: any) => (
-                  <div key={item.id} className="flex gap-4 p-3 rounded-lg bg-white/5">
+                  <div key={item.id} className="flex gap-4 p-3 rounded-lg bg-slate-700/60">
                     <img
                       src={
                         item.poster_path
@@ -135,7 +135,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
                       className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold mb-1 truncate">{item.title}</h3>
+                      <h3 className="text-slate-200 font-semibold mb-1 truncate">{item.title}</h3>
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 text-xs">
                           {item.media_type === "movie" ? "Movie" : "TV Series"}
@@ -161,9 +161,9 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
 
           {/* Wishlist */}
           {wishlist && wishlist.list_items && wishlist.list_items.length > 0 && (
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm mb-6">
+            <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-6">
               <CardHeader>
-                <CardTitle className="text-white">Wishlist ({wishlist.list_items.length})</CardTitle>
+                <CardTitle className="text-slate-200">Wishlist ({wishlist.list_items.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
@@ -178,7 +178,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
                         alt={item.title}
                         className="w-full aspect-[2/3] rounded-lg object-cover group-hover:scale-105 transition-transform"
                       />
-                      <p className="text-white text-xs mt-1 truncate">{item.title}</p>
+                      <p className="text-slate-200 text-xs mt-1 truncate">{item.title}</p>
                     </div>
                   ))}
                 </div>
@@ -194,10 +194,10 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
           {/* No Content Message */}
           {(!recommendationsList || !recommendationsList.list_items || recommendationsList.list_items.length === 0) &&
             (!wishlist || !wishlist.list_items || wishlist.list_items.length === 0) && (
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                 <CardContent className="text-center py-12">
                   <Film className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-                  <h3 className="text-lg font-semibold text-white mb-2">No public lists yet</h3>
+                  <h3 className="text-lg font-semibold text-slate-200 mb-2">No public lists yet</h3>
                   <p className="text-slate-400">
                     {friendProfile.display_name || friendProfile.username} hasn't shared any public lists yet.
                   </p>
