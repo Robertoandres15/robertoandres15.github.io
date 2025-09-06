@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const minRating = searchParams.get("min_rating") || ""
     const inTheaters = searchParams.get("in_theaters") === "true"
     const streamingServices = searchParams.get("streaming_services") || ""
+    const excludeIds = searchParams.get("exclude_ids") || ""
+    const withGenres = searchParams.get("with_genres") || ""
 
     let year = ""
     if (yearParam && yearParam !== "0") {
@@ -35,7 +37,9 @@ export async function GET(request: NextRequest) {
       page: Number.parseInt(page),
     }
 
-    if (genre && genre !== "0") {
+    if (withGenres) {
+      params.with_genres = withGenres
+    } else if (genre && genre !== "0") {
       params.genre = genre
     }
 
@@ -66,8 +70,25 @@ export async function GET(request: NextRequest) {
       params.watch_region = "US" // Default to US region
     }
 
-    console.log("[v0] Discovering content:", { type, params, inTheaters, streamingServices, processedYear: year })
+    console.log("[v0] Discovering content:", {
+      type,
+      params,
+      inTheaters,
+      streamingServices,
+      processedYear: year,
+      excludeIds,
+    })
     const results = type === "tv" ? await tmdb.discoverTV(params) : await tmdb.discoverMovies(params)
+
+    if (excludeIds && results.results) {
+      const excludeIdArray = excludeIds
+        .split(",")
+        .map((id) => Number.parseInt(id.trim()))
+        .filter((id) => !isNaN(id))
+      results.results = results.results.filter((item: any) => !excludeIdArray.includes(item.id))
+      console.log("[v0] Filtered out", excludeIdArray.length, "excluded items, remaining:", results.results.length)
+    }
+
     console.log("[v0] Successfully fetched discover results:", results.results?.length, "items")
 
     return NextResponse.json(results)
