@@ -79,13 +79,16 @@ export default function ExplorePage() {
   }, [])
 
   useEffect(() => {
-    if (mediaType === "tv" && inTheaters) {
-      setInTheaters(false)
+    // Only reset these values when mediaType changes, not when the values themselves change
+    if (mediaType === "tv") {
+      if (inTheaters) {
+        setInTheaters(false)
+      }
+      if (movieDuration !== "any") {
+        setMovieDuration("any")
+      }
     }
-    if (mediaType === "tv" && movieDuration !== "any") {
-      setMovieDuration("any")
-    }
-  }, [mediaType, inTheaters, movieDuration])
+  }, [mediaType]) // Only depend on mediaType, not on the values we're setting
 
   const loadGenres = async () => {
     try {
