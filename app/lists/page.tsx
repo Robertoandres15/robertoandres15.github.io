@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import {
   Heart,
   BookmarkPlus,
@@ -171,6 +172,8 @@ export default function ListsPage() {
   const [selectedFriends, setSelectedFriends] = useState<string[]>([])
   const [isLoadingFriends, setIsLoadingFriends] = useState(false)
   const [isSharingWithFriends, setIsSharingWithFriends] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -464,6 +467,40 @@ export default function ListsPage() {
     setNewListPublic(true)
   }
 
+  const deleteList = async (listId: string) => {
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/lists?list_id=${listId}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        toast({
+          title: "List deleted",
+          description: "Your list has been permanently deleted",
+        })
+        setShowDeleteDialog(null)
+        loadLists() // Refresh the lists
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Failed to delete list",
+          description: data.error || "An error occurred",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Failed to delete list:", error)
+      toast({
+        title: "Failed to delete list",
+        description: "An error occurred while deleting the list",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -663,6 +700,14 @@ export default function ListsPage() {
                           <Badge variant="outline" className="border-purple-400 text-purple-400">
                             {list.list_items.length} items
                           </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowDeleteDialog(list.id)}
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -819,6 +864,14 @@ export default function ListsPage() {
                           <Badge variant="outline" className="border-purple-400 text-purple-400">
                             {list.list_items.length} items
                           </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowDeleteDialog(list.id)}
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
@@ -1060,6 +1113,36 @@ export default function ListsPage() {
                 </div>
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!showDeleteDialog} onOpenChange={() => setShowDeleteDialog(null)}>
+          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Delete List</DialogTitle>
+              <DialogDescription className="text-slate-300">
+                Are you sure you want to delete this list? This action cannot be undone and will permanently remove all
+                items in the list.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(null)}
+                disabled={isDeleting}
+                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => showDeleteDialog && deleteList(showDeleteDialog)}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? "Deleting..." : "Delete List"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
