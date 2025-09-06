@@ -234,6 +234,86 @@ async function AIMovieSuggestions() {
     }
   }
 
+  let userRecommendations = []
+  if (supabase && user) {
+    try {
+      const { data: recommendationsList } = await supabase
+        .from("list_items")
+        .select(`
+          tmdb_id,
+          media_type,
+          title,
+          poster_path,
+          overview,
+          release_date,
+          rating,
+          lists!inner(type, user_id)
+        `)
+        .eq("lists.user_id", user.id)
+        .eq("lists.type", "recommendations")
+        .limit(10)
+
+      userRecommendations = recommendationsList || []
+    } catch (error) {
+      console.log("[v0] Error fetching user recommendations:", error)
+    }
+  }
+
+  if (userRecommendations.length > 0) {
+    try {
+      // Get genres from user's recommendations to find similar content
+      const recommendationGenres = new Set()
+      const recommendationIds = userRecommendations.map((item) => item.tmdb_id)
+
+      // Extract genres from user's existing recommendations
+      for (const item of userRecommendations) {
+        if (item.media_type === "movie") {
+          // Use TMDB API to get movie details and extract genres
+          const movieResponse = await fetch(
+            `https://api.themoviedb.org/3/movie/${item.tmdb_id}?api_key=${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            },
+          )
+          if (movieResponse.ok) {
+            const movieData = await movieResponse.json()
+            movieData.genres?.forEach((genre) => recommendationGenres.add(genre.id.toString()))
+          }
+        }
+      }
+
+      // If we have genres from recommendations, use them for discovery
+      if (recommendationGenres.size > 0) {
+        const genreIds = Array.from(recommendationGenres).slice(0, 4).join(",")
+
+        const discoverUrl = `https://api.themoviedb.org/3/discover/movie?with_genres=${genreIds}&sort_by=popularity.desc&page=1`
+        const headers = {
+          Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        }
+
+        console.log("[v0] Fetching personalized recommendations based on user's list")
+
+        const response = await fetch(discoverUrl, { headers })
+
+        if (response.ok) {
+          const data = await response.json()
+          const suggestions = data.results?.filter((movie) => !recommendationIds.includes(movie.id)).slice(0, 10) || []
+
+          if (suggestions.length > 0) {
+            console.log("[v0] Found", suggestions.length, "personalized suggestions based on recommendations list")
+            return renderMovieSuggestions(suggestions, Array.from(recommendationGenres), userProfile, true)
+          }
+        }
+      }
+    } catch (error) {
+      console.log("[v0] Error generating personalized recommendations:", error)
+    }
+  }
+
   const defaultGenres = ["28", "12", "878", "35"] // Action, Adventure, Sci-Fi, Comedy
   const movieGenres = userProfile?.movie_genres || defaultGenres
 
@@ -268,7 +348,7 @@ async function AIMovieSuggestions() {
   try {
     if (!process.env.TMDB_API_READ_ACCESS_TOKEN && !process.env.TMDB_API_KEY) {
       console.log("[v0] No TMDB API credentials configured, using fallback movies")
-      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
     }
 
     const genreIds = movieGenres.join(",")
@@ -327,9 +407,9 @@ async function AIMovieSuggestions() {
         const suggestions = data.results?.slice(0, 10) || []
         if (suggestions.length === 0) {
           console.log("[v0] No movies returned from TMDB fallback, using local fallback")
-          return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+          return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
         }
-        return renderMovieSuggestions(suggestions, movieGenres, userProfile)
+        return renderMovieSuggestions(suggestions, movieGenres, userProfile, false)
       }
     }
 
@@ -337,7 +417,7 @@ async function AIMovieSuggestions() {
       const errorText = await response.text()
       console.log("[v0] TMDB API error response:", errorText)
       console.log("[v0] Using fallback movies due to API error")
-      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
     }
 
     const data = await response.json()
@@ -347,55 +427,69 @@ async function AIMovieSuggestions() {
 
     if (suggestions.length === 0) {
       console.log("[v0] No movies returned from TMDB, using fallback")
-      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+      return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
     }
 
-    return renderMovieSuggestions(suggestions, movieGenres, userProfile)
+    return renderMovieSuggestions(suggestions, movieGenres, userProfile, false)
   } catch (error) {
     console.log("[v0] TMDB API fetch failed:", error.message)
     console.log("[v0] Using fallback movies due to network error")
 
-    return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile)
+    return renderMovieSuggestions(fallbackMovies, movieGenres, userProfile, false)
   }
 }
 
-function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userProfile: any) {
+function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userProfile: any, isPersonalized = false) {
   return (
     <div className="space-y-4">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-white mb-2">
-          {userProfile ? "AI Recommendations for You" : "Popular Movies You Might Like"}
+          {isPersonalized
+            ? "Personalized Recommendations"
+            : userProfile
+              ? "AI Recommendations for You"
+              : "Popular Movies You Might Like"}
         </h2>
         <p className="text-slate-400 text-sm">
-          {userProfile ? "Based on your preferences: " : "Based on popular genres: "}
-          {movieGenres
-            .map((id) => {
-              const genreMap: { [key: string]: string } = {
-                "28": "Action",
-                "12": "Adventure",
-                "16": "Animation",
-                "35": "Comedy",
-                "80": "Crime",
-                "99": "Documentary",
-                "18": "Drama",
-                "10751": "Family",
-                "14": "Fantasy",
-                "36": "History",
-                "27": "Horror",
-                "10402": "Music",
-                "9648": "Mystery",
-                "10749": "Romance",
-                "878": "Sci-Fi",
-                "10770": "TV Movie",
-                "53": "Thriller",
-                "10752": "War",
-                "37": "Western",
-              }
-              return genreMap[id.toString()] || "Unknown"
-            })
-            .join(", ")}
-          {!userProfile && (
+          {isPersonalized
+            ? "Based on movies in your Recommendations List"
+            : userProfile
+              ? "Based on your preferences: "
+              : "Based on popular genres: "}
+          {!isPersonalized &&
+            movieGenres
+              .map((id) => {
+                const genreMap: { [key: string]: string } = {
+                  "28": "Action",
+                  "12": "Adventure",
+                  "16": "Animation",
+                  "35": "Comedy",
+                  "80": "Crime",
+                  "99": "Documentary",
+                  "18": "Drama",
+                  "10751": "Family",
+                  "14": "Fantasy",
+                  "36": "History",
+                  "27": "Horror",
+                  "10402": "Music",
+                  "9648": "Mystery",
+                  "10749": "Romance",
+                  "878": "Sci-Fi",
+                  "10770": "TV Movie",
+                  "53": "Thriller",
+                  "10752": "War",
+                  "37": "Western",
+                }
+                return genreMap[id.toString()] || "Unknown"
+              })
+              .join(", ")}
+          {!userProfile && !isPersonalized && (
             <span className="block mt-1 text-xs">Complete your profile to get personalized recommendations!</span>
+          )}
+          {isPersonalized && (
+            <span className="block mt-1 text-xs">
+              Add more movies to your Recommendations List for better suggestions!
+            </span>
           )}
         </p>
       </div>
