@@ -556,7 +556,16 @@ export default function ExplorePage() {
 
                         <div>
                           <label className="text-white text-sm mb-2 block">Genre</label>
-                          <Select>
+                          <Select
+                            value=""
+                            onValueChange={(value) => {
+                              if (selectedGenres.includes(value)) {
+                                setSelectedGenres(selectedGenres.filter((id) => id !== value))
+                              } else {
+                                setSelectedGenres([...selectedGenres, value])
+                              }
+                            }}
+                          >
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue
                                 placeholder={
@@ -576,14 +585,6 @@ export default function ExplorePage() {
                                   className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
                                     selectedGenres.includes(genre.id.toString()) ? "bg-purple-600 text-white" : ""
                                   }`}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    if (selectedGenres.includes(genre.id.toString())) {
-                                      setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
-                                    } else {
-                                      setSelectedGenres([...selectedGenres, genre.id.toString()])
-                                    }
-                                  }}
                                 >
                                   {selectedGenres.includes(genre.id.toString()) ? "✓ " : ""}
                                   {genre.name}
@@ -595,7 +596,16 @@ export default function ExplorePage() {
 
                         <div>
                           <label className="text-white text-sm mb-2 block">Year</label>
-                          <Select>
+                          <Select
+                            value=""
+                            onValueChange={(value) => {
+                              if (selectedYears.includes(value)) {
+                                setSelectedYears(selectedYears.filter((y) => y !== value))
+                              } else {
+                                setSelectedYears([...selectedYears, value])
+                              }
+                            }}
+                          >
                             <SelectTrigger className="bg-white/10 border-white/20 text-white">
                               <SelectValue
                                 placeholder={
@@ -615,14 +625,6 @@ export default function ExplorePage() {
                                   className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
                                     selectedYears.includes(year.toString()) ? "bg-purple-600 text-white" : ""
                                   }`}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    if (selectedYears.includes(year.toString())) {
-                                      setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
-                                    } else {
-                                      setSelectedYears([...selectedYears, year.toString()])
-                                    }
-                                  }}
                                 >
                                   {selectedYears.includes(year.toString()) ? "✓ " : ""}
                                   {year}
@@ -874,8 +876,18 @@ export default function ExplorePage() {
                 </div>
 
                 <div>
-                  <Select>
-                    <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                  <label className="text-white text-sm mb-2 block">Genre</label>
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (selectedGenres.includes(value)) {
+                        setSelectedGenres(selectedGenres.filter((id) => id !== value))
+                      } else {
+                        setSelectedGenres([...selectedGenres, value])
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue
                         placeholder={
                           selectedGenres.length === 0
@@ -894,14 +906,6 @@ export default function ExplorePage() {
                           className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
                             selectedGenres.includes(genre.id.toString()) ? "bg-purple-600 text-white" : ""
                           }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            if (selectedGenres.includes(genre.id.toString())) {
-                              setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
-                            } else {
-                              setSelectedGenres([...selectedGenres, genre.id.toString()])
-                            }
-                          }}
                         >
                           {selectedGenres.includes(genre.id.toString()) ? "✓ " : ""}
                           {genre.name}
@@ -912,8 +916,18 @@ export default function ExplorePage() {
                 </div>
 
                 <div>
-                  <Select>
-                    <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                  <label className="text-white text-sm mb-2 block">Year</label>
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (selectedYears.includes(value)) {
+                        setSelectedYears(selectedYears.filter((y) => y !== value))
+                      } else {
+                        setSelectedYears([...selectedYears, value])
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue
                         placeholder={
                           selectedYears.length === 0
@@ -932,14 +946,6 @@ export default function ExplorePage() {
                           className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
                             selectedYears.includes(year.toString()) ? "bg-purple-600 text-white" : ""
                           }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            if (selectedYears.includes(year.toString())) {
-                              setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
-                            } else {
-                              setSelectedYears([...selectedYears, year.toString()])
-                            }
-                          }}
                         >
                           {selectedYears.includes(year.toString()) ? "✓ " : ""}
                           {year}
