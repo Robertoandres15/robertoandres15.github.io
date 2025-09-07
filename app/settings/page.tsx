@@ -647,7 +647,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground">
       <nav className="flex items-center justify-center gap-8 p-4 border-b border-white/10">
         <a href="/feed" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
           <User className="w-5 h-5" />
