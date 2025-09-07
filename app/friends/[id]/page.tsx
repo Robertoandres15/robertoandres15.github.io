@@ -126,7 +126,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
                 {recommendationsList.list_items.map((item: any) => (
                   <Link
                     key={item.id}
-                    href={`/movie/${item.tmdb_id}?type=${item.media_type}`}
+                    href={`/explore/${item.media_type}/${item.tmdb_id}`}
                     className="block hover:bg-slate-700/40 rounded-lg transition-colors"
                   >
                     <div className="flex gap-4 p-3 rounded-lg bg-slate-700/60">
@@ -176,7 +176,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                   {wishlist.list_items.slice(0, 12).map((item: any) => (
-                    <Link key={item.id} href={`/movie/${item.tmdb_id}?type=${item.media_type}`} className="group block">
+                    <Link key={item.id} href={`/explore/${item.media_type}/${item.tmdb_id}`} className="group block">
                       <img
                         src={
                           item.poster_path

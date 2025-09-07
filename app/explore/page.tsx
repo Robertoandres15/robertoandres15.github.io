@@ -554,6 +554,100 @@ export default function ExplorePage() {
                           </Select>
                         </div>
 
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Select>
+                              <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                                <SelectValue
+                                  placeholder={
+                                    selectedGenres.length === 0
+                                      ? "Any Genre"
+                                      : selectedGenres.length === 1
+                                        ? genres.find((g) => g.id.toString() === selectedGenres[0])?.name || "Any Genre"
+                                        : `${selectedGenres.length} genres selected`
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                                <div className="p-2">
+                                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                                    {genres.map((genre) => (
+                                      <div key={genre.id} className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id={`genre-${genre.id}`}
+                                          checked={selectedGenres.includes(genre.id.toString())}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedGenres([...selectedGenres, genre.id.toString()])
+                                            } else {
+                                              setSelectedGenres(
+                                                selectedGenres.filter((id) => id !== genre.id.toString()),
+                                              )
+                                            }
+                                          }}
+                                          className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <label
+                                          htmlFor={`genre-${genre.id}`}
+                                          className="text-slate-200 text-sm cursor-pointer"
+                                        >
+                                          {genre.name}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Select>
+                              <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                                <SelectValue
+                                  placeholder={
+                                    selectedYears.length === 0
+                                      ? "Any Year"
+                                      : selectedYears.length === 1
+                                        ? selectedYears[0]
+                                        : `${selectedYears.length} years selected`
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                                <div className="p-2">
+                                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                                    {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                      <div key={year} className="flex items-center space-x-2">
+                                        <input
+                                          type="checkbox"
+                                          id={`year-${year}`}
+                                          checked={selectedYears.includes(year.toString())}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setSelectedYears([...selectedYears, year.toString()])
+                                            } else {
+                                              setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
+                                            }
+                                          }}
+                                          className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
+                                        />
+                                        <label
+                                          htmlFor={`year-${year}`}
+                                          className="text-slate-200 text-sm cursor-pointer"
+                                        >
+                                          {year}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
                         <div>
                           <label className="text-white text-sm mb-2 block">Genre</label>
                           <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
@@ -846,53 +940,90 @@ export default function ExplorePage() {
                 </div>
 
                 <div>
-                  <label className="text-white text-sm mb-2 block">Genre</label>
-                  <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
-                    <div className="space-y-2">
-                      {genres.map((genre) => (
-                        <label key={genre.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedGenres.includes(genre.id.toString())}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedGenres([...selectedGenres, genre.id.toString()])
-                              } else {
-                                setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
-                              }
-                            }}
-                            className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
-                          />
-                          <span className="text-slate-200 text-sm">{genre.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                  <Select>
+                    <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                      <SelectValue
+                        placeholder={
+                          selectedGenres.length === 0
+                            ? "Any Genre"
+                            : selectedGenres.length === 1
+                              ? genres.find((g) => g.id.toString() === selectedGenres[0])?.name || "Any Genre"
+                              : `${selectedGenres.length} genres selected`
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                      <div className="p-2">
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                          {genres.map((genre) => (
+                            <div key={genre.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`desktop-genre-${genre.id}`}
+                                checked={selectedGenres.includes(genre.id.toString())}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedGenres([...selectedGenres, genre.id.toString()])
+                                  } else {
+                                    setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
+                                  }
+                                }}
+                                className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
+                              />
+                              <label
+                                htmlFor={`desktop-genre-${genre.id}`}
+                                className="text-slate-200 text-sm cursor-pointer"
+                              >
+                                {genre.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="text-white text-sm mb-2 block">Year</label>
-                  <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
-                    <div className="space-y-2">
-                      {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                        <label key={year} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedYears.includes(year.toString())}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedYears([...selectedYears, year.toString()])
-                              } else {
-                                setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
-                              }
-                            }}
-                            className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
-                          />
-                          <span className="text-slate-200 text-sm">{year}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                  <Select>
+                    <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                      <SelectValue
+                        placeholder={
+                          selectedYears.length === 0
+                            ? "Any Year"
+                            : selectedYears.length === 1
+                              ? selectedYears[0]
+                              : `${selectedYears.length} years selected`
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
+                      <div className="p-2">
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                          {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <div key={year} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`desktop-year-${year}`}
+                                checked={selectedYears.includes(year.toString())}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedYears([...selectedYears, year.toString()])
+                                  } else {
+                                    setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
+                                  }
+                                }}
+                                className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
+                              />
+                              <label htmlFor={`desktop-year-${year}`} className="text-slate-200 text-sm cursor-pointer">
+                                {year}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
