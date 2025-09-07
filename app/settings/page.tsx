@@ -647,7 +647,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground">
       <nav className="flex items-center justify-center gap-8 p-4 border-b border-white/10">
         <a href="/feed" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
           <User className="w-5 h-5" />
@@ -673,8 +673,8 @@ export default function SettingsPage() {
 
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-          <p className="text-muted-foreground">Manage your account settings and preferences</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-gray-300">Manage your account settings and preferences</p>
         </div>
 
         <div className="flex gap-8">
@@ -695,8 +695,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveSection(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                   activeSection === item.id
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-purple-600 text-white"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
@@ -707,12 +707,12 @@ export default function SettingsPage() {
 
           {/* Main Content */}
           <div className="flex-1">
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
               {/* Profile Section */}
               {activeSection === "profile" && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-semibold text-foreground mb-4">Edit Profile</h2>
+                    <h2 className="text-xl font-semibold text-white mb-4">Edit Profile</h2>
 
                     {/* Avatar */}
                     <div className="flex items-center gap-4 mb-6">
@@ -723,7 +723,7 @@ export default function SettingsPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <Label htmlFor="avatar_upload" className="text-foreground">
+                        <Label htmlFor="avatar_upload" className="text-white">
                           Profile Picture
                         </Label>
                         <div className="flex gap-2 mt-2">
@@ -732,7 +732,7 @@ export default function SettingsPage() {
                             variant="outline"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingAvatar}
-                            className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
+                            className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                           >
                             {uploadingAvatar ? "Uploading..." : "Upload Photo"}
                           </Button>
@@ -754,7 +754,7 @@ export default function SettingsPage() {
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-gray-300 mt-1">
                           Upload an image file (max 5MB). Supported formats: JPG, PNG, GIF, WebP
                         </p>
                       </div>
@@ -762,21 +762,21 @@ export default function SettingsPage() {
 
                     {/* Username (read-only) */}
                     <div className="mb-4">
-                      <Label htmlFor="username" className="text-foreground">
+                      <Label htmlFor="username" className="text-white">
                         Username
                       </Label>
                       <Input
                         id="username"
                         value={profile?.username ?? ""}
                         disabled
-                        className="bg-white/5 border-white/10 text-slate-400"
+                        className="bg-white/5 border-white/10 text-gray-300"
                       />
-                      <p className="text-xs text-slate-400 mt-1">Username cannot be changed</p>
+                      <p className="text-xs text-gray-300 mt-1">Username cannot be changed</p>
                     </div>
 
                     {/* Display Name */}
                     <div className="mb-4">
-                      <Label htmlFor="display_name" className="text-foreground">
+                      <Label htmlFor="display_name" className="text-white">
                         Display Name
                       </Label>
                       <Input
@@ -784,7 +784,7 @@ export default function SettingsPage() {
                         placeholder="Your display name"
                         value={formData.display_name}
                         onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                        className="bg-white/5 border-white/10 text-foreground placeholder:text-slate-400"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
                       />
                     </div>
 
@@ -792,11 +792,11 @@ export default function SettingsPage() {
                     <div className="space-y-4 mb-6">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-purple-400" />
-                        <Label className="text-foreground font-medium">Location</Label>
+                        <Label className="text-white font-medium">Location</Label>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="city" className="text-foreground text-sm">
+                          <Label htmlFor="city" className="text-white text-sm">
                             City
                           </Label>
                           <Input
@@ -804,11 +804,11 @@ export default function SettingsPage() {
                             placeholder="New York"
                             value={formData.city}
                             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                            className="bg-white/5 border-white/10 text-foreground placeholder:text-slate-400"
+                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="state" className="text-foreground text-sm">
+                          <Label htmlFor="state" className="text-white text-sm">
                             State
                           </Label>
                           <Input
@@ -819,12 +819,12 @@ export default function SettingsPage() {
                               setFormData({ ...formData, state: e.target.value.toUpperCase().slice(0, 2) })
                             }
                             maxLength={2}
-                            className="bg-white/5 border-white/10 text-foreground placeholder:text-slate-400"
+                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
                           />
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="zip_code" className="text-foreground text-sm">
+                        <Label htmlFor="zip_code" className="text-white text-sm">
                           Zip Code
                         </Label>
                         <Input
@@ -835,7 +835,7 @@ export default function SettingsPage() {
                             setFormData({ ...formData, zip_code: e.target.value.replace(/\D/g, "").slice(0, 5) })
                           }
                           maxLength={5}
-                          className="bg-white/5 border-white/10 text-foreground placeholder:text-slate-400"
+                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
                         />
                       </div>
                     </div>
@@ -844,7 +844,7 @@ export default function SettingsPage() {
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Phone className="h-4 w-4 text-purple-400" />
-                        <Label htmlFor="phone_number" className="text-foreground">
+                        <Label htmlFor="phone_number" className="text-white">
                           Phone Number
                         </Label>
                       </div>
@@ -858,14 +858,14 @@ export default function SettingsPage() {
                           const formatted = value.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")
                           setFormData({ ...formData, phone_number: formatted })
                         }}
-                        className="bg-white/5 border-white/10 text-foreground placeholder:text-slate-400"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-400"
                       />
-                      <p className="text-xs text-slate-400 mt-1">Used for SMS friend invitations</p>
+                      <p className="text-xs text-gray-300 mt-1">Used for SMS friend invitations</p>
                     </div>
 
                     {/* Bio */}
                     <div className="mb-6">
-                      <Label htmlFor="bio" className="text-foreground">
+                      <Label htmlFor="bio" className="text-white">
                         Bio
                       </Label>
                       <Textarea
@@ -873,7 +873,7 @@ export default function SettingsPage() {
                         placeholder="Tell us about yourself and your movie preferences..."
                         value={formData.bio}
                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        className="bg-white/5 border-white/10 text-foreground placeholder:text-slate-400 min-h-[100px]"
+                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-400 min-h-[100px]"
                       />
                     </div>
                   </div>
@@ -883,10 +883,10 @@ export default function SettingsPage() {
               {/* Streaming Services Section */}
               {activeSection === "streaming" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Streaming Services</h2>
+                  <h2 className="text-xl font-semibold text-white mb-4">Streaming Services</h2>
 
                   <div className="space-y-4">
-                    <p className="text-muted-foreground">
+                    <p className="text-gray-300">
                       Select the streaming services you're subscribed to for better recommendations:
                     </p>
                     <div className="grid grid-cols-2 gap-4">
@@ -908,7 +908,7 @@ export default function SettingsPage() {
                             onCheckedChange={(checked) => handleStreamingServiceChange(service, checked as boolean)}
                             className="border-white/20"
                           />
-                          <Label htmlFor={service} className="text-foreground">
+                          <Label htmlFor={service} className="text-white">
                             {service}
                           </Label>
                         </div>
@@ -918,28 +918,28 @@ export default function SettingsPage() {
 
                   {/* Theater Preferences */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-foreground">Theater Preferences</h3>
+                    <h3 className="text-lg font-medium text-white">Theater Preferences</h3>
                     <div>
-                      <Label className="text-foreground mb-3 block">Do you like to go to movie theaters?</Label>
+                      <Label className="text-white mb-3 block">Do you like to go to movie theaters?</Label>
                       <RadioGroup
                         value={formData.likes_theaters}
                         onValueChange={(value) => setFormData({ ...formData, likes_theaters: value })}
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="yes" id="theaters-yes" className="border-white/20" />
-                          <Label htmlFor="theaters-yes" className="text-foreground">
+                          <Label htmlFor="theaters-yes" className="text-white">
                             Yes!
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="sometimes" id="theaters-sometimes" className="border-white/20" />
-                          <Label htmlFor="theaters-sometimes" className="text-foreground">
+                          <Label htmlFor="theaters-sometimes" className="text-white">
                             Sometimes
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="no" id="theaters-no" className="border-white/20" />
-                          <Label htmlFor="theaters-no" className="text-foreground">
+                          <Label htmlFor="theaters-no" className="text-white">
                             Not really
                           </Label>
                         </div>
@@ -948,20 +948,20 @@ export default function SettingsPage() {
 
                     {(formData.likes_theaters === "yes" || formData.likes_theaters === "sometimes") && (
                       <div>
-                        <Label className="text-foreground mb-3 block">When you go to theaters, do you go:</Label>
+                        <Label className="text-white mb-3 block">When you go to theaters, do you go:</Label>
                         <RadioGroup
                           value={formData.theater_companion}
                           onValueChange={(value) => setFormData({ ...formData, theater_companion: value })}
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="friends-family" id="friends-family" className="border-white/20" />
-                            <Label htmlFor="friends-family" className="text-foreground">
+                            <Label htmlFor="friends-family" className="text-white">
                               With friends and family
                             </Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="alone" id="alone" className="border-white/20" />
-                            <Label htmlFor="alone" className="text-foreground">
+                            <Label htmlFor="alone" className="text-white">
                               Alone
                             </Label>
                           </div>
@@ -971,7 +971,7 @@ export default function SettingsPage() {
                               id="significant-other"
                               className="border-white/20"
                             />
-                            <Label htmlFor="significant-other" className="text-foreground">
+                            <Label htmlFor="significant-other" className="text-white">
                               With significant other
                             </Label>
                           </div>
@@ -982,10 +982,10 @@ export default function SettingsPage() {
 
                   {/* Genre Preferences */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-foreground">Genre Preferences</h3>
+                    <h3 className="text-lg font-medium text-white">Genre Preferences</h3>
 
                     <div>
-                      <Label className="text-foreground mb-3 block">Movie Genres</Label>
+                      <Label className="text-white mb-3 block">Movie Genres</Label>
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           "Drama",
@@ -1005,7 +1005,7 @@ export default function SettingsPage() {
                               onCheckedChange={(checked) => handleGenreChange(genre, checked as boolean, "movie")}
                               className="border-white/20"
                             />
-                            <Label htmlFor={`movie-${genre}`} className="text-foreground text-sm">
+                            <Label htmlFor={`movie-${genre}`} className="text-white text-sm">
                               {genre}
                             </Label>
                           </div>
@@ -1014,7 +1014,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <Label className="text-foreground mb-3 block">Series Genres</Label>
+                      <Label className="text-white mb-3 block">Series Genres</Label>
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           "Drama",
@@ -1037,7 +1037,7 @@ export default function SettingsPage() {
                               onCheckedChange={(checked) => handleGenreChange(genre, checked as boolean, "series")}
                               className="border-white/20"
                             />
-                            <Label htmlFor={`series-${genre}`} className="text-foreground text-sm">
+                            <Label htmlFor={`series-${genre}`} className="text-white text-sm">
                               {genre}
                             </Label>
                           </div>
@@ -1051,20 +1051,20 @@ export default function SettingsPage() {
               {/* Moderation Section */}
               {activeSection === "moderation" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Moderation</h2>
+                  <h2 className="text-xl font-semibold text-white mb-4">Moderation</h2>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Volume2 className="h-5 w-5 text-primary" />
+                        <Volume2 className="h-5 w-5 text-purple-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Muted Accounts</h3>
-                          <p className="text-muted-foreground text-sm">Manage accounts you've muted</p>
+                          <h3 className="text-white font-medium">Muted Accounts</h3>
+                          <p className="text-gray-300 text-sm">Manage accounts you've muted</p>
                         </div>
                       </div>
                       <Button
                         variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                         onClick={() => {
                           loadMutedAccounts()
                           setShowMutedDialog(true)
@@ -1074,17 +1074,17 @@ export default function SettingsPage() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
                         <UserX className="h-5 w-5 text-red-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Blocked Accounts</h3>
-                          <p className="text-muted-foreground text-sm">Manage accounts you've blocked</p>
+                          <h3 className="text-white font-medium">Blocked Accounts</h3>
+                          <p className="text-gray-300 text-sm">Manage accounts you've blocked</p>
                         </div>
                       </div>
                       <Button
                         variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                         onClick={() => {
                           loadBlockedAccounts()
                           setShowBlockedDialog(true)
@@ -1101,17 +1101,17 @@ export default function SettingsPage() {
               {activeSection === "appearance" && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-semibold text-foreground mb-4">Appearance</h2>
-                    <p className="text-muted-foreground mb-6">Customize how the app looks and feels</p>
+                    <h2 className="text-xl font-semibold text-white mb-4">Appearance</h2>
+                    <p className="text-gray-300 mb-6">Customize how the app looks and feels</p>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Moon className="h-5 w-5 text-primary" />
+                        <Moon className="h-5 w-5 text-purple-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Dark Mode</h3>
-                          <p className="text-muted-foreground text-sm">Toggle dark mode theme</p>
+                          <h3 className="text-white font-medium">Dark Mode</h3>
+                          <p className="text-gray-300 text-sm">Toggle dark mode theme</p>
                         </div>
                       </div>
                       <Switch checked={darkMode} onCheckedChange={setDarkMode} />
@@ -1123,15 +1123,13 @@ export default function SettingsPage() {
               {/* Notifications Section */}
               {activeSection === "notifications" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Manage Notifications</h2>
+                  <h2 className="text-xl font-semibold text-white mb-4">Manage Notifications</h2>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Friend Requests</h3>
-                        <p className="text-muted-foreground text-sm">
-                          Get notified when someone sends you a friend request
-                        </p>
+                        <h3 className="text-white font-medium">Friend Requests</h3>
+                        <p className="text-gray-300 text-sm">Get notified when someone sends you a friend request</p>
                       </div>
                       <Switch
                         checked={notifications.friend_requests}
@@ -1139,10 +1137,10 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Recommendations</h3>
-                        <p className="text-muted-foreground text-sm">Get notified about new movie recommendations</p>
+                        <h3 className="text-white font-medium">Recommendations</h3>
+                        <p className="text-gray-300 text-sm">Get notified about new movie recommendations</p>
                       </div>
                       <Switch
                         checked={notifications.recommendations}
@@ -1150,10 +1148,10 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Watch Parties</h3>
-                        <p className="text-muted-foreground text-sm">Get notified about watch party invitations</p>
+                        <h3 className="text-white font-medium">Watch Parties</h3>
+                        <p className="text-gray-300 text-sm">Get notified about watch party invitations</p>
                       </div>
                       <Switch
                         checked={notifications.watch_parties}
@@ -1161,12 +1159,10 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Email Updates</h3>
-                        <p className="text-muted-foreground text-sm">
-                          Receive weekly email updates about your activity
-                        </p>
+                        <h3 className="text-white font-medium">Email Updates</h3>
+                        <p className="text-gray-300 text-sm">Receive weekly email updates about your activity</p>
                       </div>
                       <Switch
                         checked={notifications.email_updates}
@@ -1180,13 +1176,13 @@ export default function SettingsPage() {
               {/* Payments Section */}
               {activeSection === "payments" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Payments</h2>
+                  <h2 className="text-xl font-semibold text-white mb-4">Payments</h2>
 
-                  <div className="bg-card rounded-lg border border-border p-6">
+                  <div className="bg-white/5 rounded-lg border border-white/10 p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground">Ad-Free Subscription</h3>
-                        <p className="text-muted-foreground">Enjoy Reel Friends without ads for $2.99/year</p>
+                        <h3 className="text-lg font-semibold text-white">Ad-Free Subscription</h3>
+                        <p className="text-gray-300">Enjoy Reel Friends without ads for $2.99/year</p>
                       </div>
                       <div className="text-right">
                         <div
@@ -1214,7 +1210,7 @@ export default function SettingsPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-gray-300">
                           Your subscription will automatically expire on the date shown above. You can resubscribe at
                           any time to continue enjoying ad-free access.
                         </div>
@@ -1245,52 +1241,46 @@ export default function SettingsPage() {
               {/* Security Section */}
               {activeSection === "security" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Sign-In & Security</h2>
+                  <h2 className="text-xl font-semibold text-white mb-4">Sign-In & Security</h2>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Mail className="h-5 w-5 text-primary" />
+                        <Mail className="h-5 w-5 text-purple-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Email Address</h3>
-                          <p className="text-muted-foreground text-sm">{user?.email}</p>
+                          <h3 className="text-white font-medium">Email Address</h3>
+                          <p className="text-gray-300 text-sm">{user?.email}</p>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
-                      >
+                      <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 bg-transparent">
                         Change
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-primary" />
+                        <Phone className="h-5 w-5 text-purple-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Phone Number</h3>
-                          <p className="text-muted-foreground text-sm">{formData.phone_number || "Not set"}</p>
+                          <h3 className="text-white font-medium">Phone Number</h3>
+                          <p className="text-gray-300 text-sm">{formData.phone_number || "Not set"}</p>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
-                      >
+                      <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 bg-transparent">
                         {formData.phone_number ? "Change" : "Add"}
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Shield className="h-5 w-5 text-primary" />
+                        <Shield className="h-5 w-5 text-purple-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Password</h3>
-                          <p className="text-muted-foreground text-sm">Last changed 30 days ago</p>
+                          <h3 className="text-white font-medium">Password</h3>
+                          <p className="text-gray-300 text-sm">Last changed 30 days ago</p>
                         </div>
                       </div>
                       <Button
                         variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                         onClick={() => setShowPasswordChange(!showPasswordChange)}
                       >
                         {showPasswordChange ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -1299,9 +1289,9 @@ export default function SettingsPage() {
                     </div>
 
                     {showPasswordChange && (
-                      <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                      <div className="p-4 bg-white/5 rounded-lg space-y-4">
                         <div>
-                          <Label htmlFor="current_password" className="text-foreground">
+                          <Label htmlFor="current_password" className="text-white">
                             Current Password
                           </Label>
                           <Input
@@ -1309,11 +1299,11 @@ export default function SettingsPage() {
                             type="password"
                             value={passwordData.current_password}
                             onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-                            className="bg-white/5 border-white/10 text-foreground"
+                            className="bg-white/5 border-white/10 text-white"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="new_password" className="text-foreground">
+                          <Label htmlFor="new_password" className="text-white">
                             New Password
                           </Label>
                           <Input
@@ -1321,11 +1311,11 @@ export default function SettingsPage() {
                             type="password"
                             value={passwordData.new_password}
                             onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                            className="bg-white/5 border-white/10 text-foreground"
+                            className="bg-white/5 border-white/10 text-white"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="confirm_password" className="text-foreground">
+                          <Label htmlFor="confirm_password" className="text-white">
                             Confirm New Password
                           </Label>
                           <Input
@@ -1333,23 +1323,23 @@ export default function SettingsPage() {
                             type="password"
                             value={passwordData.confirm_password}
                             onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                            className="bg-white/5 border-white/10 text-foreground"
+                            className="bg-white/5 border-white/10 text-white"
                           />
                         </div>
-                        <Button onClick={handlePasswordChange} className="bg-primary hover:bg-primary/80">
+                        <Button onClick={handlePasswordChange} className="bg-purple-600 hover:bg-purple-700 text-white">
                           Update Password
                         </Button>
                       </div>
                     )}
 
-                    <Separator className="bg-muted" />
+                    <Separator className="bg-white/20" />
 
-                    <div className="flex items-center justify-between p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                    <div className="flex items-center justify-between p-4 bg-red-500/10 rounded-lg border border-red-500/20">
                       <div className="flex items-center gap-3">
-                        <Trash2 className="h-5 w-5 text-destructive" />
+                        <Trash2 className="h-5 w-5 text-red-400" />
                         <div>
-                          <h3 className="text-foreground font-medium">Delete Account</h3>
-                          <p className="text-muted-foreground text-sm">Permanently delete your account and all data</p>
+                          <h3 className="text-white font-medium">Delete Account</h3>
+                          <p className="text-gray-300 text-sm">Permanently delete your account and all data</p>
                         </div>
                       </div>
                       <Button variant="destructive" onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}>
@@ -1358,15 +1348,15 @@ export default function SettingsPage() {
                     </div>
 
                     {showDeleteConfirm && (
-                      <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-                        <p className="text-foreground mb-4">
+                      <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <p className="text-white mb-4">
                           Are you sure you want to delete your account? This action cannot be undone.
                         </p>
                         <div className="flex gap-3">
                           <Button
                             variant="outline"
                             onClick={() => setShowDeleteConfirm(false)}
-                            className="border-white/20 text-foreground hover:bg-white/10"
+                            className="border-white/20 text-white hover:bg-white/10"
                           >
                             Cancel
                           </Button>
@@ -1383,46 +1373,43 @@ export default function SettingsPage() {
               {/* Legal Section */}
               {activeSection === "legal" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Legal</h2>
+                  <h2 className="text-xl font-semibold text-white mb-4">Legal</h2>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Terms of Service</h3>
-                        <p className="text-muted-foreground text-sm">Read our terms of service</p>
+                        <h3 className="text-white font-medium">Terms of Service</h3>
+                        <p className="text-gray-300 text-sm">Read our terms of service</p>
                       </div>
                       <Button
                         variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                         onClick={() => router.push("/legal/terms")}
                       >
                         View
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Privacy Policy</h3>
-                        <p className="text-muted-foreground text-sm">Read our privacy policy</p>
+                        <h3 className="text-white font-medium">Privacy Policy</h3>
+                        <p className="text-gray-300 text-sm">Read our privacy policy</p>
                       </div>
                       <Button
                         variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
                         onClick={() => router.push("/legal/privacy")}
                       >
                         View
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div>
-                        <h3 className="text-foreground font-medium">Data Export</h3>
-                        <p className="text-muted-foreground text-sm">Download a copy of your data</p>
+                        <h3 className="text-white font-medium">Data Export</h3>
+                        <p className="text-gray-300 text-sm">Download a copy of your data</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="border-white/20 text-foreground hover:bg-white/10 bg-transparent"
-                      >
+                      <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 bg-transparent">
                         Export
                       </Button>
                     </div>

@@ -388,7 +388,7 @@ export default function FriendsPage() {
                               >
                                 <Avatar className="h-8 w-8">
                                   <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
-                                  <AvatarFallback className="text-xs">
+                                  <AvatarFallback className="text-xs bg-purple-600 text-white">
                                     {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
                                   </AvatarFallback>
                                 </Avatar>
@@ -504,7 +504,7 @@ export default function FriendsPage() {
                       <div key={user.id} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
                         <Avatar>
                           <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-purple-600 text-white">
                             {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
                           </AvatarFallback>
                         </Avatar>
@@ -538,7 +538,7 @@ export default function FriendsPage() {
                             src={friend.friend?.avatar_url || "/placeholder.svg"}
                             alt={friend.friend?.display_name}
                           />
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-purple-600 text-white">
                             {friend.friend?.display_name?.charAt(0) || friend.friend?.username?.charAt(0) || "F"}
                           </AvatarFallback>
                         </Avatar>
@@ -580,7 +580,7 @@ export default function FriendsPage() {
                             src={request.user?.avatar_url || "/placeholder.svg"}
                             alt={request.user?.display_name}
                           />
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-purple-600 text-white">
                             {request.user?.display_name?.charAt(0) || request.user?.username?.charAt(0) || "R"}
                           </AvatarFallback>
                         </Avatar>

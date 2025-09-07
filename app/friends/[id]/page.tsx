@@ -124,36 +124,44 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
               </CardHeader>
               <CardContent className="space-y-4">
                 {recommendationsList.list_items.map((item: any) => (
-                  <div key={item.id} className="flex gap-4 p-3 rounded-lg bg-slate-700/60">
-                    <img
-                      src={
-                        item.poster_path
-                          ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
-                          : `/placeholder.svg?height=120&width=80&query=${item.title} poster`
-                      }
-                      alt={item.title}
-                      className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-slate-200 font-semibold mb-1 truncate">{item.title}</h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 text-xs">
-                          {item.media_type === "movie" ? "Movie" : "TV Series"}
-                        </Badge>
-                        {item.release_date && (
-                          <span className="text-slate-400 text-sm">{new Date(item.release_date).getFullYear()}</span>
-                        )}
-                        {item.rating && (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                            <span className="text-sm text-slate-300">{item.rating}</span>
-                          </div>
-                        )}
+                  <Link
+                    key={item.id}
+                    href={`/explore/${item.media_type}/${item.tmdb_id}`}
+                    className="block hover:bg-slate-700/40 rounded-lg transition-colors"
+                  >
+                    <div className="flex gap-4 p-3 rounded-lg bg-slate-700/60">
+                      <img
+                        src={
+                          item.poster_path
+                            ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+                            : `/placeholder.svg?height=120&width=80&query=${item.title} poster`
+                        }
+                        alt={item.title}
+                        className="w-16 h-24 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-slate-200 font-semibold mb-1 truncate hover:text-purple-300 transition-colors">
+                          {item.title}
+                        </h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 text-xs">
+                            {item.media_type === "movie" ? "Movie" : "TV Series"}
+                          </Badge>
+                          {item.release_date && (
+                            <span className="text-slate-400 text-sm">{new Date(item.release_date).getFullYear()}</span>
+                          )}
+                          {item.rating && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                              <span className="text-sm text-slate-300">{item.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                        {item.overview && <p className="text-slate-400 text-sm line-clamp-2 mb-2">{item.overview}</p>}
+                        {item.note && <p className="text-slate-300 text-sm italic">"{item.note}"</p>}
                       </div>
-                      {item.overview && <p className="text-slate-400 text-sm line-clamp-2 mb-2">{item.overview}</p>}
-                      {item.note && <p className="text-slate-300 text-sm italic">"{item.note}"</p>}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </CardContent>
             </Card>
@@ -168,7 +176,7 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                   {wishlist.list_items.slice(0, 12).map((item: any) => (
-                    <div key={item.id} className="group">
+                    <Link key={item.id} href={`/explore/${item.media_type}/${item.tmdb_id}`} className="group block">
                       <img
                         src={
                           item.poster_path
@@ -178,8 +186,10 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
                         alt={item.title}
                         className="w-full aspect-[2/3] rounded-lg object-cover group-hover:scale-105 transition-transform"
                       />
-                      <p className="text-slate-200 text-xs mt-1 truncate">{item.title}</p>
-                    </div>
+                      <p className="text-slate-200 text-xs mt-1 truncate group-hover:text-purple-300 transition-colors">
+                        {item.title}
+                      </p>
+                    </Link>
                   ))}
                 </div>
                 {wishlist.list_items.length > 12 && (
