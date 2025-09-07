@@ -32,8 +32,13 @@ function UserLists({ userId }: { userId: string }) {
             *,
             list_items(
               id,
-              content_id,
-              metadata
+              tmdb_id,
+              title,
+              poster_path,
+              media_type,
+              overview,
+              rating,
+              release_date
             )
           `)
           .eq("user_id", userId)
@@ -119,11 +124,11 @@ function UserLists({ userId }: { userId: string }) {
                   <img
                     key={item.id}
                     src={
-                      item.metadata?.poster_path
-                        ? `https://image.tmdb.org/t/p/w200${item.metadata.poster_path}`
+                      item.poster_path
+                        ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
                         : "/placeholder.svg?height=120&width=80"
                     }
-                    alt={item.metadata?.title || "Movie poster"}
+                    alt={item.title || "Movie poster"}
                     className="w-12 h-18 object-cover rounded flex-shrink-0"
                   />
                 ))}
