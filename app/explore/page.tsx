@@ -554,152 +554,86 @@ export default function ExplorePage() {
                           </Select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Select>
-                              <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
-                                <SelectValue
-                                  placeholder={
-                                    selectedGenres.length === 0
-                                      ? "Any Genre"
-                                      : selectedGenres.length === 1
-                                        ? genres.find((g) => g.id.toString() === selectedGenres[0])?.name || "Any Genre"
-                                        : `${selectedGenres.length} genres selected`
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
-                                <div className="p-2">
-                                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                                    {genres.map((genre) => (
-                                      <div key={genre.id} className="flex items-center space-x-2">
-                                        <input
-                                          type="checkbox"
-                                          id={`genre-${genre.id}`}
-                                          checked={selectedGenres.includes(genre.id.toString())}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setSelectedGenres([...selectedGenres, genre.id.toString()])
-                                            } else {
-                                              setSelectedGenres(
-                                                selectedGenres.filter((id) => id !== genre.id.toString()),
-                                              )
-                                            }
-                                          }}
-                                          className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
-                                        />
-                                        <label
-                                          htmlFor={`genre-${genre.id}`}
-                                          className="text-slate-200 text-sm cursor-pointer"
-                                        >
-                                          {genre.name}
-                                        </label>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Select>
-                              <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
-                                <SelectValue
-                                  placeholder={
-                                    selectedYears.length === 0
-                                      ? "Any Year"
-                                      : selectedYears.length === 1
-                                        ? selectedYears[0]
-                                        : `${selectedYears.length} years selected`
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
-                                <div className="p-2">
-                                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                                    {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                                      <div key={year} className="flex items-center space-x-2">
-                                        <input
-                                          type="checkbox"
-                                          id={`year-${year}`}
-                                          checked={selectedYears.includes(year.toString())}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setSelectedYears([...selectedYears, year.toString()])
-                                            } else {
-                                              setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
-                                            }
-                                          }}
-                                          className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
-                                        />
-                                        <label
-                                          htmlFor={`year-${year}`}
-                                          className="text-slate-200 text-sm cursor-pointer"
-                                        >
-                                          {year}
-                                        </label>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Genre</label>
+                          <Select>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue
+                                placeholder={
+                                  selectedGenres.length === 0
+                                    ? "Any Genre"
+                                    : selectedGenres.length === 1
+                                      ? genres.find((g) => g.id.toString() === selectedGenres[0])?.name || "Any Genre"
+                                      : `${selectedGenres.length} genres selected`
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                              {genres.map((genre) => (
+                                <SelectItem
+                                  key={genre.id}
+                                  value={genre.id.toString()}
+                                  className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                                    selectedGenres.includes(genre.id.toString()) ? "bg-purple-600 text-white" : ""
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    if (selectedGenres.includes(genre.id.toString())) {
+                                      setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
+                                    } else {
+                                      setSelectedGenres([...selectedGenres, genre.id.toString()])
+                                    }
+                                  }}
+                                >
+                                  {selectedGenres.includes(genre.id.toString()) ? "✓ " : ""}
+                                  {genre.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div>
-                          <label className="text-white text-sm mb-2 block">Genre</label>
-                          <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
-                            <div className="space-y-2">
-                              {genres.map((genre) => (
-                                <label key={genre.id} className="flex items-center space-x-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedGenres.includes(genre.id.toString())}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedGenres([...selectedGenres, genre.id.toString()])
-                                      } else {
-                                        setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
-                                      }
-                                    }}
-                                    className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
-                                  />
-                                  <span className="text-slate-200 text-sm">{genre.name}</span>
-                                </label>
+                          <label className="text-white text-sm mb-2 block">Year</label>
+                          <Select>
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                              <SelectValue
+                                placeholder={
+                                  selectedYears.length === 0
+                                    ? "Any Year"
+                                    : selectedYears.length === 1
+                                      ? selectedYears[0]
+                                      : `${selectedYears.length} years selected`
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                              {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                <SelectItem
+                                  key={year}
+                                  value={year.toString()}
+                                  className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                                    selectedYears.includes(year.toString()) ? "bg-purple-600 text-white" : ""
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    if (selectedYears.includes(year.toString())) {
+                                      setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
+                                    } else {
+                                      setSelectedYears([...selectedYears, year.toString()])
+                                    }
+                                  }}
+                                >
+                                  {selectedYears.includes(year.toString()) ? "✓ " : ""}
+                                  {year}
+                                </SelectItem>
                               ))}
-                            </div>
-                          </div>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-white text-sm mb-2 block">Year</label>
-                          <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
-                            <div className="space-y-2">
-                              {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                                <label key={year} className="flex items-center space-x-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedYears.includes(year.toString())}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedYears([...selectedYears, year.toString()])
-                                      } else {
-                                        setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
-                                      }
-                                    }}
-                                    className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
-                                  />
-                                  <span className="text-slate-200 text-sm">{year}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
                         <div>
                           <label className="text-white text-sm mb-2 block">Sort By</label>
                           <Select value={sortBy} onValueChange={setSortBy}>
@@ -734,53 +668,53 @@ export default function ExplorePage() {
                             </SelectContent>
                           </Select>
                         </div>
-                      </div>
 
-                      <div>
-                        <label className="text-white text-sm mb-2 block">Duration</label>
-                        <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
-                          <SelectTrigger
-                            className={
-                              mediaType === "tv"
-                                ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
-                                : "bg-white/10 border-white/20 text-white"
-                            }
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                            <SelectItem
-                              value="any"
-                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                        <div>
+                          <label className="text-white text-sm mb-2 block">Duration</label>
+                          <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
+                            <SelectTrigger
+                              className={
+                                mediaType === "tv"
+                                  ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
+                                  : "bg-white/10 border-white/20 text-white"
+                              }
                             >
-                              Any Duration
-                            </SelectItem>
-                            <SelectItem
-                              value="0-90"
-                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                            >
-                              Under 90 min
-                            </SelectItem>
-                            <SelectItem
-                              value="90-120"
-                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                            >
-                              90-120 min
-                            </SelectItem>
-                            <SelectItem
-                              value="120-150"
-                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                            >
-                              120-150 min
-                            </SelectItem>
-                            <SelectItem
-                              value="150-999"
-                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                            >
-                              Over 150 min
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                              <SelectItem
+                                value="any"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Any Duration
+                              </SelectItem>
+                              <SelectItem
+                                value="0-90"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Under 90 min
+                              </SelectItem>
+                              <SelectItem
+                                value="90-120"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                90-120 min
+                              </SelectItem>
+                              <SelectItem
+                                value="120-150"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                120-150 min
+                              </SelectItem>
+                              <SelectItem
+                                value="150-999"
+                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                              >
+                                Over 150 min
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div>
@@ -952,34 +886,27 @@ export default function ExplorePage() {
                         }
                       />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
-                      <div className="p-2">
-                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                          {genres.map((genre) => (
-                            <div key={genre.id} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`desktop-genre-${genre.id}`}
-                                checked={selectedGenres.includes(genre.id.toString())}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedGenres([...selectedGenres, genre.id.toString()])
-                                  } else {
-                                    setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
-                                  }
-                                }}
-                                className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
-                              />
-                              <label
-                                htmlFor={`desktop-genre-${genre.id}`}
-                                className="text-slate-200 text-sm cursor-pointer"
-                              >
-                                {genre.name}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                    <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 max-h-[200px] overflow-y-auto">
+                      {genres.map((genre) => (
+                        <SelectItem
+                          key={genre.id}
+                          value={genre.id.toString()}
+                          className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                            selectedGenres.includes(genre.id.toString()) ? "bg-purple-600 text-white" : ""
+                          }`}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            if (selectedGenres.includes(genre.id.toString())) {
+                              setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
+                            } else {
+                              setSelectedGenres([...selectedGenres, genre.id.toString()])
+                            }
+                          }}
+                        >
+                          {selectedGenres.includes(genre.id.toString()) ? "✓ " : ""}
+                          {genre.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -997,31 +924,27 @@ export default function ExplorePage() {
                         }
                       />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 focus:ring-purple-500">
-                      <div className="p-2">
-                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                          {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                            <div key={year} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`desktop-year-${year}`}
-                                checked={selectedYears.includes(year.toString())}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedYears([...selectedYears, year.toString()])
-                                  } else {
-                                    setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
-                                  }
-                                }}
-                                className="rounded border-slate-600 bg-slate-700 text-purple-600 focus:ring-purple-500"
-                              />
-                              <label htmlFor={`desktop-year-${year}`} className="text-slate-200 text-sm cursor-pointer">
-                                {year}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                    <SelectContent className="bg-slate-800 border-slate-600 text-slate-200 max-h-[200px] overflow-y-auto">
+                      {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                        <SelectItem
+                          key={year}
+                          value={year.toString()}
+                          className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                            selectedYears.includes(year.toString()) ? "bg-purple-600 text-white" : ""
+                          }`}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            if (selectedYears.includes(year.toString())) {
+                              setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
+                            } else {
+                              setSelectedYears([...selectedYears, year.toString()])
+                            }
+                          }}
+                        >
+                          {selectedYears.includes(year.toString()) ? "✓ " : ""}
+                          {year}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
