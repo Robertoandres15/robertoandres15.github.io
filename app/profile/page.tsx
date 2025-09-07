@@ -126,22 +126,40 @@ export default function ProfilePage() {
         const supabase = createClient()
 
         if (!supabase) {
+          console.error("[v0] Supabase client not available")
           router.push("/auth/login")
           return
         }
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const { data: authData, error: authError } = await supabase.auth.getUser()
 
+        if (authError) {
+          console.error("[v0] Auth error:", authError)
+          router.push("/auth/login")
+          return
+        }
+
+        const user = authData?.user
         if (!user) {
+          console.error("[v0] No authenticated user")
           router.push("/auth/login")
           return
         }
 
-        const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single()
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single()
+
+        if (profileError) {
+          console.error("[v0] Profile fetch error:", profileError)
+          router.push("/auth/login")
+          return
+        }
 
         if (!profile?.username) {
+          console.log("[v0] User needs onboarding")
           router.push("/onboarding")
           return
         }

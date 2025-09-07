@@ -35,10 +35,9 @@ interface Friend {
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [mediaType, setMediaType] = useState<"all" | "movie" | "tv">("all")
-  const [selectedGenre, setSelectedGenre] = useState("0")
-  const [selectedYear, setSelectedYear] = useState("0")
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const [selectedYears, setSelectedYears] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("popularity.desc")
-  const [minRating, setMinRating] = useState("0")
   const [inTheaters, setInTheaters] = useState(false)
   const [selectedStreamingServices, setSelectedStreamingServices] = useState<string[]>([])
   const [movieDuration, setMovieDuration] = useState("any")
@@ -103,16 +102,7 @@ export default function ExplorePage() {
 
       return () => clearTimeout(timeoutId)
     }
-  }, [
-    selectedGenre,
-    selectedYear,
-    sortBy,
-    minRating,
-    selectedStreamingServices,
-    movieDuration,
-    recommendedBy,
-    inTheaters,
-  ])
+  }, [selectedGenres, selectedYears, sortBy, selectedStreamingServices, movieDuration, recommendedBy, inTheaters])
 
   const loadGenres = async () => {
     try {
@@ -264,10 +254,9 @@ export default function ExplorePage() {
         searchQuery: searchQuery.trim(),
         recommendedBy,
         mediaType,
-        selectedGenre,
-        selectedYear,
+        selectedGenres,
+        selectedYears,
         sortBy,
-        minRating,
         inTheaters,
         selectedStreamingServices,
         movieDuration,
@@ -291,10 +280,9 @@ export default function ExplorePage() {
         url = "/api/tmdb/discover"
         console.log("[v0] Using discover API")
         if (mediaType !== "all") params.append("type", mediaType)
-        if (selectedGenre !== "0") params.append("genre", selectedGenre)
-        if (selectedYear !== "0") params.append("year", selectedYear)
+        if (selectedGenres.length > 0) params.append("genre", selectedGenres.join(","))
+        if (selectedYears.length > 0) params.append("year", selectedYears.join(","))
         if (sortBy) params.append("sort_by", sortBy)
-        if (minRating !== "0") params.append("min_rating", minRating)
         if (inTheaters) params.append("in_theaters", "true")
         if (selectedStreamingServices.length > 0) {
           params.append("streaming_services", selectedStreamingServices.join(","))
@@ -374,10 +362,9 @@ export default function ExplorePage() {
   }
 
   const handleClearFilters = () => {
-    setSelectedGenre("0")
-    setSelectedYear("0")
+    setSelectedGenres([])
+    setSelectedYears([])
     setSortBy("popularity.desc")
-    setMinRating("0")
     setMediaType("all")
     setInTheaters(false)
     setSelectedStreamingServices([])
@@ -569,56 +556,54 @@ export default function ExplorePage() {
 
                         <div>
                           <label className="text-white text-sm mb-2 block">Genre</label>
-                          <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                              <SelectItem
-                                value="0"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                Any Genre
-                              </SelectItem>
+                          <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
+                            <div className="space-y-2">
                               {genres.map((genre) => (
-                                <SelectItem
-                                  key={genre.id}
-                                  value={genre.id.toString()}
-                                  className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                                >
-                                  {genre.name}
-                                </SelectItem>
+                                <label key={genre.id} className="flex items-center space-x-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedGenres.includes(genre.id.toString())}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedGenres([...selectedGenres, genre.id.toString()])
+                                      } else {
+                                        setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
+                                      }
+                                    }}
+                                    className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <span className="text-slate-200 text-sm">{genre.name}</span>
+                                </label>
                               ))}
-                            </SelectContent>
-                          </Select>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="text-white text-sm mb-2 block">Year</label>
-                          <Select value={selectedYear} onValueChange={setSelectedYear}>
-                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                              <SelectItem
-                                value="0"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                Any Year
-                              </SelectItem>
+                          <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
+                            <div className="space-y-2">
                               {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                                <SelectItem
-                                  key={year}
-                                  value={year.toString()}
-                                  className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                                >
-                                  {year}
-                                </SelectItem>
+                                <label key={year} className="flex items-center space-x-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedYears.includes(year.toString())}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedYears([...selectedYears, year.toString()])
+                                      } else {
+                                        setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
+                                      }
+                                    }}
+                                    className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <span className="text-slate-200 text-sm">{year}</span>
+                                </label>
                               ))}
-                            </SelectContent>
-                          </Select>
+                            </div>
+                          </div>
                         </div>
 
                         <div>
@@ -657,88 +642,51 @@ export default function ExplorePage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-white text-sm mb-2 block">Min Rating</label>
-                          <Select value={minRating} onValueChange={setMinRating}>
-                            <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                              <SelectItem
-                                value="0"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                Any Rating
-                              </SelectItem>
-                              <SelectItem
-                                value="7"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                7+ Stars
-                              </SelectItem>
-                              <SelectItem
-                                value="8"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                8+ Stars
-                              </SelectItem>
-                              <SelectItem
-                                value="9"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                9+ Stars
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <label className="text-white text-sm mb-2 block">Duration</label>
-                          <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
-                            <SelectTrigger
-                              className={
-                                mediaType === "tv"
-                                  ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
-                                  : "bg-white/10 border-white/20 text-white"
-                              }
+                      <div>
+                        <label className="text-white text-sm mb-2 block">Duration</label>
+                        <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
+                          <SelectTrigger
+                            className={
+                              mediaType === "tv"
+                                ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
+                                : "bg-white/10 border-white/20 text-white"
+                            }
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                            <SelectItem
+                              value="any"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
                             >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                              <SelectItem
-                                value="any"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                Any Duration
-                              </SelectItem>
-                              <SelectItem
-                                value="0-90"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                Under 90 min
-                              </SelectItem>
-                              <SelectItem
-                                value="90-120"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                90-120 min
-                              </SelectItem>
-                              <SelectItem
-                                value="120-150"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                120-150 min
-                              </SelectItem>
-                              <SelectItem
-                                value="150-999"
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                              >
-                                Over 150 min
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                              Any Duration
+                            </SelectItem>
+                            <SelectItem
+                              value="0-90"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              Under 90 min
+                            </SelectItem>
+                            <SelectItem
+                              value="90-120"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              90-120 min
+                            </SelectItem>
+                            <SelectItem
+                              value="120-150"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              120-150 min
+                            </SelectItem>
+                            <SelectItem
+                              value="150-999"
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              Over 150 min
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div>
@@ -899,54 +847,52 @@ export default function ExplorePage() {
 
                 <div>
                   <label className="text-white text-sm mb-2 block">Genre</label>
-                  <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                      <SelectItem
-                        value="0"
-                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                      >
-                        Any Genre
-                      </SelectItem>
+                  <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
+                    <div className="space-y-2">
                       {genres.map((genre) => (
-                        <SelectItem
-                          key={genre.id}
-                          value={genre.id.toString()}
-                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                        >
-                          {genre.name}
-                        </SelectItem>
+                        <label key={genre.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedGenres.includes(genre.id.toString())}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedGenres([...selectedGenres, genre.id.toString()])
+                              } else {
+                                setSelectedGenres(selectedGenres.filter((id) => id !== genre.id.toString()))
+                              }
+                            }}
+                            className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-slate-200 text-sm">{genre.name}</span>
+                        </label>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label className="text-white text-sm mb-2 block">Year</label>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
-                      <SelectItem
-                        value="0"
-                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                      >
-                        Any Year
-                      </SelectItem>
+                  <div className="bg-white/10 border border-white/20 rounded-md p-3 max-h-[200px] overflow-y-auto">
+                    <div className="space-y-2">
                       {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                        <SelectItem
-                          key={year}
-                          value={year.toString()}
-                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                        >
-                          {year}
-                        </SelectItem>
+                        <label key={year} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedYears.includes(year.toString())}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedYears([...selectedYears, year.toString()])
+                              } else {
+                                setSelectedYears(selectedYears.filter((y) => y !== year.toString()))
+                              }
+                            }}
+                            className="rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-slate-200 text-sm">{year}</span>
+                        </label>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -979,41 +925,6 @@ export default function ExplorePage() {
                         className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
                       >
                         A-Z
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-white text-sm mb-2 block">Min Rating</label>
-                  <Select value={minRating} onValueChange={setMinRating}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
-                      <SelectItem
-                        value="0"
-                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                      >
-                        Any Rating
-                      </SelectItem>
-                      <SelectItem
-                        value="7"
-                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                      >
-                        7+ Stars
-                      </SelectItem>
-                      <SelectItem
-                        value="8"
-                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                      >
-                        8+ Stars
-                      </SelectItem>
-                      <SelectItem
-                        value="9"
-                        className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                      >
-                        9+ Stars
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -1144,10 +1055,9 @@ export default function ExplorePage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setSelectedGenre("0")
-                    setSelectedYear("0")
+                    setSelectedGenres([])
+                    setSelectedYears([])
                     setSortBy("popularity.desc")
-                    setMinRating("0")
                     setMediaType("all")
                     setInTheaters(false)
                     setSelectedStreamingServices([])
