@@ -11,98 +11,134 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
-async function UserLists({ userId }: { userId: string }) {
-  try {
-    const supabase = createClient()
-    if (!supabase) {
-      return (
-        <div className="text-center py-8">
-          <List className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-          <p className="text-slate-400">Unable to load lists</p>
-        </div>
-      )
+function UserLists({ userId }: { userId: string }) {
+  const [lists, setLists] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadLists() {
+      try {
+        console.log("[v0] Loading user lists for:", userId)
+        const supabase = createClient()
+        if (!supabase) {
+          setError("Unable to connect to database")
+          return
+        }
+
+        const { data: listsData, error: listsError } = await supabase
+          .from("lists")
+          .select(`
+            *,
+            list_items(
+              id,
+              content_id,
+              metadata
+            )
+          `)
+          .eq("user_id", userId)
+          .eq("is_public", true)
+          .order("created_at", { ascending: false })
+
+        if (listsError) {
+          console.error("[v0] Lists fetch error:", listsError)
+          setError("Failed to load lists")
+          return
+        }
+
+        console.log("[v0] User lists loaded:", listsData?.length || 0)
+        setLists(listsData || [])
+      } catch (error) {
+        console.error("[v0] UserLists error:", error)
+        setError("Unable to load lists")
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const { data: lists } = await supabase
-      .from("lists")
-      .select(`
-        *,
-        list_items(
-          id,
-          content_id,
-          metadata
-        )
-      `)
-      .eq("user_id", userId)
-      .eq("is_public", true)
-      .order("created_at", { ascending: false })
-
-    if (!lists || lists.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <List className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-          <p className="text-slate-400">No public lists yet</p>
-          <Button asChild className="mt-4 bg-purple-600 hover:bg-purple-700">
-            <Link href="/lists">Create Your First List</Link>
-          </Button>
-        </div>
-      )
+    if (userId) {
+      loadLists()
     }
+  }, [userId])
 
-    return (
-      <div className="grid gap-4">
-        {lists.map((list) => (
-          <Card key={list.id} className="bg-white/5 border-white/10 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white text-lg">{list.name}</CardTitle>
-                <Badge variant="secondary" className="bg-purple-600/20 text-purple-300">
-                  {list.type}
-                </Badge>
-              </div>
-              {list.description && <p className="text-slate-400 text-sm">{list.description}</p>}
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <span>{list.list_items?.length || 0} items</span>
-                <span>•</span>
-                <span>{new Date(list.created_at).toLocaleDateString()}</span>
-              </div>
-              {list.list_items && list.list_items.length > 0 && (
-                <div className="flex gap-2 mt-3 overflow-x-auto">
-                  {list.list_items.slice(0, 4).map((item) => (
-                    <img
-                      key={item.id}
-                      src={
-                        item.metadata?.poster_path
-                          ? `https://image.tmdb.org/t/p/w200${item.metadata.poster_path}`
-                          : "/placeholder.svg?height=120&width=80"
-                      }
-                      alt={item.metadata?.title || "Movie poster"}
-                      className="w-12 h-18 object-cover rounded flex-shrink-0"
-                    />
-                  ))}
-                  {list.list_items.length > 4 && (
-                    <div className="w-12 h-18 bg-white/10 rounded flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-white">+{list.list_items.length - 4}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  } catch (error) {
-    console.error("[v0] UserLists error:", error)
+  if (loading) {
     return (
       <div className="text-center py-8">
-        <List className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-        <p className="text-slate-400">Unable to load lists</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+        <p className="text-slate-400">Loading lists...</p>
       </div>
     )
   }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <List className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+        <p className="text-slate-400">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-4 bg-purple-600 hover:bg-purple-700">
+          Try Again
+        </Button>
+      </div>
+    )
+  }
+
+  if (!lists || lists.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <List className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+        <p className="text-slate-400">No public lists yet</p>
+        <Button asChild className="mt-4 bg-purple-600 hover:bg-purple-700">
+          <Link href="/lists">Create Your First List</Link>
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-4">
+      {lists.map((list) => (
+        <Card key={list.id} className="bg-white/5 border-white/10 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white text-lg">{list.name}</CardTitle>
+              <Badge variant="secondary" className="bg-purple-600/20 text-purple-300">
+                {list.type}
+              </Badge>
+            </div>
+            {list.description && <p className="text-slate-400 text-sm">{list.description}</p>}
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <span>{list.list_items?.length || 0} items</span>
+              <span>•</span>
+              <span>{new Date(list.created_at).toLocaleDateString()}</span>
+            </div>
+            {list.list_items && list.list_items.length > 0 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto">
+                {list.list_items.slice(0, 4).map((item) => (
+                  <img
+                    key={item.id}
+                    src={
+                      item.metadata?.poster_path
+                        ? `https://image.tmdb.org/t/p/w200${item.metadata.poster_path}`
+                        : "/placeholder.svg?height=120&width=80"
+                    }
+                    alt={item.metadata?.title || "Movie poster"}
+                    className="w-12 h-18 object-cover rounded flex-shrink-0"
+                  />
+                ))}
+                {list.list_items.length > 4 && (
+                  <div className="w-12 h-18 bg-white/10 rounded flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs text-white">+{list.list_items.length - 4}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 }
 
 interface ProfileData {
@@ -118,16 +154,19 @@ interface ProfileData {
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
     async function loadProfile() {
       try {
+        console.log("[v0] Loading profile page")
         const supabase = createClient()
 
         if (!supabase) {
           console.error("[v0] Supabase client not available")
-          router.push("/auth/login")
+          setError("Unable to connect to database")
+          setLoading(false)
           return
         }
 
@@ -135,16 +174,20 @@ export default function ProfilePage() {
 
         if (authError) {
           console.error("[v0] Auth error:", authError)
-          router.push("/auth/login")
+          setError("Authentication failed")
+          setLoading(false)
           return
         }
 
         const user = authData?.user
         if (!user) {
           console.error("[v0] No authenticated user")
-          router.push("/auth/login")
+          setError("Please log in to view your profile")
+          setLoading(false)
           return
         }
+
+        console.log("[v0] User authenticated:", user.id)
 
         const { data: profile, error: profileError } = await supabase
           .from("users")
@@ -154,7 +197,8 @@ export default function ProfilePage() {
 
         if (profileError) {
           console.error("[v0] Profile fetch error:", profileError)
-          router.push("/auth/login")
+          setError("Failed to load profile")
+          setLoading(false)
           return
         }
 
@@ -163,6 +207,8 @@ export default function ProfilePage() {
           router.push("/onboarding")
           return
         }
+
+        console.log("[v0] Profile loaded:", profile.username)
 
         const [listsResult, friendsResult, activitiesResult] = await Promise.allSettled([
           supabase.from("lists").select("id").eq("user_id", user.id),
@@ -176,10 +222,11 @@ export default function ProfilePage() {
           activities: activitiesResult.status === "fulfilled" ? activitiesResult.value.data?.length || 0 : 0,
         }
 
+        console.log("[v0] Profile stats:", stats)
         setProfileData({ user, profile, stats })
       } catch (error) {
         console.error("[v0] Profile page error:", error)
-        router.push("/auth/login")
+        setError("An unexpected error occurred")
       } finally {
         setLoading(false)
       }
@@ -191,13 +238,42 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="text-white">Loading your profile...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">{error}</div>
+          <div className="space-x-4">
+            <Button onClick={() => window.location.reload()} className="bg-purple-600 hover:bg-purple-700">
+              Try Again
+            </Button>
+            <Button
+              onClick={() => router.push("/feed")}
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Go to Feed
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (!profileData) {
-    return null
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white">Profile not found</div>
+      </div>
+    )
   }
 
   const { user, profile, stats } = profileData
