@@ -169,7 +169,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
 
   const relevantLists = userLists.filter((list) => list.type === actionType)
   const hasMultipleLists = relevantLists.length > 1
-  const buttonIcon = actionType === "wishlist" ? Plus : Heart
+  const ButtonIcon = actionType === "wishlist" ? Plus : Heart
   const buttonText = actionType === "wishlist" ? "Add to Wishlist" : "Recommend"
 
   // If user has 0 or 1 list, use simple button
@@ -181,7 +181,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
         className={actionType === "wishlist" ? "bg-purple-600 hover:bg-purple-700" : ""}
         variant={actionType === "wishlist" ? "default" : "outline"}
       >
-        <buttonIcon className="h-4 w-4 mr-2" />
+        <ButtonIcon className="h-4 w-4 mr-2" />
         {isLoading ? "Adding..." : buttonText}
       </Button>
     )
@@ -195,7 +195,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
           className={actionType === "wishlist" ? "bg-purple-600 hover:bg-purple-700" : ""}
           variant={actionType === "wishlist" ? "default" : "outline"}
         >
-          <buttonIcon className="h-4 w-4 mr-2" />
+          <ButtonIcon className="h-4 w-4 mr-2" />
           {buttonText}
           <ChevronDown className="h-4 w-4 ml-2" />
         </Button>
