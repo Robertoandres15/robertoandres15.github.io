@@ -178,8 +178,12 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
       <Button
         onClick={() => addToList()}
         disabled={isLoading}
-        className={actionType === "wishlist" ? "bg-purple-600 hover:bg-purple-700" : ""}
-        variant={actionType === "wishlist" ? "default" : "outline"}
+        className={
+          actionType === "wishlist"
+            ? "bg-purple-600 hover:bg-purple-700"
+            : "bg-slate-700 hover:bg-slate-600 border-white/20 text-white"
+        }
+        variant="default"
       >
         <ButtonIcon className="h-4 w-4 mr-2" />
         {isLoading ? "Adding..." : buttonText}
@@ -192,8 +196,12 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button
-          className={actionType === "wishlist" ? "bg-purple-600 hover:bg-purple-700" : ""}
-          variant={actionType === "wishlist" ? "default" : "outline"}
+          className={
+            actionType === "wishlist"
+              ? "bg-purple-600 hover:bg-purple-700"
+              : "bg-slate-700 hover:bg-slate-600 border-white/20 text-white"
+          }
+          variant="default"
         >
           <ButtonIcon className="h-4 w-4 mr-2" />
           {buttonText}
