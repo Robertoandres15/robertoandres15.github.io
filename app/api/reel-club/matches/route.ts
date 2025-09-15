@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         overview,
         release_date,
         lists!inner(type, user_id),
-        users:lists(id, username, display_name, avatar_url)
+        lists(users(id, username, display_name, avatar_url))
       `)
       .in("lists.user_id", friendIds)
       .eq("lists.type", "wishlist")
@@ -105,10 +105,10 @@ export async function GET(request: NextRequest) {
             overview: userItem.overview,
             release_date: userItem.release_date,
             matched_friends: matchingFriends.map((f) => ({
-              id: f.users.id,
-              username: f.users.username,
-              display_name: f.users.display_name,
-              avatar_url: f.users.avatar_url,
+              id: f.lists.users.id,
+              username: f.lists.users.username,
+              display_name: f.lists.users.display_name,
+              avatar_url: f.lists.users.avatar_url,
             })),
             watch_party: existingParty || null,
           })
