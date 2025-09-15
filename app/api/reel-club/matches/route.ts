@@ -197,12 +197,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { data: userWishlistLists } = await supabase
+      .from("lists")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("type", "wishlist")
+
+    if (!userWishlistLists || userWishlistLists.length === 0) {
+      return NextResponse.json({ error: "No wishlist found" }, { status: 400 })
+    }
+
+    const { data: listItem } = await supabase
+      .from("list_items")
+      .select("id")
+      .in(
+        "list_id",
+        userWishlistLists.map((l) => l.id),
+      )
+      .eq("tmdb_id", tmdb_id)
+      .eq("media_type", media_type)
+      .single()
+
+    if (!listItem) {
+      return NextResponse.json({ error: "Item not found in wishlist" }, { status: 400 })
+    }
+
     const serviceSupabase = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
 
-    // Create watch party using service role client
     const { data: watchParty, error: partyError } = await serviceSupabase
       .from("watch_parties")
       .insert({
@@ -211,6 +235,7 @@ export async function POST(request: NextRequest) {
         media_type,
         title,
         poster_path,
+        item_id: listItem.id, // Added the required item_id field
         status: "pending",
       })
       .select()
