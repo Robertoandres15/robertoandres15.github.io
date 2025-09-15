@@ -216,7 +216,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="text-sm text-gray-300 mb-4">Select which list to add "{title}" to:</div>
+          <div className="text-sm text-slate-300 mb-4">Select which list to add "{title}" to:</div>
 
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {relevantLists.map((list) => (
@@ -224,12 +224,12 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
                 key={list.id}
                 onClick={() => addToList(list.id)}
                 disabled={isLoading}
-                className="w-full text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10 hover:border-white/20"
+                className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-slate-600/50 hover:border-slate-500/50"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-white">{list.name}</div>
-                    <div className="text-sm text-gray-400 flex items-center gap-2">
+                    <div className="text-sm text-slate-300 flex items-center gap-2">
                       <ListIcon className="h-3 w-3" />
                       {list.type}
                       {list.is_public && (
@@ -244,7 +244,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
             ))}
           </div>
 
-          <div className="pt-4 border-t border-white/10">
+          <div className="pt-4 border-t border-slate-600/50">
             <CreateNewListForm actionType={actionType} onCreateList={createNewList} isLoading={isLoading} />
           </div>
         </div>
@@ -294,7 +294,7 @@ function CreateNewListForm({ actionType, onCreateList, isLoading }: CreateNewLis
         value={newListName}
         onChange={(e) => setNewListName(e.target.value)}
         placeholder={`Enter ${actionType} name...`}
-        className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         autoFocus
       />
       <div className="flex gap-2">
@@ -309,7 +309,7 @@ function CreateNewListForm({ actionType, onCreateList, isLoading }: CreateNewLis
           type="button"
           onClick={() => setIsCreating(false)}
           variant="outline"
-          className="border-white/20 text-white hover:bg-white/10"
+          className="border-slate-600 text-slate-200 hover:bg-slate-700/50"
         >
           Cancel
         </Button>

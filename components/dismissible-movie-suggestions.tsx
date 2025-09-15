@@ -365,7 +365,7 @@ export function DismissibleMovieSuggestions({
       {suggestions.map((movie: Movie) => (
         <div
           key={`${movie.id}-${movie.title}`}
-          className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors relative"
+          className="bg-slate-800/50 rounded-lg p-4 hover:bg-slate-700/50 transition-colors relative border border-slate-700/50"
         >
           <Button
             size="sm"
@@ -396,16 +396,16 @@ export function DismissibleMovieSuggestions({
             </div>
             <div className="flex-1 min-w-0 text-center sm:text-left">
               <h3 className="text-white font-semibold mb-2 text-lg sm:text-base leading-tight">{movie.title}</h3>
-              <p className="text-slate-400 text-sm mb-3 line-clamp-3 sm:line-clamp-2 leading-relaxed">
+              <p className="text-slate-300 text-sm mb-3 line-clamp-3 sm:line-clamp-2 leading-relaxed">
                 {movie.overview}
               </p>
               <div className="flex items-center justify-center sm:justify-start gap-2 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                  <span className="text-sm text-slate-300">{movie.vote_average?.toFixed(1)}</span>
+                  <span className="text-sm text-slate-200">{movie.vote_average?.toFixed(1)}</span>
                 </div>
-                <span className="text-slate-500">•</span>
-                <span className="text-sm text-slate-400">{new Date(movie.release_date).getFullYear()}</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-sm text-slate-300">{new Date(movie.release_date).getFullYear()}</span>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                 <Button
@@ -438,7 +438,7 @@ export function DismissibleMovieSuggestions({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
+                  className="border-slate-600 text-slate-200 hover:bg-slate-700/50 bg-transparent min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
                 >
                   View Details
                 </Button>
