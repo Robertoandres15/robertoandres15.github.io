@@ -62,16 +62,18 @@ export async function GET(request: NextRequest) {
         poster_path,
         overview,
         release_date,
-        lists!inner(
-          type,
-          user_id,
-          users!inner(id, username, display_name, avatar_url)
-        )
+        lists!inner(type, user_id)
       `)
       .in("lists.user_id", friendIds)
       .eq("lists.type", "wishlist")
 
     console.log("[v0] Matches API - Friends wishlist items:", friendsWishlist?.length || 0)
+
+    // Get user info for matched friends separately
+    const { data: friendsInfo } = await supabase
+      .from("users")
+      .select("id, username, display_name, avatar_url")
+      .in("id", friendIds)
 
     // Find shared items (matches)
     const matches = []
@@ -107,12 +109,15 @@ export async function GET(request: NextRequest) {
             poster_path: userItem.poster_path,
             overview: userItem.overview,
             release_date: userItem.release_date,
-            matched_friends: matchingFriends.map((f) => ({
-              id: f.lists.users.id,
-              username: f.lists.users.username,
-              display_name: f.lists.users.display_name,
-              avatar_url: f.lists.users.avatar_url,
-            })),
+            matched_friends: matchingFriends.map((f) => {
+              const friendInfo = friendsInfo?.find((friend) => friend.id === f.lists.user_id)
+              return {
+                id: f.lists.user_id,
+                username: friendInfo?.username || "Unknown",
+                display_name: friendInfo?.display_name || "Unknown",
+                avatar_url: friendInfo?.avatar_url || null,
+              }
+            }),
             watch_party: existingParty || null,
           })
         }
