@@ -7,198 +7,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { MobileNavigation } from "@/components/mobile-navigation"
 import { DismissibleMovieSuggestions } from "@/components/dismissible-movie-suggestions"
-
-async function ReelClub() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/10 flex items-center justify-center">
-          <Users className="h-8 w-8 text-purple-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-white mb-2">Reel Club</h3>
-        <p className="text-slate-400 mb-4">Connect with friends to discover movies you both want to watch together.</p>
-        <Button asChild className="bg-purple-600 hover:bg-purple-700">
-          <Link href="/explore">Explore Movies</Link>
-        </Button>
-      </div>
-    )
-  }
-
-  let supabase
-  try {
-    supabase = await createClient()
-  } catch (error) {
-    return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/10 flex items-center justify-center">
-          <Users className="h-8 w-8 text-purple-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-white mb-2">Reel Club</h3>
-        <p className="text-slate-400 mb-4">Connect with friends to discover movies you both want to watch together.</p>
-        <Button asChild className="bg-purple-600 hover:bg-purple-700">
-          <Link href="/explore">Explore Movies</Link>
-        </Button>
-      </div>
-    )
-  }
-
-  if (!supabase) {
-    return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
-          <Users className="h-8 w-8 text-red-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-white mb-2">Configuration Issue</h3>
-        <p className="text-slate-400 mb-4">
-          Supabase integration is not properly configured. Please check your Project Settings.
-        </p>
-        <Button asChild className="bg-purple-600 hover:bg-purple-700">
-          <Link href="/explore">Explore Movies</Link>
-        </Button>
-      </div>
-    )
-  }
-
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/10 flex items-center justify-center">
-            <Users className="h-8 w-8 text-purple-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">Sign in to see Reel Club</h3>
-          <p className="text-slate-400 mb-4">
-            Connect with friends and discover movies you both want to watch together.
-          </p>
-          <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link href="/auth/sign-in">Sign In</Link>
-          </Button>
-        </div>
-      )
-    }
-
-    // Get user's friends
-    const { data: friendships } = await supabase
-      .from("friendships")
-      .select("friend_id")
-      .eq("user_id", user.id)
-      .eq("status", "accepted")
-
-    if (!friendships || friendships.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/10 flex items-center justify-center">
-            <Users className="h-8 w-8 text-purple-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No friends yet!</h3>
-          <p className="text-slate-400 mb-4">Add friends to discover movies you both want to watch together.</p>
-          <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link href="/friends">Find Friends</Link>
-          </Button>
-        </div>
-      )
-    }
-
-    const friendIds = friendships.map((f) => f.friend_id)
-
-    // Get user's wishlist items
-    const { data: userWishlist } = await supabase
-      .from("list_items")
-      .select(`
-        tmdb_id,
-        media_type,
-        title,
-        poster_path,
-        lists!inner(type, user_id)
-      `)
-      .eq("lists.user_id", user.id)
-      .eq("lists.type", "wishlist")
-
-    // Get friends' wishlist items
-    const { data: friendsWishlist } = await supabase
-      .from("list_items")
-      .select(`
-        tmdb_id,
-        media_type,
-        title,
-        poster_path,
-        lists!inner(type, user_id),
-        users:lists(username, display_name, avatar_url)
-      `)
-      .in("lists.user_id", friendIds)
-      .eq("lists.type", "wishlist")
-
-    // Find shared items
-    const sharedItems =
-      userWishlist?.filter((userItem) =>
-        friendsWishlist?.some(
-          (friendItem) => friendItem.tmdb_id === userItem.tmdb_id && friendItem.media_type === userItem.media_type,
-        ),
-      ) || []
-
-    if (sharedItems.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/10 flex items-center justify-center">
-            <Users className="h-8 w-8 text-purple-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No shared interests yet!</h3>
-          <p className="text-slate-400 mb-4">Add movies to your wishlist to find matches with your friends.</p>
-          <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link href="/explore">Explore Movies</Link>
-          </Button>
-        </div>
-      )
-    }
-
-    return (
-      <div className="space-y-4">
-        {sharedItems.map((item) => {
-          const friendsWithItem =
-            friendsWishlist?.filter((f) => f.tmdb_id === item.tmdb_id && f.media_type === item.media_type) || []
-
-          return (
-            <div key={`${item.tmdb_id}-${item.media_type}`} className="bg-white/5 rounded-lg p-4">
-              <div className="flex gap-4">
-                <img
-                  src={
-                    item.poster_path
-                      ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
-                      : `/placeholder.svg?height=120&width=80&query=${item.title} poster`
-                  }
-                  alt={item.title}
-                  className="w-20 h-30 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="text-white font-semibold mb-2">{item.title}</h3>
-                  <p className="text-slate-400 text-sm mb-3">
-                    Also on {friendsWithItem.map((f) => f.users?.display_name || f.users?.username).join(", ")}'s
-                    wishlist
-                  </p>
-                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                    <Users className="h-4 w-4 mr-2" />
-                    Watch Together
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    )
-  } catch (error) {
-    console.error("ReelClub error:", error)
-    return (
-      <div className="text-center py-12">
-        <p className="text-slate-400">Error loading Reel Club content</p>
-      </div>
-    )
-  }
-}
+import { ReelClubMatches } from "@/components/reel-club-matches"
 
 async function AIMovieSuggestions() {
   let supabase
@@ -208,31 +17,29 @@ async function AIMovieSuggestions() {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       supabase = await createClient()
-      if (supabase) {
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser()
-        user = authUser
-
-        if (user) {
-          const { data: profile } = await supabase
-            .from("users")
-            .select(`
-              streaming_services,
-              theater_frequency,
-              series_preference,
-              movie_genres,
-              series_genres
-            `)
-            .eq("id", user.id)
-            .single()
-
-          userProfile = profile
-        }
-      }
     } catch (error) {
-      // Silently handle Supabase errors and use fallback
       supabase = null
+    }
+  }
+
+  if (supabase) {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser()
+    user = authUser
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("username, display_name, city, state, zip_code")
+        .eq("id", user.id)
+        .single()
+
+      userProfile = profile
+
+      if (!profile?.username || !profile?.display_name || !profile?.city || !profile?.state || !profile?.zip_code) {
+        redirect("/onboarding")
+      }
     }
   }
 
@@ -486,7 +293,6 @@ export default async function FeedPage() {
     }
   }
 
-  const reelClubContent = await ReelClub()
   const aiMovieSuggestionsContent = await AIMovieSuggestions()
 
   return (
@@ -553,7 +359,7 @@ export default async function FeedPage() {
             </TabsContent>
 
             <TabsContent value="reel-club" className="mt-6">
-              {reelClubContent}
+              <ReelClubMatches />
             </TabsContent>
 
             <TabsContent value="recommendations" className="mt-6">
