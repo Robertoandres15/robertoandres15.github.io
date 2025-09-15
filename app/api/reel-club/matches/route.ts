@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
+    console.log("[v0] Matches API called")
     const supabase = await createClient()
 
     // Get current user
@@ -11,8 +12,11 @@ export async function GET(request: NextRequest) {
       error: userError,
     } = await supabase.auth.getUser()
     if (userError || !user) {
+      console.log("[v0] Matches API - No user found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log("[v0] Matches API - User ID:", user.id)
 
     // Get user's friends
     const { data: friendships } = await supabase
@@ -21,11 +25,15 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .eq("status", "accepted")
 
+    console.log("[v0] Matches API - Friendships found:", friendships?.length || 0)
+
     if (!friendships || friendships.length === 0) {
+      console.log("[v0] Matches API - No friends found")
       return NextResponse.json({ matches: [] })
     }
 
     const friendIds = friendships.map((f) => f.friend_id)
+    console.log("[v0] Matches API - Friend IDs:", friendIds)
 
     // Get user's wishlist items
     const { data: userWishlist } = await supabase
@@ -41,6 +49,8 @@ export async function GET(request: NextRequest) {
       `)
       .eq("lists.user_id", user.id)
       .eq("lists.type", "wishlist")
+
+    console.log("[v0] Matches API - User wishlist items:", userWishlist?.length || 0)
 
     // Get friends' wishlist items
     const { data: friendsWishlist } = await supabase
@@ -58,15 +68,21 @@ export async function GET(request: NextRequest) {
       .in("lists.user_id", friendIds)
       .eq("lists.type", "wishlist")
 
+    console.log("[v0] Matches API - Friends wishlist items:", friendsWishlist?.length || 0)
+
     // Find shared items (matches)
     const matches = []
     if (userWishlist && friendsWishlist) {
+      console.log("[v0] Matches API - Starting match detection...")
       for (const userItem of userWishlist) {
+        console.log("[v0] Matches API - Checking user item:", userItem.title, userItem.tmdb_id)
         const matchingFriends = friendsWishlist.filter(
           (friendItem) => friendItem.tmdb_id === userItem.tmdb_id && friendItem.media_type === userItem.media_type,
         )
 
         if (matchingFriends.length > 0) {
+          console.log("[v0] Matches API - Found match for:", userItem.title, "with", matchingFriends.length, "friends")
+
           // Check if there's already an active watch party for this item
           const { data: existingParty } = await supabase
             .from("watch_parties")
@@ -100,9 +116,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log("[v0] Matches API - Total matches found:", matches.length)
     return NextResponse.json({ matches })
   } catch (error) {
-    console.error("Matches API error:", error)
+    console.error("[v0] Matches API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

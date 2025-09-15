@@ -33,15 +33,21 @@ export function useRealtimeMatches() {
 
   const fetchMatches = async () => {
     try {
+      console.log("[v0] Fetching matches from API...")
       const response = await fetch("/api/reel-club/matches")
+      console.log("[v0] Matches API response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Matches API response data:", data)
         setMatches(data.matches || [])
       } else {
+        const errorText = await response.text()
+        console.log("[v0] Matches API error:", errorText)
         setError("Failed to fetch matches")
       }
     } catch (err) {
-      console.error("Error fetching matches:", err)
+      console.error("[v0] Error fetching matches:", err)
       setError("Failed to fetch matches")
     } finally {
       setLoading(false)
