@@ -79,6 +79,20 @@ export async function GET(request: NextRequest) {
     )
     console.log("[v0] Matches API - Friends wishlist list details:", JSON.stringify(friendsWishlistLists))
 
+    const { data: debugListItems, error: debugError } = await supabase
+      .from("list_items")
+      .select("*")
+      .in(
+        "list_id",
+        friendsWishlistLists.map((l) => l.id),
+      )
+
+    console.log("[v0] Matches API - Debug: Raw list_items query result:", debugListItems?.length || 0)
+    console.log("[v0] Matches API - Debug: Raw list_items data:", JSON.stringify(debugListItems))
+    if (debugError) {
+      console.log("[v0] Matches API - Debug: Raw list_items error:", debugError)
+    }
+
     // Get friends' wishlist items
     const { data: friendsWishlist, error: friendsWishlistError } = await supabase
       .from("list_items")
