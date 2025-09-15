@@ -35,41 +35,56 @@ export async function GET(request: NextRequest) {
     const friendIds = friendships.map((f) => f.friend_id)
     console.log("[v0] Matches API - Friend IDs:", friendIds)
 
+    // First get user's wishlist lists
+    const { data: userWishlistLists } = await supabase
+      .from("lists")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("type", "wishlist")
+
+    console.log("[v0] Matches API - User wishlist lists:", userWishlistLists?.length || 0)
+
+    if (!userWishlistLists || userWishlistLists.length === 0) {
+      console.log("[v0] Matches API - No user wishlist found")
+      return NextResponse.json({ matches: [] })
+    }
+
     // Get user's wishlist items
     const { data: userWishlist } = await supabase
       .from("list_items")
-      .select(`
-        tmdb_id,
-        media_type,
-        title,
-        poster_path,
-        overview,
-        release_date,
-        lists!inner(type, user_id)
-      `)
-      .eq("lists.user_id", user.id)
-      .eq("lists.type", "wishlist")
+      .select("tmdb_id, media_type, title, poster_path, overview, release_date")
+      .in(
+        "list_id",
+        userWishlistLists.map((l) => l.id),
+      )
 
     console.log("[v0] Matches API - User wishlist items:", userWishlist?.length || 0)
+
+    const { data: friendsWishlistLists } = await supabase
+      .from("lists")
+      .select("id, user_id")
+      .in("user_id", friendIds)
+      .eq("type", "wishlist")
+
+    console.log("[v0] Matches API - Friends wishlist lists:", friendsWishlistLists?.length || 0)
+
+    if (!friendsWishlistLists || friendsWishlistLists.length === 0) {
+      console.log("[v0] Matches API - No friends wishlists found")
+      return NextResponse.json({ matches: [] })
+    }
 
     // Get friends' wishlist items
     const { data: friendsWishlist } = await supabase
       .from("list_items")
-      .select(`
-        tmdb_id,
-        media_type,
-        title,
-        poster_path,
-        overview,
-        release_date,
-        lists!inner(type, user_id)
-      `)
-      .in("lists.user_id", friendIds)
-      .eq("lists.type", "wishlist")
+      .select("tmdb_id, media_type, title, poster_path, overview, release_date, list_id")
+      .in(
+        "list_id",
+        friendsWishlistLists.map((l) => l.id),
+      )
 
     console.log("[v0] Matches API - Friends wishlist items:", friendsWishlist?.length || 0)
 
-    // Get user info for matched friends separately
+    // Get user info for matched friends
     const { data: friendsInfo } = await supabase
       .from("users")
       .select("id, username, display_name, avatar_url")
@@ -77,16 +92,35 @@ export async function GET(request: NextRequest) {
 
     // Find shared items (matches)
     const matches = []
-    if (userWishlist && friendsWishlist) {
+    if (userWishlist && friendsWishlist && friendsWishlistLists) {
       console.log("[v0] Matches API - Starting match detection...")
       for (const userItem of userWishlist) {
         console.log("[v0] Matches API - Checking user item:", userItem.title, userItem.tmdb_id)
-        const matchingFriends = friendsWishlist.filter(
+
+        // Find matching items from friends
+        const matchingFriendItems = friendsWishlist.filter(
           (friendItem) => friendItem.tmdb_id === userItem.tmdb_id && friendItem.media_type === userItem.media_type,
         )
 
-        if (matchingFriends.length > 0) {
-          console.log("[v0] Matches API - Found match for:", userItem.title, "with", matchingFriends.length, "friends")
+        if (matchingFriendItems.length > 0) {
+          console.log(
+            "[v0] Matches API - Found match for:",
+            userItem.title,
+            "with",
+            matchingFriendItems.length,
+            "friends",
+          )
+
+          const matchedFriends = matchingFriendItems.map((friendItem) => {
+            const friendList = friendsWishlistLists.find((list) => list.id === friendItem.list_id)
+            const friendInfo = friendsInfo?.find((friend) => friend.id === friendList?.user_id)
+            return {
+              id: friendList?.user_id || "",
+              username: friendInfo?.username || "Unknown",
+              display_name: friendInfo?.display_name || "Unknown",
+              avatar_url: friendInfo?.avatar_url || null,
+            }
+          })
 
           // Check if there's already an active watch party for this item
           const { data: existingParty } = await supabase
@@ -109,15 +143,7 @@ export async function GET(request: NextRequest) {
             poster_path: userItem.poster_path,
             overview: userItem.overview,
             release_date: userItem.release_date,
-            matched_friends: matchingFriends.map((f) => {
-              const friendInfo = friendsInfo?.find((friend) => friend.id === f.lists.user_id)
-              return {
-                id: f.lists.user_id,
-                username: friendInfo?.username || "Unknown",
-                display_name: friendInfo?.display_name || "Unknown",
-                avatar_url: friendInfo?.avatar_url || null,
-              }
-            }),
+            matched_friends: matchedFriends,
             watch_party: existingParty || null,
           })
         }
