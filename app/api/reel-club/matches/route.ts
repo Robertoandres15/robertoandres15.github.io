@@ -62,7 +62,11 @@ export async function GET(request: NextRequest) {
         poster_path,
         overview,
         release_date,
-        lists!inner(type, user_id, users(id, username, display_name, avatar_url))
+        lists!inner(
+          type,
+          user_id,
+          users!inner(id, username, display_name, avatar_url)
+        )
       `)
       .in("lists.user_id", friendIds)
       .eq("lists.type", "wishlist")
