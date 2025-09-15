@@ -73,14 +73,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ matches: [] })
     }
 
+    console.log(
+      "[v0] Matches API - Friends wishlist list IDs:",
+      friendsWishlistLists.map((l) => l.id),
+    )
+    console.log("[v0] Matches API - Friends wishlist list details:", JSON.stringify(friendsWishlistLists))
+
     // Get friends' wishlist items
-    const { data: friendsWishlist } = await supabase
+    const { data: friendsWishlist, error: friendsWishlistError } = await supabase
       .from("list_items")
       .select("tmdb_id, media_type, title, poster_path, overview, release_date, list_id")
       .in(
         "list_id",
         friendsWishlistLists.map((l) => l.id),
       )
+
+    if (friendsWishlistError) {
+      console.log("[v0] Matches API - Friends wishlist items error:", friendsWishlistError)
+    }
 
     console.log("[v0] Matches API - Friends wishlist items:", friendsWishlist?.length || 0)
 
