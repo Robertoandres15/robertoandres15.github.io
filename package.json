@@ -37,7 +37,7 @@
     "@radix-ui/react-toast": "latest",
     "@remix-run/react": "latest",
     "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "latest",
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
     "@vercel/blob": "latest",

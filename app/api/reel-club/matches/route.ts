@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createServiceClient } from "@supabase/supabase-js"
 
 export async function GET(request: NextRequest) {
   try {
@@ -196,8 +197,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Create watch party
-    const { data: watchParty, error: partyError } = await supabase
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    )
+
+    // Create watch party using service role client
+    const { data: watchParty, error: partyError } = await serviceSupabase
       .from("watch_parties")
       .insert({
         creator_id: user.id,
@@ -215,21 +221,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create watch party" }, { status: 500 })
     }
 
-    // Add creator as participant (auto-accepted)
-    await supabase.from("watch_party_participants").insert({
+    // Add creator as participant (auto-accepted) using service role client
+    await serviceSupabase.from("watch_party_participants").insert({
       watch_party_id: watchParty.id,
       user_id: user.id,
       status: "accepted",
     })
 
-    // Add friends as participants (pending)
+    // Add friends as participants (pending) using service role client
     const friendParticipants = friend_ids.map((friendId: string) => ({
       watch_party_id: watchParty.id,
       user_id: friendId,
       status: "pending",
     }))
 
-    await supabase.from("watch_party_participants").insert(friendParticipants)
+    await serviceSupabase.from("watch_party_participants").insert(friendParticipants)
 
     return NextResponse.json({ watch_party: watchParty })
   } catch (error) {
