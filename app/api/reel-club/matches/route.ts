@@ -9,20 +9,21 @@ async function fetchTMDBData(tmdbId: number, mediaType: string) {
 
     let response
 
-    // First try with Bearer token
-    if (process.env.TMDB_API_READ_ACCESS_TOKEN) {
-      response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}`, {
-        headers: {
-          Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      })
+    if (process.env.TMDB_API_KEY) {
+      console.log(`[v0] Trying TMDB API with API key for ${mediaType} ${tmdbId}`)
+      response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
     }
 
-    // If Bearer token fails or doesn't exist, try with API key parameter
+    // If API key fails, try with Bearer token
     if (!response || !response.ok) {
-      if (process.env.TMDB_API_KEY) {
-        response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
+      if (process.env.TMDB_API_READ_ACCESS_TOKEN) {
+        console.log(`[v0] Trying TMDB API with Bearer token for ${mediaType} ${tmdbId}`)
+        response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        })
       }
     }
 
@@ -30,6 +31,11 @@ async function fetchTMDBData(tmdbId: number, mediaType: string) {
       console.log(`[v0] TMDB API error for ${mediaType} ${tmdbId}:`, response?.status || "No response")
       console.log(`[v0] TMDB API - Bearer token available:`, !!process.env.TMDB_API_READ_ACCESS_TOKEN)
       console.log(`[v0] TMDB API - API key available:`, !!process.env.TMDB_API_KEY)
+      console.log(
+        `[v0] TMDB API - Bearer token value:`,
+        process.env.TMDB_API_READ_ACCESS_TOKEN?.substring(0, 10) + "...",
+      )
+      console.log(`[v0] TMDB API - API key value:`, process.env.TMDB_API_KEY?.substring(0, 10) + "...")
       return null
     }
 
