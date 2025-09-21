@@ -70,6 +70,7 @@ export function SeriesMatchCard({
   const { progress, refetch: refetchProgress } = useRealtimeProgress(watch_party?.id || null)
 
   const handleCreateMatch = async () => {
+    console.log("[v0] Yes button clicked - creating series match")
     setIsLoading(true)
     try {
       const response = await fetch("/api/reel-club/matches", {
@@ -86,6 +87,7 @@ export function SeriesMatchCard({
         }),
       })
 
+      console.log("[v0] Create series match response status:", response.status)
       if (response.ok) {
         toast({
           title: "Match Created!",
@@ -94,6 +96,7 @@ export function SeriesMatchCard({
         onMatchUpdate?.()
       } else {
         const error = await response.json()
+        console.log("[v0] Create series match error:", error)
         toast({
           title: "Failed to create match",
           description: error.error || "Something went wrong",
@@ -156,6 +159,7 @@ export function SeriesMatchCard({
   }
 
   const handleDeclineMatch = async () => {
+    console.log("[v0] No button clicked - declining series match")
     setIsLoading(true)
     try {
       const response = await fetch("/api/reel-club/matches/decline", {
@@ -172,6 +176,7 @@ export function SeriesMatchCard({
         }),
       })
 
+      console.log("[v0] Decline series match response status:", response.status)
       if (response.ok) {
         toast({
           title: "Match Declined",
@@ -180,6 +185,7 @@ export function SeriesMatchCard({
         onMatchUpdate?.()
       } else {
         const error = await response.json()
+        console.log("[v0] Decline series match error:", error)
         toast({
           title: "Failed to decline match",
           description: error.error || "Something went wrong",

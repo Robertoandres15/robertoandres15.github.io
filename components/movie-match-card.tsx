@@ -53,6 +53,7 @@ export function MovieMatchCard({
   const { toast } = useToast()
 
   const handleCreateMatch = async () => {
+    console.log("[v0] Yes button clicked - creating match")
     setIsLoading(true)
     try {
       const response = await fetch("/api/reel-club/matches", {
@@ -69,6 +70,7 @@ export function MovieMatchCard({
         }),
       })
 
+      console.log("[v0] Create match response status:", response.status)
       if (response.ok) {
         toast({
           title: "Match Created!",
@@ -77,6 +79,7 @@ export function MovieMatchCard({
         onMatchUpdate?.()
       } else {
         const error = await response.json()
+        console.log("[v0] Create match error:", error)
         toast({
           title: "Failed to create match",
           description: error.error || "Something went wrong",
@@ -136,6 +139,7 @@ export function MovieMatchCard({
   }
 
   const handleDeclineMatch = async () => {
+    console.log("[v0] No button clicked - declining match")
     setIsLoading(true)
     try {
       const response = await fetch("/api/reel-club/matches/decline", {
@@ -152,6 +156,7 @@ export function MovieMatchCard({
         }),
       })
 
+      console.log("[v0] Decline match response status:", response.status)
       if (response.ok) {
         toast({
           title: "Match Declined",
@@ -160,6 +165,7 @@ export function MovieMatchCard({
         onMatchUpdate?.()
       } else {
         const error = await response.json()
+        console.log("[v0] Decline match error:", error)
         toast({
           title: "Failed to decline match",
           description: error.error || "Something went wrong",
