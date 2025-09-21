@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Check, X, Users, ExternalLink, Ticket } from "lucide-react"
+import { Check, X, ExternalLink, Ticket } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface Friend {
@@ -153,10 +153,26 @@ export function MovieMatchCard({
     switch (status) {
       case "no_party":
         return (
-          <Button onClick={handleCreateMatch} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
-            <Users className="h-4 w-4 mr-2" />
-            {isLoading ? "Creating..." : "Watch Together?"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleCreateMatch} disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+              <Check className="h-4 w-4 mr-2" />
+              {isLoading ? "Creating..." : "Yes"}
+            </Button>
+            <Button
+              onClick={() => {
+                toast({
+                  title: "Maybe next time!",
+                  description: "You can always change your mind later.",
+                })
+              }}
+              disabled={isLoading}
+              variant="outline"
+              className="border-red-500 text-red-400 hover:bg-red-500/10"
+            >
+              <X className="h-4 w-4 mr-2" />
+              No
+            </Button>
+          </div>
         )
 
       case "pending":
@@ -202,7 +218,7 @@ export function MovieMatchCard({
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                    <h3 className="text-white font-medium mb-2">{title}</h3>
+                    <h3 className="text-white font-medium mb-2 truncate">{title}</h3>
                     <p className="text-slate-300 text-sm">
                       Ready to watch with {matched_friends.map((f) => f.display_name).join(", ")}!
                     </p>
