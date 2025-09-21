@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Check, X, ExternalLink, Ticket } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { createBrowserClient } from "@supabase/ssr"
 
 interface Friend {
   id: string
@@ -51,6 +52,11 @@ export function MovieMatchCard({
   const [isLoading, setIsLoading] = useState(false)
   const [showTicketDialog, setShowTicketDialog] = useState(false)
   const { toast } = useToast()
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
 
   const handleCreateMatch = async () => {
     console.log("[v0] Yes button clicked - creating match")
@@ -142,36 +148,42 @@ export function MovieMatchCard({
     console.log("[v0] No button clicked - declining match")
     setIsLoading(true)
     try {
-      const response = await fetch("/api/reel-club/matches/decline", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          tmdb_id,
-          media_type,
-          title,
-          poster_path,
-          friend_ids: matched_friends.map((f) => f.id),
-        }),
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to decline matches.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const { error } = await supabase.from("watch_parties").insert({
+        tmdb_id,
+        media_type,
+        title,
+        poster_path,
+        status: "declined",
+        created_by: user.id,
       })
 
-      console.log("[v0] Decline match response status:", response.status)
-      if (response.ok) {
+      if (error) {
+        console.error("[v0] Supabase error:", error)
+        toast({
+          title: "Failed to decline match",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive",
+        })
+      } else {
+        console.log("[v0] Match declined successfully")
         toast({
           title: "Match Declined",
           description: "This match won't be shown again.",
         })
         window.location.reload()
-      } else {
-        const error = await response.json()
-        console.log("[v0] Decline match error:", error)
-        toast({
-          title: "Failed to decline match",
-          description: error.error || "Something went wrong",
-          variant: "destructive",
-        })
       }
     } catch (error) {
       console.error("Error declining match:", error)
