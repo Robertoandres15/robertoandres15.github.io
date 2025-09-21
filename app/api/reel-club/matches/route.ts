@@ -287,27 +287,14 @@ export async function GET(request: NextRequest) {
             .single()
             .then((response) => response.data)
 
-          let movieData = {
-            title: userItem.title,
-            poster_path: userItem.poster_path,
-            overview: userItem.overview,
-            release_date: userItem.release_date,
-          }
-
-          if (!movieData.title || movieData.title === "undefined") {
-            console.log(`[v0] Fetching TMDB data for ${userItem.media_type} ${userItem.tmdb_id}`)
-            const tmdbData = await fetchTMDBData(userItem.tmdb_id, userItem.media_type)
-            if (tmdbData) {
-              movieData = {
-                title:
-                  tmdbData.title || `${userItem.media_type === "movie" ? "Movie" : "TV Series"} ${userItem.tmdb_id}`,
-                poster_path: tmdbData.poster_path || movieData.poster_path,
-                overview: tmdbData.overview || movieData.overview,
-                release_date: tmdbData.release_date || movieData.release_date,
-              }
-            } else {
-              movieData.title = `${userItem.media_type === "movie" ? "Movie" : "TV Series"} ${userItem.tmdb_id}`
-            }
+          const firstMatchingFriend = matchingFriendItems[0]
+          const movieData = {
+            title:
+              firstMatchingFriend.title ||
+              `${userItem.media_type === "movie" ? "Movie" : "TV Series"} ${userItem.tmdb_id}`,
+            poster_path: firstMatchingFriend.poster_path,
+            overview: firstMatchingFriend.overview,
+            release_date: firstMatchingFriend.release_date,
           }
 
           matches.push({
