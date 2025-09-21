@@ -155,6 +155,49 @@ export function SeriesMatchCard({
     }
   }
 
+  const handleDeclineMatch = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/reel-club/matches/decline", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tmdb_id,
+          media_type,
+          title,
+          poster_path,
+          friend_ids: matched_friends.map((f) => f.id),
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Match Declined",
+          description: "This match won't be shown again.",
+        })
+        onMatchUpdate?.()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Failed to decline match",
+          description: error.error || "Something went wrong",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error declining match:", error)
+      toast({
+        title: "Error",
+        description: "Failed to decline match",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const updateProgress = async () => {
     if (!watch_party) return
 
@@ -254,18 +297,13 @@ export function SeriesMatchCard({
               {isLoading ? "Creating..." : "Yes"}
             </Button>
             <Button
-              onClick={() => {
-                toast({
-                  title: "Maybe next time!",
-                  description: "You can always change your mind later.",
-                })
-              }}
+              onClick={handleDeclineMatch}
               disabled={isLoading}
               variant="outline"
-              className="border-red-500 text-red-400 hover:bg-red-500/10"
+              className="border-red-500 text-red-400 hover:bg-red-500/10 bg-transparent"
             >
               <X className="h-4 w-4 mr-2" />
-              No
+              {isLoading ? "Declining..." : "No"}
             </Button>
           </div>
         )
