@@ -154,7 +154,12 @@ export function MovieMatchCard({
       case "no_party":
         return (
           <div className="flex gap-2">
-            <Button onClick={handleCreateMatch} disabled={isLoading} className="bg-green-600 hover:bg-green-700">
+            <Button
+              onClick={handleCreateMatch}
+              disabled={isLoading}
+              variant="outline"
+              className="border-green-500 text-green-400 hover:bg-green-500/10 bg-transparent"
+            >
               <Check className="h-4 w-4 mr-2" />
               {isLoading ? "Creating..." : "Yes"}
             </Button>
@@ -181,7 +186,8 @@ export function MovieMatchCard({
             <Button
               onClick={() => handleRespondToMatch("accept")}
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700"
+              variant="outline"
+              className="border-green-500 text-green-400 hover:bg-green-500/10"
             >
               <Check className="h-4 w-4 mr-2" />
               Accept
