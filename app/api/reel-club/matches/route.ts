@@ -7,38 +7,19 @@ async function fetchTMDBData(tmdbId: number, mediaType: string) {
     const baseUrl = "https://api.themoviedb.org/3"
     const endpoint = mediaType === "movie" ? "movie" : "tv"
 
-    let response
-    let authMethod = "none"
-
-    if (process.env.TMDB_API_READ_ACCESS_TOKEN) {
-      console.log(`[v0] Trying TMDB API with Bearer token for ${mediaType} ${tmdbId}`)
-      authMethod = "bearer"
-      response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}`, {
-        headers: {
-          Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      })
+    const apiKey = process.env.TMDB_API_KEY
+    if (!apiKey) {
+      console.log(`[v0] TMDB API key not available`)
+      return null
     }
 
-    if (!response || !response.ok) {
-      if (process.env.TMDB_API_KEY) {
-        console.log(`[v0] Trying TMDB API with API key for ${mediaType} ${tmdbId}`)
-        authMethod = "api_key"
-        response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
-      }
-    }
+    console.log(`[v0] Fetching TMDB data for ${mediaType} ${tmdbId} with API key`)
+    const response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${apiKey}`)
 
-    if (!response || !response.ok) {
-      console.log(`[v0] TMDB API error for ${mediaType} ${tmdbId}:`, response?.status || "No response")
-      console.log(`[v0] TMDB API - Auth method tried:`, authMethod)
-      console.log(`[v0] TMDB API - Bearer token available:`, !!process.env.TMDB_API_READ_ACCESS_TOKEN)
-      console.log(`[v0] TMDB API - API key available:`, !!process.env.TMDB_API_KEY)
-
-      if (response) {
-        const errorText = await response.text()
-        console.log(`[v0] TMDB API error response:`, errorText)
-      }
+    if (!response.ok) {
+      console.log(`[v0] TMDB API error for ${mediaType} ${tmdbId}:`, response.status)
+      const errorText = await response.text()
+      console.log(`[v0] TMDB API error response:`, errorText)
       return null
     }
 
