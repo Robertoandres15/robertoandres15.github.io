@@ -168,7 +168,7 @@ export function MovieMatchCard({
           media_type: media_type,
         },
         {
-          onConflict: "user_id,tmdb_id,media_type",
+          onConflict: ["user_id", "tmdb_id", "media_type"],
         },
       )
 
