@@ -167,7 +167,7 @@ export function MovieMatchCard({
         title,
         poster_path,
         status: "declined",
-        created_by: user.id,
+        creator_id: user.id,
       })
 
       if (error) {
