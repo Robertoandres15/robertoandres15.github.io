@@ -8,34 +8,37 @@ async function fetchTMDBData(tmdbId: number, mediaType: string) {
     const endpoint = mediaType === "movie" ? "movie" : "tv"
 
     let response
+    let authMethod = "none"
 
-    if (process.env.TMDB_API_KEY) {
-      console.log(`[v0] Trying TMDB API with API key for ${mediaType} ${tmdbId}`)
-      response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
+    if (process.env.TMDB_API_READ_ACCESS_TOKEN) {
+      console.log(`[v0] Trying TMDB API with Bearer token for ${mediaType} ${tmdbId}`)
+      authMethod = "bearer"
+      response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}`, {
+        headers: {
+          Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      })
     }
 
-    // If API key fails, try with Bearer token
     if (!response || !response.ok) {
-      if (process.env.TMDB_API_READ_ACCESS_TOKEN) {
-        console.log(`[v0] Trying TMDB API with Bearer token for ${mediaType} ${tmdbId}`)
-        response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}`, {
-          headers: {
-            Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        })
+      if (process.env.TMDB_API_KEY) {
+        console.log(`[v0] Trying TMDB API with API key for ${mediaType} ${tmdbId}`)
+        authMethod = "api_key"
+        response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
       }
     }
 
     if (!response || !response.ok) {
       console.log(`[v0] TMDB API error for ${mediaType} ${tmdbId}:`, response?.status || "No response")
+      console.log(`[v0] TMDB API - Auth method tried:`, authMethod)
       console.log(`[v0] TMDB API - Bearer token available:`, !!process.env.TMDB_API_READ_ACCESS_TOKEN)
       console.log(`[v0] TMDB API - API key available:`, !!process.env.TMDB_API_KEY)
-      console.log(
-        `[v0] TMDB API - Bearer token value:`,
-        process.env.TMDB_API_READ_ACCESS_TOKEN?.substring(0, 10) + "...",
-      )
-      console.log(`[v0] TMDB API - API key value:`, process.env.TMDB_API_KEY?.substring(0, 10) + "...")
+
+      if (response) {
+        const errorText = await response.text()
+        console.log(`[v0] TMDB API error response:`, errorText)
+      }
       return null
     }
 
@@ -310,17 +313,19 @@ export async function GET(request: NextRequest) {
             release_date: userItem.release_date,
           }
 
-          // If any essential data is missing, fetch from TMDB
-          if (!movieData.title || !movieData.poster_path) {
+          if (!movieData.title || movieData.title === "undefined") {
             console.log(`[v0] Fetching TMDB data for ${userItem.media_type} ${userItem.tmdb_id}`)
             const tmdbData = await fetchTMDBData(userItem.tmdb_id, userItem.media_type)
             if (tmdbData) {
               movieData = {
-                title: tmdbData.title || movieData.title,
+                title:
+                  tmdbData.title || `${userItem.media_type === "movie" ? "Movie" : "TV Series"} ${userItem.tmdb_id}`,
                 poster_path: tmdbData.poster_path || movieData.poster_path,
                 overview: tmdbData.overview || movieData.overview,
                 release_date: tmdbData.release_date || movieData.release_date,
               }
+            } else {
+              movieData.title = `${userItem.media_type === "movie" ? "Movie" : "TV Series"} ${userItem.tmdb_id}`
             }
           }
 
