@@ -6,7 +6,12 @@ async function fetchTMDBData(tmdbId: number, mediaType: string) {
   try {
     const baseUrl = "https://api.themoviedb.org/3"
     const endpoint = mediaType === "movie" ? "movie" : "tv"
-    const response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
+    const response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.TMDB_API_READ_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    })
 
     if (!response.ok) {
       console.log(`[v0] TMDB API error for ${mediaType} ${tmdbId}:`, response.status)
