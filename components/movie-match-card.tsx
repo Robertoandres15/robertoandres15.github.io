@@ -182,7 +182,7 @@ export function MovieMatchCard({
         title: "Match Declined",
         description: "This match won't be shown again.",
       })
-      window.location.reload()
+      onMatchUpdate?.()
     } catch (error: any) {
       console.log("[v0] Error declining match:", error.message)
       toast({
