@@ -19,24 +19,92 @@ export async function GET(request: NextRequest) {
 
     console.log("[v0] Matches API - User ID:", user.id)
 
-    // Get user's friends
-    const { data: friendships } = await supabase
+    const { data: acceptedFriendships } = await supabase
       .from("friends")
       .select("friend_id")
       .eq("user_id", user.id)
       .eq("status", "accepted")
 
-    console.log("[v0] Matches API - Friendships found:", friendships?.length || 0)
+    const { data: pendingSentRequests } = await supabase
+      .from("friends")
+      .select("friend_id")
+      .eq("user_id", user.id)
+      .eq("status", "pending")
 
-    if (!friendships || friendships.length === 0) {
-      console.log("[v0] Matches API - No friends found")
+    const { data: pendingReceivedRequests } = await supabase
+      .from("friends")
+      .select("user_id")
+      .eq("friend_id", user.id)
+      .eq("status", "pending")
+
+    const allPotentialFriends = [
+      ...(acceptedFriendships || []).map((f) => f.friend_id),
+      ...(pendingSentRequests || []).map((f) => f.friend_id),
+      ...(pendingReceivedRequests || []).map((f) => f.user_id),
+    ]
+
+    const uniqueFriendIds = [...new Set(allPotentialFriends)].filter((id) => id !== user.id)
+
+    console.log("[v0] Matches API - Accepted friendships found:", acceptedFriendships?.length || 0)
+    console.log("[v0] Matches API - Pending sent requests found:", pendingSentRequests?.length || 0)
+    console.log("[v0] Matches API - Pending received requests found:", pendingReceivedRequests?.length || 0)
+    console.log("[v0] Matches API - Total unique potential friends:", uniqueFriendIds.length)
+
+    if (uniqueFriendIds.length === 0) {
+      console.log("[v0] Matches API - No friends found, looking for users with shared interests")
+
+      // Get user's wishlist items first
+      const { data: userWishlistLists } = await supabase
+        .from("lists")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("type", "wishlist")
+
+      if (userWishlistLists && userWishlistLists.length > 0) {
+        const { data: userWishlist } = await supabase
+          .from("list_items")
+          .select("tmdb_id, media_type")
+          .in(
+            "list_id",
+            userWishlistLists.map((l) => l.id),
+          )
+
+        if (userWishlist && userWishlist.length > 0) {
+          // Find other users who have the same items in their wishlists
+          const { data: otherUsersWithSameItems } = await supabase
+            .from("list_items")
+            .select(`
+              list_id,
+              lists!inner(user_id, type)
+            `)
+            .in(
+              "tmdb_id",
+              userWishlist.map((item) => item.tmdb_id),
+            )
+            .eq("lists.type", "wishlist")
+            .neq("lists.user_id", user.id)
+
+          if (otherUsersWithSameItems && otherUsersWithSameItems.length > 0) {
+            const potentialFriendIds = [...new Set(otherUsersWithSameItems.map((item) => item.lists.user_id))].slice(
+              0,
+              10,
+            ) // Limit to 10 potential friends
+
+            uniqueFriendIds.push(...potentialFriendIds)
+            console.log("[v0] Matches API - Found users with shared interests:", potentialFriendIds.length)
+          }
+        }
+      }
+    }
+
+    if (uniqueFriendIds.length === 0) {
+      console.log("[v0] Matches API - No potential friends found")
       return NextResponse.json({ matches: [] })
     }
 
-    const friendIds = friendships.map((f) => f.friend_id)
-    console.log("[v0] Matches API - Friend IDs:", friendIds)
+    console.log("[v0] Matches API - Final friend IDs to check:", uniqueFriendIds)
 
-    // First get user's wishlist lists
+    // Get user's wishlist lists
     const { data: userWishlistLists } = await supabase
       .from("lists")
       .select("id")
@@ -64,7 +132,7 @@ export async function GET(request: NextRequest) {
     const { data: friendsWishlistLists } = await supabase
       .from("lists")
       .select("id, user_id")
-      .in("user_id", friendIds)
+      .in("user_id", uniqueFriendIds)
       .eq("type", "wishlist")
 
     console.log("[v0] Matches API - Friends wishlist lists:", friendsWishlistLists?.length || 0)
@@ -113,7 +181,7 @@ export async function GET(request: NextRequest) {
     const { data: friendsInfo } = await supabase
       .from("users")
       .select("id, username, display_name, avatar_url")
-      .in("id", friendIds)
+      .in("id", uniqueFriendIds)
 
     // Find shared items (matches)
     const matches = []
