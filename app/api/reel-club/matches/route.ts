@@ -2,6 +2,30 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createServiceClient } from "@supabase/supabase-js"
 
+async function fetchTMDBData(tmdbId: number, mediaType: string) {
+  try {
+    const baseUrl = "https://api.themoviedb.org/3"
+    const endpoint = mediaType === "movie" ? "movie" : "tv"
+    const response = await fetch(`${baseUrl}/${endpoint}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}`)
+
+    if (!response.ok) {
+      console.log(`[v0] TMDB API error for ${mediaType} ${tmdbId}:`, response.status)
+      return null
+    }
+
+    const data = await response.json()
+    return {
+      title: data.title || data.name,
+      poster_path: data.poster_path,
+      overview: data.overview,
+      release_date: data.release_date || data.first_air_date,
+    }
+  } catch (error) {
+    console.error(`[v0] Error fetching TMDB data for ${mediaType} ${tmdbId}:`, error)
+    return null
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] Matches API called")
@@ -252,13 +276,34 @@ export async function GET(request: NextRequest) {
             .single()
             .then((response) => response.data)
 
-          matches.push({
-            tmdb_id: userItem.tmdb_id,
-            media_type: userItem.media_type,
+          let movieData = {
             title: userItem.title,
             poster_path: userItem.poster_path,
             overview: userItem.overview,
             release_date: userItem.release_date,
+          }
+
+          // If any essential data is missing, fetch from TMDB
+          if (!movieData.title || !movieData.poster_path) {
+            console.log(`[v0] Fetching TMDB data for ${userItem.media_type} ${userItem.tmdb_id}`)
+            const tmdbData = await fetchTMDBData(userItem.tmdb_id, userItem.media_type)
+            if (tmdbData) {
+              movieData = {
+                title: tmdbData.title || movieData.title,
+                poster_path: tmdbData.poster_path || movieData.poster_path,
+                overview: tmdbData.overview || movieData.overview,
+                release_date: tmdbData.release_date || movieData.release_date,
+              }
+            }
+          }
+
+          matches.push({
+            tmdb_id: userItem.tmdb_id,
+            media_type: userItem.media_type,
+            title: movieData.title,
+            poster_path: movieData.poster_path,
+            overview: movieData.overview,
+            release_date: movieData.release_date,
             matched_friends: matchedFriends,
             watch_party: existingParty || null,
           })
