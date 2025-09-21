@@ -167,6 +167,7 @@ export function SeriesMatchCard({
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           tmdb_id,
           media_type,
@@ -182,7 +183,7 @@ export function SeriesMatchCard({
           title: "Match Declined",
           description: "This match won't be shown again.",
         })
-        onMatchUpdate?.()
+        window.location.reload()
       } else {
         const error = await response.json()
         console.log("[v0] Decline series match error:", error)
