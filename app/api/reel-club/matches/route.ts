@@ -7,9 +7,9 @@ async function fetchTMDBData(tmdbId: number, mediaType: string) {
     const baseUrl = "https://api.themoviedb.org/3"
     const endpoint = mediaType === "movie" ? "movie" : "tv"
 
-    const apiKey = process.env.TMDB_API_KEY
+    const apiKey = process.env.TMBD_API_KEY
     if (!apiKey) {
-      console.log(`[v0] TMDB API key not available`)
+      console.log(`[v0] TMBD API key not available`)
       return null
     }
 
