@@ -104,6 +104,13 @@ export async function GET(request: NextRequest) {
 
     console.log("[v0] Matches API - Final friend IDs to check:", uniqueFriendIds)
 
+    const { data: friendsDebugInfo } = await supabase
+      .from("users")
+      .select("id, username, display_name")
+      .in("id", uniqueFriendIds)
+
+    console.log("[v0] Matches API - Friend details:", JSON.stringify(friendsDebugInfo))
+
     // Get user's wishlist lists
     const { data: userWishlistLists } = await supabase
       .from("lists")
@@ -128,6 +135,12 @@ export async function GET(request: NextRequest) {
       )
 
     console.log("[v0] Matches API - User wishlist items:", userWishlist?.length || 0)
+    console.log(
+      "[v0] Matches API - User wishlist item details:",
+      JSON.stringify(
+        userWishlist?.map((item) => ({ title: item.title, tmdb_id: item.tmdb_id, media_type: item.media_type })),
+      ),
+    )
 
     const { data: friendsWishlistLists } = await supabase
       .from("lists")
@@ -147,6 +160,21 @@ export async function GET(request: NextRequest) {
       friendsWishlistLists.map((l) => l.id),
     )
     console.log("[v0] Matches API - Friends wishlist list details:", JSON.stringify(friendsWishlistLists))
+
+    for (const friendList of friendsWishlistLists) {
+      const friendInfo = friendsDebugInfo?.find((f) => f.id === friendList.user_id)
+      const { data: friendItems } = await supabase
+        .from("list_items")
+        .select("tmdb_id, media_type, title")
+        .eq("list_id", friendList.id)
+
+      console.log(
+        `[v0] Matches API - ${friendInfo?.display_name || friendInfo?.username || "Unknown"} (${friendList.user_id}) has ${friendItems?.length || 0} wishlist items:`,
+        JSON.stringify(
+          friendItems?.map((item) => ({ title: item.title, tmdb_id: item.tmdb_id, media_type: item.media_type })),
+        ),
+      )
+    }
 
     const { data: debugListItems, error: debugError } = await supabase
       .from("list_items")
