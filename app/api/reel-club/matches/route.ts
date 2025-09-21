@@ -244,8 +244,26 @@ export async function GET(request: NextRequest) {
     const matches = []
     if (userWishlist && friendsWishlist && friendsWishlistLists) {
       console.log("[v0] Matches API - Starting match detection...")
+
+      const { data: userNotInterestedItems } = await supabase
+        .from("user_not_interested")
+        .select("tmdb_id, media_type")
+        .eq("user_id", user.id)
+
+      console.log("[v0] Matches API - User not interested items:", userNotInterestedItems?.length || 0)
+
       for (const userItem of userWishlist) {
         console.log("[v0] Matches API - Checking user item:", userItem.title, userItem.tmdb_id)
+
+        const isNotInterested = userNotInterestedItems?.some(
+          (notInterested) =>
+            notInterested.tmdb_id === userItem.tmdb_id && notInterested.media_type === userItem.media_type,
+        )
+
+        if (isNotInterested) {
+          console.log("[v0] Matches API - Skipping not interested item:", userItem.title)
+          continue
+        }
 
         // Find matching items from friends
         const matchingFriendItems = friendsWishlist.filter(
