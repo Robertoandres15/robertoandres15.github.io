@@ -161,11 +161,16 @@ export function MovieMatchCard({
         return
       }
 
-      const { error } = await supabase.from("user_not_interested").insert({
-        user_id: user.id,
-        tmdb_id: tmdb_id,
-        media_type: media_type,
-      })
+      const { error } = await supabase.from("user_not_interested").upsert(
+        {
+          user_id: user.id,
+          tmdb_id: tmdb_id,
+          media_type: media_type,
+        },
+        {
+          onConflict: "user_id,tmdb_id,media_type",
+        },
+      )
 
       if (error) {
         console.error("[v0] Supabase error:", error)
