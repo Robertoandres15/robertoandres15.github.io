@@ -161,32 +161,30 @@ export function MovieMatchCard({
         return
       }
 
-      const { error } = await supabase.from("user_not_interested").upsert(
-        {
+      try {
+        const { error } = await supabase.from("user_not_interested").insert({
           user_id: user.id,
           tmdb_id: tmdb_id,
           media_type: media_type,
-        },
-        {
-          onConflict: ["user_id", "tmdb_id", "media_type"],
-        },
-      )
+        })
 
-      if (error) {
-        console.error("[v0] Supabase error:", error)
-        toast({
-          title: "Failed to decline match",
-          description: "Something went wrong. Please try again.",
-          variant: "destructive",
-        })
-      } else {
-        console.log("[v0] Match declined successfully")
-        toast({
-          title: "Match Declined",
-          description: "This match won't be shown again.",
-        })
-        window.location.reload()
+        if (error && !error.message.includes("duplicate key value violates unique constraint")) {
+          throw error
+        }
+      } catch (insertError: any) {
+        // If it's a duplicate constraint error, treat it as success since the user's preference is already recorded
+        if (!insertError.message.includes("duplicate key value violates unique constraint")) {
+          throw insertError
+        }
+        console.log("[v0] User already declined this match - treating as success")
       }
+
+      console.log("[v0] Match declined successfully")
+      toast({
+        title: "Match Declined",
+        description: "This match won't be shown again.",
+      })
+      window.location.reload()
     } catch (error) {
       console.error("Error declining match:", error)
       toast({
