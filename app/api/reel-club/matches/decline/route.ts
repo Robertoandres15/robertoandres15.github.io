@@ -5,12 +5,12 @@ export async function POST(request: NextRequest) {
   try {
     const { tmdb_id, media_type, title, poster_path, friend_ids } = await request.json()
 
-    const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
       cookies: {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll() {
+        setAll(cookiesToSet) {
           // No-op for server-side
         },
       },
@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
+
+    console.log("[v0] Decline API - Auth check:", { user: user?.id, error: authError })
+
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (partyError) {
-      console.error("Error creating declined watch party:", partyError)
+      console.error("[v0] Error creating declined watch party:", partyError)
       return NextResponse.json({ error: "Failed to decline match" }, { status: 500 })
     }
 
@@ -52,13 +55,14 @@ export async function POST(request: NextRequest) {
     })
 
     if (participantError) {
-      console.error("Error adding declined participant:", participantError)
+      console.error("[v0] Error adding declined participant:", participantError)
       return NextResponse.json({ error: "Failed to decline match" }, { status: 500 })
     }
 
+    console.log("[v0] Match declined successfully for user:", user.id)
     return NextResponse.json({ message: "Match declined successfully" })
   } catch (error) {
-    console.error("Error in decline match API:", error)
+    console.error("[v0] Error in decline match API:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
