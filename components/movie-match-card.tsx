@@ -161,13 +161,10 @@ export function MovieMatchCard({
         return
       }
 
-      const { error } = await supabase.from("watch_parties").insert({
-        item_id: tmdb_id,
-        media_type,
-        title,
-        poster_path,
-        status: "declined",
-        creator_id: user.id,
+      const { error } = await supabase.from("user_not_interested").insert({
+        user_id: user.id,
+        tmdb_id: tmdb_id,
+        media_type: media_type,
       })
 
       if (error) {
