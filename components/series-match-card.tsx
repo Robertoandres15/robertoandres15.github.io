@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Check, X, Users, Play, Plus, Minus } from "lucide-react"
+import { Check, X, Play, Plus, Minus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRealtimeProgress } from "@/hooks/use-realtime-progress"
 
@@ -243,10 +243,31 @@ export function SeriesMatchCard({
     switch (status) {
       case "no_party":
         return (
-          <Button onClick={handleCreateMatch} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
-            <Users className="h-4 w-4 mr-2" />
-            {isLoading ? "Creating..." : "Watch Together?"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleCreateMatch}
+              disabled={isLoading}
+              variant="outline"
+              className="border-green-500 text-green-400 hover:bg-green-500/10 bg-transparent"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              {isLoading ? "Creating..." : "Yes"}
+            </Button>
+            <Button
+              onClick={() => {
+                toast({
+                  title: "Maybe next time!",
+                  description: "You can always change your mind later.",
+                })
+              }}
+              disabled={isLoading}
+              variant="outline"
+              className="border-red-500 text-red-400 hover:bg-red-500/10"
+            >
+              <X className="h-4 w-4 mr-2" />
+              No
+            </Button>
+          </div>
         )
 
       case "pending":
@@ -255,7 +276,8 @@ export function SeriesMatchCard({
             <Button
               onClick={() => handleRespondToMatch("accept")}
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700"
+              variant="outline"
+              className="border-green-500 text-green-400 hover:bg-green-500/10"
             >
               <Check className="h-4 w-4 mr-2" />
               Accept
