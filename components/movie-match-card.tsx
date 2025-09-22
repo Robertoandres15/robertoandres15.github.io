@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -51,12 +51,39 @@ export function MovieMatchCard({
 }: MovieMatchProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showTicketDialog, setShowTicketDialog] = useState(false)
+  const [isInTheaters, setIsInTheaters] = useState(false)
+  const [checkingTheaters, setCheckingTheaters] = useState(false)
   const { toast } = useToast()
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+
+  const checkIfInTheaters = async () => {
+    if (media_type !== "movie") return false
+
+    setCheckingTheaters(true)
+    try {
+      const response = await fetch(`/api/tmdb/now-playing-check?tmdb_id=${tmdb_id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setIsInTheaters(data.inTheaters)
+        return data.inTheaters
+      }
+    } catch (error) {
+      console.error("Error checking theater status:", error)
+    } finally {
+      setCheckingTheaters(false)
+    }
+    return false
+  }
+
+  useEffect(() => {
+    if (getMatchStatus() === "accepted" && media_type === "movie") {
+      checkIfInTheaters()
+    }
+  }, [watch_party?.status, media_type, tmdb_id])
 
   const handleCreateMatch = async () => {
     console.log("[v0] Yes button clicked - creating match")
@@ -266,40 +293,62 @@ export function MovieMatchCard({
               <Check className="h-3 w-3 mr-1" />
               Match Activated!
             </Badge>
-            <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-orange-600 hover:bg-orange-700 w-full">
-                  <Ticket className="h-4 w-4 mr-2" />
-                  Buy Tickets
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-slate-900 border-white/10">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Purchase Tickets</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                    <h3 className="text-white font-medium mb-2 truncate">{title}</h3>
-                    <p className="text-slate-300 text-sm">
-                      Ready to watch with {matched_friends.map((f) => f.display_name).join(", ")}!
-                    </p>
-                  </div>
+            {media_type === "movie" && (
+              <>
+                {checkingTheaters ? (
+                  <Button disabled className="w-full bg-slate-600">
+                    <Ticket className="h-4 w-4 mr-2" />
+                    Checking theaters...
+                  </Button>
+                ) : isInTheaters ? (
+                  <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-orange-600 hover:bg-orange-700 w-full">
+                        <Ticket className="h-4 w-4 mr-2" />
+                        Buy Tickets
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-slate-900 border-white/10">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Purchase Tickets</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                          <h3 className="text-white font-medium mb-2 truncate">{title}</h3>
+                          <p className="text-slate-300 text-sm">
+                            Ready to watch with {matched_friends.map((f) => f.display_name).join(", ")}!
+                          </p>
+                        </div>
 
-                  <div className="space-y-3">
-                    <Button onClick={openTicketPurchase} className="w-full bg-orange-600 hover:bg-orange-700">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Open Fandango
-                    </Button>
+                        <div className="space-y-3">
+                          <Button onClick={openTicketPurchase} className="w-full bg-orange-600 hover:bg-orange-700">
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Open Fandango
+                          </Button>
 
-                    <div className="text-xs text-slate-400 space-y-1">
-                      <p>• Opens Fandango with movie search</p>
-                      <p>• Find showtimes and purchase tickets</p>
-                      <p>• Coordinate with your friends for the same showing</p>
-                    </div>
+                          <div className="text-xs text-slate-400 space-y-1">
+                            <p>• Opens Fandango with movie search</p>
+                            <p>• Find showtimes and purchase tickets</p>
+                            <p>• Coordinate with your friends for the same showing</p>
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <div className="text-center p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <p className="text-slate-400 text-sm">🏠 This movie is not currently in theaters</p>
+                    <p className="text-slate-500 text-xs mt-1">Perfect for a cozy movie night at home!</p>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                )}
+              </>
+            )}
+            {media_type === "tv" && (
+              <div className="text-center p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                <p className="text-slate-400 text-sm">📺 Ready to binge-watch together!</p>
+                <p className="text-slate-500 text-xs mt-1">Find it on your favorite streaming platform</p>
+              </div>
+            )}
           </div>
         )
 
