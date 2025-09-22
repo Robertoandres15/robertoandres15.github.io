@@ -42,6 +42,29 @@ export interface TMDBSearchResponse {
   total_results: number
 }
 
+export interface TMDBPerson {
+  id: number
+  name: string
+  profile_path: string | null
+  adult: boolean
+  known_for_department: string
+  known_for: (TMDBMovie | TMDBTVShow)[]
+  popularity: number
+}
+
+export interface TMDBPersonSearchResponse {
+  page: number
+  results: TMDBPerson[]
+  total_pages: number
+  total_results: number
+}
+
+export interface TMDBPersonCredits {
+  id: number
+  cast: (TMDBMovie | TMDBTVShow)[]
+  crew: (TMDBMovie | (TMDBTVShow & { job: string; department: string }))[]
+}
+
 export interface TMDBGenre {
   id: number
   name: string
@@ -260,6 +283,14 @@ export class TMDBClient {
 
   async getTVWatchProviders(id: number): Promise<TMDBWatchProviders> {
     return this.request(`/tv/${id}/watch/providers`)
+  }
+
+  async searchPerson(query: string, page = 1): Promise<TMDBPersonSearchResponse> {
+    return this.request("/search/person", { query, page: page.toString() })
+  }
+
+  async getPersonCredits(personId: number): Promise<TMDBPersonCredits> {
+    return this.request(`/person/${personId}/combined_credits`)
   }
 
   getImageUrl(path: string | null, size: "w200" | "w300" | "w500" | "w780" | "original" = "w500"): string | null {

@@ -20,6 +20,15 @@ interface MediaItem extends TMDBMovie, TMDBTVShow {
   media_type?: "movie" | "tv"
 }
 
+interface DirectorResult {
+  director: {
+    id: number
+    name: string
+    profile_path: string | null
+  }
+  works: MediaItem[]
+}
+
 interface List {
   id: string
   name: string
@@ -44,6 +53,7 @@ export default function ExplorePage() {
   const [recommendedBy, setRecommendedBy] = useState("0")
   const [friends, setFriends] = useState<Friend[]>([])
   const [results, setResults] = useState<MediaItem[]>([])
+  const [directorResults, setDirectorResults] = useState<DirectorResult[]>([])
   const [genres, setGenres] = useState<TMDBGenre[]>([])
   const [userLists, setUserLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -307,6 +317,8 @@ export default function ExplorePage() {
       }
 
       let results = []
+      let directors = []
+
       if (recommendedBy !== "0") {
         // Recommendations API returns { recommendations: [...] }
         results = data.recommendations || []
@@ -329,13 +341,22 @@ export default function ExplorePage() {
       } else {
         // Discover/Search APIs return { results: [...] }
         results = data.results || []
-        console.log("[v0] Discover/Search results received:", results.length)
+        directors = data.directors || []
+        console.log(
+          "[v0] Discover/Search results received:",
+          results.length,
+          "media items,",
+          directors.length,
+          "directors",
+        )
       }
 
       if (page === 1) {
         setResults(results)
+        setDirectorResults(directors)
       } else {
         setResults((prev) => [...prev, ...results])
+        // Don't append directors on pagination, they're only shown on first page
       }
 
       setHasMore(results.length === 20)
@@ -825,7 +846,7 @@ export default function ExplorePage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
-              placeholder="Search for movies, TV shows..."
+              placeholder="Search for movies, TV shows, directors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -1133,7 +1154,79 @@ export default function ExplorePage() {
           </Card>
         )}
 
-        {isLoading && results.length === 0 ? (
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {directorResults.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Directors</h2>
+            <div className="space-y-6">
+              {directorResults.map((directorResult) => (
+                <div
+                  key={directorResult.director.id}
+                  className="bg-slate-800/60 rounded-lg p-4 border border-slate-600"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+                      {directorResult.director.profile_path ? (
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w200${directorResult.director.profile_path}`}
+                          alt={directorResult.director.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                          No Photo
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{directorResult.director.name}</h3>
+                      <p className="text-slate-400">Director • {directorResult.works.length} works found</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {directorResult.works.slice(0, 5).map((work) => (
+                      <Link key={work.id} href={`/explore/${getMediaType(work)}/${work.id}`} className="group">
+                        <Card className="bg-slate-700/60 border-slate-600 hover:bg-slate-600/60 transition-colors">
+                          <CardContent className="p-2">
+                            <div className="aspect-[2/3] mb-2 rounded overflow-hidden bg-slate-800">
+                              <Image
+                                src={getPosterUrl(work.poster_path) || "/placeholder.svg"}
+                                alt={getTitle(work)}
+                                width={150}
+                                height={225}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            </div>
+                            <h4 className="text-white text-sm font-medium line-clamp-2 mb-1">{getTitle(work)}</h4>
+                            <p className="text-slate-400 text-xs">{getReleaseDate(work)?.split("-")[0] || "N/A"}</p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {directorResult.works.length > 5 && (
+                    <div className="mt-4 text-center">
+                      <p className="text-slate-400 text-sm">
+                        +{directorResult.works.length - 5} more works by {directorResult.director.name}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isLoading && results.length === 0 && directorResults.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-white">Loading...</div>
           </div>
