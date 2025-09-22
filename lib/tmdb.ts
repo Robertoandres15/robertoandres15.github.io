@@ -76,7 +76,7 @@ export class TMDBClient {
   }
 
   private getAuthToken(): string {
-    const token = TMDB_API_READ_ACCESS_TOKEN
+    const token = process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY
     if (!token) {
       throw new Error("TMDB API Read Access Token is required")
     }
@@ -105,6 +105,11 @@ export class TMDBClient {
       const responseText = await response.text()
       console.log("[v0] TMDB API response status:", response.status)
       console.log("[v0] TMDB API response preview:", responseText.substring(0, 200))
+
+      if (responseText.includes("Too Many Requests") || response.status === 429) {
+        console.error("[v0] TMDB API rate limit exceeded")
+        throw new Error("TMDB API rate limit exceeded. Please try again later.")
+      }
 
       if (!response.ok) {
         console.error("[v0] TMDB API error response:", responseText)
