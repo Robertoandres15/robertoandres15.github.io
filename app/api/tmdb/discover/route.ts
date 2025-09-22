@@ -76,10 +76,8 @@ export async function GET(request: NextRequest) {
       if (type === "movie") {
         params.release_date_gte = tomorrow.toISOString().split("T")[0]
         params.release_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
-        // Only include movies with theatrical releases that haven't happened yet
-        params.with_release_type = "3" // Theatrical release only
-        // Exclude movies that already have digital/streaming releases
         params.region = "US"
+        params.with_original_language = "en" // Focus on English releases for consistency
       } else {
         // For TV shows, use first_air_date
         params.first_air_date_gte = tomorrow.toISOString().split("T")[0]
@@ -107,20 +105,31 @@ export async function GET(request: NextRequest) {
       const today = new Date()
       today.setHours(0, 0, 0, 0) // Set to start of today
 
-      results.results = results.results.filter((item: any) => {
+      const filteredResults = []
+
+      for (const item of results.results) {
         const releaseDate = new Date(item.release_date || item.first_air_date)
         releaseDate.setHours(0, 0, 0, 0)
 
         // Only include items with future release dates
         const isFuture = releaseDate > today
 
+        const hasReasonablePopularity = item.popularity > 5
+
+        const hasLowVoteCount = (item.vote_count || 0) < 100
+
+        const shouldInclude = isFuture && hasReasonablePopularity && hasLowVoteCount
+
         console.log(
-          `[v0] Coming Soon filter - ${item.title || item.name}: ${item.release_date || item.first_air_date} -> ${isFuture ? "INCLUDED" : "EXCLUDED"}`,
+          `[v0] Coming Soon filter - ${item.title || item.name}: ${item.release_date || item.first_air_date}, popularity: ${item.popularity}, votes: ${item.vote_count} -> ${shouldInclude ? "INCLUDED" : "EXCLUDED"}`,
         )
 
-        return isFuture
-      })
+        if (shouldInclude) {
+          filteredResults.push(item)
+        }
+      }
 
+      results.results = filteredResults
       console.log(`[v0] After Coming Soon filtering: ${results.results.length} items remaining`)
     }
 
