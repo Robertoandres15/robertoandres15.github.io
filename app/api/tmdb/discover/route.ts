@@ -111,20 +111,13 @@ export async function GET(request: NextRequest) {
         const releaseDate = new Date(item.release_date || item.first_air_date)
         releaseDate.setHours(0, 0, 0, 0)
 
-        // Only include items with future release dates
         const isFuture = releaseDate > today
 
-        const hasReasonablePopularity = item.popularity > 5
-
-        const hasLowVoteCount = (item.vote_count || 0) < 100
-
-        const shouldInclude = isFuture && hasReasonablePopularity && hasLowVoteCount
-
         console.log(
-          `[v0] Coming Soon filter - ${item.title || item.name}: ${item.release_date || item.first_air_date}, popularity: ${item.popularity}, votes: ${item.vote_count} -> ${shouldInclude ? "INCLUDED" : "EXCLUDED"}`,
+          `[v0] Coming Soon filter - ${item.title || item.name}: ${item.release_date || item.first_air_date}, isFuture: ${isFuture}`,
         )
 
-        if (shouldInclude) {
+        if (isFuture) {
           filteredResults.push(item)
         }
       }
