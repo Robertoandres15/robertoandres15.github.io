@@ -290,17 +290,17 @@ export async function GET(request: NextRequest) {
             }
           })
 
-          // Check if there's already an active watch party for this item
           const existingParty = await supabase
             .from("watch_parties")
             .select(`
               id,
               status,
-              watch_party_participants(user_id, status)
+              creator_id,
+              watch_party_participants!inner(user_id, status)
             `)
             .eq("tmdb_id", userItem.tmdb_id)
             .eq("media_type", userItem.media_type)
-            .eq("creator_id", user.id)
+            .eq("watch_party_participants.user_id", user.id)
             .in("status", ["pending", "accepted", "active"])
             .single()
             .then((response) => response.data)
