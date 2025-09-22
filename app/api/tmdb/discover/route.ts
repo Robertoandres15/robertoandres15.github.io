@@ -103,19 +103,23 @@ export async function GET(request: NextRequest) {
 
     if (comingSoon && results.results) {
       const today = new Date()
-      today.setHours(0, 0, 0, 0) // Set to start of today
+      const currentDateString = today.toISOString().split("T")[0] // Get YYYY-MM-DD format
+
+      console.log(`[v0] Current date for comparison: ${currentDateString}`)
 
       const filteredResults = []
 
       for (const item of results.results) {
-        const releaseDate = new Date(item.release_date || item.first_air_date)
-        releaseDate.setHours(0, 0, 0, 0)
+        const releaseDateString = item.release_date || item.first_air_date
 
-        const isFuture = releaseDate > today
+        if (!releaseDateString) {
+          console.log(`[v0] Coming Soon filter - ${item.title || item.name}: No release date, skipping`)
+          continue
+        }
 
-        console.log(
-          `[v0] Coming Soon filter - ${item.title || item.name}: ${item.release_date || item.first_air_date}, isFuture: ${isFuture}`,
-        )
+        const isFuture = releaseDateString > currentDateString
+
+        console.log(`[v0] Coming Soon filter - ${item.title || item.name}: ${releaseDateString}, isFuture: ${isFuture}`)
 
         if (isFuture) {
           filteredResults.push(item)
