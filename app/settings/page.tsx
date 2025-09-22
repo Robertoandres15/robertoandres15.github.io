@@ -894,7 +894,7 @@ export default function SettingsPage() {
                         "Disney+",
                         "Hulu",
                         "Netflix",
-                        "HBO Max",
+                        "Max", // Updated from HBO Max
                         "Prime Video",
                         "Apple TV",
                         "Peacock",

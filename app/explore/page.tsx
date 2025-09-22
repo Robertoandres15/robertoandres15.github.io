@@ -63,13 +63,12 @@ export default function ExplorePage() {
     { id: "8", name: "Netflix" },
     { id: "9", name: "Amazon Prime Video" },
     { id: "337", name: "Disney+" },
-    { id: "384", name: "HBO Max" },
     { id: "15", name: "Hulu" },
     { id: "350", name: "Apple TV+" },
     { id: "531", name: "Paramount+" },
     { id: "387", name: "Peacock" },
     { id: "283", name: "Crunchyroll" },
-    { id: "1899", name: "Max" },
+    { id: "1899", name: "HBO Max" },
   ]
 
   useEffect(() => {
