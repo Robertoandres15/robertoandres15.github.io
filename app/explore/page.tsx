@@ -48,6 +48,7 @@ export default function ExplorePage() {
   const [selectedYears, setSelectedYears] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("popularity.desc")
   const [inTheaters, setInTheaters] = useState(false)
+  const [comingSoon, setComingSoon] = useState(false)
   const [selectedStreamingServices, setSelectedStreamingServices] = useState<string[]>([])
   const [movieDuration, setMovieDuration] = useState("any")
   const [recommendedBy, setRecommendedBy] = useState("0")
@@ -112,7 +113,16 @@ export default function ExplorePage() {
 
       return () => clearTimeout(timeoutId)
     }
-  }, [selectedGenres, selectedYears, sortBy, selectedStreamingServices, movieDuration, recommendedBy, inTheaters])
+  }, [
+    selectedGenres,
+    selectedYears,
+    sortBy,
+    selectedStreamingServices,
+    movieDuration,
+    recommendedBy,
+    inTheaters,
+    comingSoon,
+  ])
 
   const loadGenres = async () => {
     try {
@@ -268,6 +278,7 @@ export default function ExplorePage() {
         selectedYears,
         sortBy,
         inTheaters,
+        comingSoon,
         selectedStreamingServices,
         movieDuration,
       })
@@ -294,6 +305,7 @@ export default function ExplorePage() {
         if (selectedYears.length > 0) params.append("year", selectedYears.join(","))
         if (sortBy) params.append("sort_by", sortBy)
         if (inTheaters) params.append("in_theaters", "true")
+        if (comingSoon) params.append("coming_soon", "true")
         if (selectedStreamingServices.length > 0) {
           params.append("streaming_services", selectedStreamingServices.join(","))
         }
@@ -388,6 +400,7 @@ export default function ExplorePage() {
     setSortBy("popularity.desc")
     setMediaType("all")
     setInTheaters(false)
+    setComingSoon(false)
     setSelectedStreamingServices([])
     setMovieDuration("any")
     setRecommendedBy("0")
@@ -781,20 +794,33 @@ export default function ExplorePage() {
 
                       <div>
                         <label className="text-white text-sm mb-2 block">Availability</label>
-                        <Button
-                          variant={inTheaters ? "default" : "outline"}
-                          onClick={() => setInTheaters(!inTheaters)}
-                          disabled={mediaType === "tv"}
-                          className={
-                            mediaType === "tv"
-                              ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
-                              : inTheaters
+                        <div className="space-y-2">
+                          <Button
+                            variant={inTheaters ? "default" : "outline"}
+                            onClick={() => setInTheaters(!inTheaters)}
+                            disabled={mediaType === "tv"}
+                            className={
+                              mediaType === "tv"
+                                ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                                : inTheaters
+                                  ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                                  : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                            }
+                          >
+                            {inTheaters ? "✓ " : ""}In Theaters
+                          </Button>
+                          <Button
+                            variant={comingSoon ? "default" : "outline"}
+                            onClick={() => setComingSoon(!comingSoon)}
+                            className={
+                              comingSoon
                                 ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
                                 : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
-                          }
-                        >
-                          {inTheaters ? "✓ " : ""}In Theaters
-                        </Button>
+                            }
+                          >
+                            {comingSoon ? "✓ " : ""}Coming Soon
+                          </Button>
+                        </div>
                       </div>
 
                       <div>
@@ -1102,20 +1128,33 @@ export default function ExplorePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="text-white text-sm mb-2 block">Availability</label>
-                  <Button
-                    variant={inTheaters ? "default" : "outline"}
-                    onClick={() => setInTheaters(!inTheaters)}
-                    disabled={mediaType === "tv"}
-                    className={
-                      mediaType === "tv"
-                        ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed"
-                        : inTheaters
-                          ? "bg-purple-600 hover:bg-purple-700 text-white"
-                          : "border-white/20 text-white hover:bg-white/20 bg-white/10"
-                    }
-                  >
-                    {inTheaters ? "✓ " : ""}In Theaters
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      variant={inTheaters ? "default" : "outline"}
+                      onClick={() => setInTheaters(!inTheaters)}
+                      disabled={mediaType === "tv"}
+                      className={
+                        mediaType === "tv"
+                          ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                          : inTheaters
+                            ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                            : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                      }
+                    >
+                      {inTheaters ? "✓ " : ""}In Theaters
+                    </Button>
+                    <Button
+                      variant={comingSoon ? "default" : "outline"}
+                      onClick={() => setComingSoon(!comingSoon)}
+                      className={
+                        comingSoon
+                          ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                          : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                      }
+                    >
+                      {comingSoon ? "✓ " : ""}Coming Soon
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
@@ -1153,6 +1192,7 @@ export default function ExplorePage() {
                     setSortBy("popularity.desc")
                     setMediaType("all")
                     setInTheaters(false)
+                    setComingSoon(false)
                     setSelectedStreamingServices([])
                     setMovieDuration("any")
                     setRecommendedBy("0")

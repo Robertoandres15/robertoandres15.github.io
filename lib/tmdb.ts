@@ -230,6 +230,8 @@ export class TMDBClient {
       release_date_gte?: string
       release_date_lte?: string
       with_release_type?: string
+      first_air_date_gte?: string
+      first_air_date_lte?: string
     } = {},
   ): Promise<TMDBSearchResponse> {
     const queryParams: Record<string, string> = {}
@@ -246,6 +248,8 @@ export class TMDBClient {
     if (params.release_date_gte) queryParams["release_date.gte"] = params.release_date_gte
     if (params.release_date_lte) queryParams["release_date.lte"] = params.release_date_lte
     if (params.with_release_type) queryParams.with_release_type = params.with_release_type
+    if (params.first_air_date_gte) queryParams["first_air_date.gte"] = params.first_air_date_gte
+    if (params.first_air_date_lte) queryParams["first_air_date.lte"] = params.first_air_date_lte
 
     console.log("[v0] Movie discover query params:", queryParams)
     return this.request("/discover/movie", queryParams)
@@ -260,6 +264,8 @@ export class TMDBClient {
       vote_average_gte?: string
       with_watch_providers?: string
       watch_region?: string
+      first_air_date_gte?: string
+      first_air_date_lte?: string
     } = {},
   ): Promise<TMDBSearchResponse> {
     const queryParams: Record<string, string> = {}
@@ -273,6 +279,8 @@ export class TMDBClient {
     if (params.vote_average_gte) queryParams["vote_average.gte"] = params.vote_average_gte
     if (params.with_watch_providers) queryParams.with_watch_providers = params.with_watch_providers
     if (params.watch_region) queryParams.watch_region = params.watch_region
+    if (params.first_air_date_gte) queryParams["first_air_date.gte"] = params.first_air_date_gte
+    if (params.first_air_date_lte) queryParams["first_air_date.lte"] = params.first_air_date_lte
 
     console.log("[v0] TV discover query params:", queryParams)
     return this.request("/discover/tv", queryParams)

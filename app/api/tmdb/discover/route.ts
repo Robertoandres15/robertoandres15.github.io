@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sort_by") || "popularity.desc"
     const minRating = searchParams.get("min_rating") || ""
     const inTheaters = searchParams.get("in_theaters") === "true"
+    const comingSoon = searchParams.get("coming_soon") === "true"
     const streamingServices = searchParams.get("streaming_services") || ""
     const excludeIds = searchParams.get("exclude_ids") || ""
     const withGenres = searchParams.get("with_genres") || ""
@@ -67,6 +68,20 @@ export async function GET(request: NextRequest) {
       params.with_release_type = "3" // Theatrical release
     }
 
+    if (comingSoon) {
+      const today = new Date()
+      const sixMonthsFromNow = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
+
+      if (type === "movie") {
+        params.release_date_gte = today.toISOString().split("T")[0]
+        params.release_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
+      } else {
+        // For TV shows, use first_air_date
+        params.first_air_date_gte = today.toISOString().split("T")[0]
+        params.first_air_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
+      }
+    }
+
     if (streamingServices) {
       params.with_watch_providers = streamingServices
       params.watch_region = "US" // Default to US region
@@ -76,6 +91,7 @@ export async function GET(request: NextRequest) {
       type,
       params,
       inTheaters,
+      comingSoon,
       streamingServices,
       processedYear: year,
       excludeIds,
