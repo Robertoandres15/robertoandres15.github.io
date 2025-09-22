@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     if (userWishlistLists && userWishlistLists.length > 0) {
       userWishlist = await supabase // Assign userWishlist variable
         .from("list_items")
-        .select("tmdb_id, media_type")
+        .select("tmdb_id, media_type, title")
         .in(
           "list_id",
           userWishlistLists.map((l) => l.id),

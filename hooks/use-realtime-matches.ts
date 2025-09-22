@@ -33,6 +33,7 @@ export function useRealtimeMatches() {
 
   const fetchMatches = async () => {
     try {
+      setError(null)
       console.log("[v0] Fetching matches from API...")
       const response = await fetch("/api/reel-club/matches")
       console.log("[v0] Matches API response status:", response.status)
