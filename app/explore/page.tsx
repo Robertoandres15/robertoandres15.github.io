@@ -68,6 +68,7 @@ export default function ExplorePage() {
   const isMobile = useIsMobile()
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
+  const [expandedDirectors, setExpandedDirectors] = useState<Set<number>>(new Set())
 
   const streamingServices = [
     { id: "8", name: "Netflix" },
@@ -473,6 +474,18 @@ export default function ExplorePage() {
     setSelectedStreamingServices((prev) =>
       prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId],
     )
+  }
+
+  const toggleDirectorExpansion = (directorId: number) => {
+    setExpandedDirectors((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(directorId)) {
+        newSet.delete(directorId)
+      } else {
+        newSet.add(directorId)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -1164,64 +1177,74 @@ export default function ExplorePage() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-white mb-4">Directors</h2>
             <div className="space-y-6">
-              {directorResults.map((directorResult) => (
-                <div
-                  key={directorResult.director.id}
-                  className="bg-slate-800/60 rounded-lg p-4 border border-slate-600"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
-                      {directorResult.director.profile_path ? (
-                        <Image
-                          src={`https://image.tmdb.org/t/p/w200${directorResult.director.profile_path}`}
-                          alt={directorResult.director.name}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
-                          No Photo
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">{directorResult.director.name}</h3>
-                      <p className="text-slate-400">Director • {directorResult.works.length} works found</p>
-                    </div>
-                  </div>
+              {directorResults.map((directorResult) => {
+                const isExpanded = expandedDirectors.has(directorResult.director.id)
+                const worksToShow = isExpanded ? directorResult.works : directorResult.works.slice(0, 5)
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {directorResult.works.slice(0, 5).map((work) => (
-                      <Link key={work.id} href={`/explore/${getMediaType(work)}/${work.id}`} className="group">
-                        <Card className="bg-slate-700/60 border-slate-600 hover:bg-slate-600/60 transition-colors">
-                          <CardContent className="p-2">
-                            <div className="aspect-[2/3] mb-2 rounded overflow-hidden bg-slate-800">
-                              <Image
-                                src={getPosterUrl(work.poster_path) || "/placeholder.svg"}
-                                alt={getTitle(work)}
-                                width={150}
-                                height={225}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            </div>
-                            <h4 className="text-white text-sm font-medium line-clamp-2 mb-1">{getTitle(work)}</h4>
-                            <p className="text-slate-400 text-xs">{getReleaseDate(work)?.split("-")[0] || "N/A"}</p>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {directorResult.works.length > 5 && (
-                    <div className="mt-4 text-center">
-                      <p className="text-slate-400 text-sm">
-                        +{directorResult.works.length - 5} more works by {directorResult.director.name}
-                      </p>
+                return (
+                  <div
+                    key={directorResult.director.id}
+                    className="bg-slate-800/60 rounded-lg p-4 border border-slate-600"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+                        {directorResult.director.profile_path ? (
+                          <Image
+                            src={`https://image.tmdb.org/t/p/w200${directorResult.director.profile_path}`}
+                            alt={directorResult.director.name}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                            No Photo
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{directorResult.director.name}</h3>
+                        <p className="text-slate-400">Director • {directorResult.works.length} works found</p>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {worksToShow.map((work) => (
+                        <Link key={work.id} href={`/explore/${getMediaType(work)}/${work.id}`} className="group">
+                          <Card className="bg-slate-700/60 border-slate-600 hover:bg-slate-600/60 transition-colors">
+                            <CardContent className="p-2">
+                              <div className="aspect-[2/3] mb-2 rounded overflow-hidden bg-slate-800">
+                                <Image
+                                  src={getPosterUrl(work.poster_path) || "/placeholder.svg"}
+                                  alt={getTitle(work)}
+                                  width={150}
+                                  height={225}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              </div>
+                              <h4 className="text-white text-sm font-medium line-clamp-2 mb-1">{getTitle(work)}</h4>
+                              <p className="text-slate-400 text-xs">{getReleaseDate(work)?.split("-")[0] || "N/A"}</p>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+
+                    {directorResult.works.length > 5 && (
+                      <div className="mt-4 text-center">
+                        <button
+                          onClick={() => toggleDirectorExpansion(directorResult.director.id)}
+                          className="text-purple-400 hover:text-purple-300 text-sm transition-colors cursor-pointer"
+                        >
+                          {isExpanded
+                            ? `Show less works by ${directorResult.director.name}`
+                            : `+${directorResult.works.length - 5} more works by ${directorResult.director.name}`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
