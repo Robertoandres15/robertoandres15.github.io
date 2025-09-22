@@ -266,14 +266,14 @@ export function DismissibleMovieSuggestions({
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-white mb-2">
             {isPersonalized
-              ? "Personalized Recommendations"
+              ? "AI Recommendations Based on Your Lists"
               : userProfile
                 ? "AI Recommendations for You"
                 : "Popular Movies You Might Like"}
           </h2>
           <p className="text-slate-400 text-sm">
             {isPersonalized
-              ? "Based on movies in your Recommendations List"
+              ? "Based on movies and shows in your Recommendation Lists"
               : userProfile
                 ? "Based on your preferences: "
                 : "Based on popular genres: "}
@@ -295,14 +295,14 @@ export function DismissibleMovieSuggestions({
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-white mb-2">
             {isPersonalized
-              ? "Personalized Recommendations"
+              ? "AI Recommendations Based on Your Lists"
               : userProfile
                 ? "AI Recommendations for You"
                 : "Popular Movies You Might Like"}
           </h2>
           <p className="text-slate-400 text-sm">
             {isPersonalized
-              ? "Based on movies in your Recommendations List"
+              ? "Based on movies and shows in your Recommendation Lists"
               : userProfile
                 ? "Based on your preferences: "
                 : "Based on popular genres: "}
@@ -339,14 +339,14 @@ export function DismissibleMovieSuggestions({
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-white mb-2">
           {isPersonalized
-            ? "Personalized Recommendations"
+            ? "AI Recommendations Based on Your Lists"
             : userProfile
               ? "AI Recommendations for You"
               : "Popular Movies You Might Like"}
         </h2>
         <p className="text-slate-400 text-sm">
           {isPersonalized
-            ? "Based on movies in your Recommendations List"
+            ? "Based on movies and shows in your Recommendation Lists"
             : userProfile
               ? "Based on your preferences: "
               : "Based on popular genres: "}
@@ -355,8 +355,8 @@ export function DismissibleMovieSuggestions({
             <span className="block mt-1 text-xs">Complete your profile to get personalized recommendations!</span>
           )}
           {isPersonalized && (
-            <span className="block mt-1 text-xs">
-              Add more movies to your Recommendations List for better suggestions!
+            <span className="block mt-1 text-xs text-purple-300">
+              Add more movies to your Recommendation Lists for even better suggestions!
             </span>
           )}
         </p>
