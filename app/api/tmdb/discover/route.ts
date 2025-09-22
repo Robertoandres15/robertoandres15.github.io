@@ -76,6 +76,10 @@ export async function GET(request: NextRequest) {
       if (type === "movie") {
         params.release_date_gte = tomorrow.toISOString().split("T")[0]
         params.release_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
+        // Only include movies with theatrical releases that haven't happened yet
+        params.with_release_type = "3" // Theatrical release only
+        // Exclude movies that already have digital/streaming releases
+        params.region = "US"
       } else {
         // For TV shows, use first_air_date
         params.first_air_date_gte = tomorrow.toISOString().split("T")[0]
@@ -98,6 +102,27 @@ export async function GET(request: NextRequest) {
       excludeIds,
     })
     const results = type === "tv" ? await tmdb.discoverTV(params) : await tmdb.discoverMovies(params)
+
+    if (comingSoon && results.results) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Set to start of today
+
+      results.results = results.results.filter((item: any) => {
+        const releaseDate = new Date(item.release_date || item.first_air_date)
+        releaseDate.setHours(0, 0, 0, 0)
+
+        // Only include items with future release dates
+        const isFuture = releaseDate > today
+
+        console.log(
+          `[v0] Coming Soon filter - ${item.title || item.name}: ${item.release_date || item.first_air_date} -> ${isFuture ? "INCLUDED" : "EXCLUDED"}`,
+        )
+
+        return isFuture
+      })
+
+      console.log(`[v0] After Coming Soon filtering: ${results.results.length} items remaining`)
+    }
 
     if (excludeIds && results.results) {
       const excludeIdArray = excludeIds
