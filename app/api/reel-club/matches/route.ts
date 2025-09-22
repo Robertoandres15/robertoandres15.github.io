@@ -296,14 +296,20 @@ export async function GET(request: NextRequest) {
               id,
               status,
               creator_id,
-              watch_party_participants!inner(user_id, status)
+              watch_party_participants(user_id, status)
             `)
             .eq("tmdb_id", userItem.tmdb_id)
             .eq("media_type", userItem.media_type)
-            .eq("watch_party_participants.user_id", user.id)
             .in("status", ["pending", "accepted", "active"])
-            .single()
-            .then((response) => response.data)
+            .then((response) => {
+              const parties = response.data || []
+              return (
+                parties.find(
+                  (party) =>
+                    party.creator_id === user.id || party.watch_party_participants?.some((p) => p.user_id === user.id),
+                ) || null
+              )
+            })
 
           const firstMatchingFriend = matchingFriendItems[0]
           const movieData = {
