@@ -69,18 +69,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (comingSoon) {
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1) // Start from tomorrow
-      const sixMonthsFromNow = new Date(tomorrow.getTime() + 180 * 24 * 60 * 60 * 1000)
+      const today = new Date()
+      const sixMonthsFromNow = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
 
       if (type === "movie") {
-        params.release_date_gte = tomorrow.toISOString().split("T")[0]
+        params.release_date_gte = today.toISOString().split("T")[0]
         params.release_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
         params.region = "US"
         params.with_original_language = "en" // Focus on English releases for consistency
       } else {
         // For TV shows, use first_air_date
-        params.first_air_date_gte = tomorrow.toISOString().split("T")[0]
+        params.first_air_date_gte = today.toISOString().split("T")[0]
         params.first_air_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
       }
     }
@@ -117,7 +116,7 @@ export async function GET(request: NextRequest) {
           continue
         }
 
-        const isFuture = releaseDateString > currentDateString
+        const isFuture = releaseDateString >= currentDateString
 
         console.log(`[v0] Coming Soon filter - ${item.title || item.name}: ${releaseDateString}, isFuture: ${isFuture}`)
 
