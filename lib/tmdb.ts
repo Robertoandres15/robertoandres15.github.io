@@ -98,16 +98,17 @@ export class TMDBClient {
 
   private getAuthToken(): string {
     const readAccessToken = process.env.TMDB_API_READ_ACCESS_TOKEN
-    const apiKey = process.env.TMBD_API_KEY
+    const apiKey = process.env.TMBD_API_KEY || process.env.TMDB_API_KEY
 
-    console.log("[v0] TMDB_API_READ_ACCESS_TOKEN exists:", !!readAccessToken)
-    console.log("[v0] TMDB_API_READ_ACCESS_TOKEN length:", readAccessToken?.length || 0)
-    console.log("[v0] TMBD_API_KEY exists:", !!apiKey)
-    console.log("[v0] TMBD_API_KEY length:", apiKey?.length || 0)
+    console.log("[v0] Environment check - TMDB token exists:", !!(readAccessToken || apiKey))
+    console.log("[v0] Environment check - TMDB token length:", (readAccessToken || apiKey)?.length || 0)
 
     const token = readAccessToken || apiKey
     if (!token) {
-      throw new Error("TMDB API Read Access Token or API Key is required")
+      console.error("[v0] No TMDB API credentials found. Please check environment variables.")
+      throw new Error(
+        "TMDB API credentials are required. Please add TMDB_API_READ_ACCESS_TOKEN or TMDB_API_KEY to your environment variables.",
+      )
     }
 
     console.log("[v0] Using token type:", this.isV3ApiKey(token) ? "v3 API Key" : "v4 Read Access Token")
