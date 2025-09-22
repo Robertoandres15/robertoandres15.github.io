@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Star, Plus, X, Check, RefreshCw } from "lucide-react"
 
@@ -42,6 +43,7 @@ export function DismissibleMovieSuggestions({
   const [addingToWishlist, setAddingToWishlist] = useState<Set<number>>(new Set())
   const [addedToWishlist, setAddedToWishlist] = useState<Set<number>>(new Set())
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const initializeComponent = async () => {
@@ -236,6 +238,11 @@ export function DismissibleMovieSuggestions({
         return newSet
       })
     }
+  }
+
+  const handleViewDetails = (movie: Movie) => {
+    console.log("[v0] Navigating to movie details:", movie.id, movie.title)
+    router.push(`/explore/movie/${movie.id}`)
   }
 
   const genreMap: { [key: string]: string } = {
@@ -438,6 +445,7 @@ export function DismissibleMovieSuggestions({
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={() => handleViewDetails(movie)}
                   className="border-slate-600 text-slate-200 hover:bg-slate-700/50 bg-transparent min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
                 >
                   View Details
