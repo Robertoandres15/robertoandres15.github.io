@@ -4,8 +4,10 @@ import { TMDBClient } from "@/lib/tmdb"
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] Genres API route called")
-    console.log("[v0] Environment check - TMDB_API_KEY exists:", !!process.env.TMDB_API_KEY)
-    console.log("[v0] Environment check - TMDB_API_KEY length:", process.env.TMDB_API_KEY?.length || 0)
+    const hasToken = !!(process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMBD_API_KEY)
+    const tokenLength = (process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMBD_API_KEY || "").length
+    console.log("[v0] Environment check - TMDB API token exists:", hasToken)
+    console.log("[v0] Environment check - TMDB API token length:", tokenLength)
 
     const tmdb = new TMDBClient()
 
@@ -24,12 +26,13 @@ export async function GET(request: NextRequest) {
       name: error instanceof Error ? error.name : undefined,
     })
 
-    if (error instanceof Error && error.message.includes("TMDB_API_KEY")) {
+    if (error instanceof Error && error.message.includes("TMDB API")) {
       return NextResponse.json(
         {
-          error: "TMDB API key configuration error",
+          error: "TMDB API authentication error",
           details: error.message,
-          suggestion: "Please check that TMDB_API_KEY environment variable is set correctly",
+          suggestion:
+            "Please check that TMDB_API_READ_ACCESS_TOKEN or TMBD_API_KEY environment variable is set correctly",
         },
         { status: 500 },
       )

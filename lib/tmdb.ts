@@ -1,5 +1,3 @@
-const TMDB_API_READ_ACCESS_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzYWYzOTcwNTY0NGIxOTcwN2ExZWJlOWJkMWFmZDY2NiIsIm5iZiI6MTc1NjY4NTE0Ny42MTEsInN1YiI6IjY4YjRlMzViMGI4YTRhY2VhNzU0ZTQ2NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.GSeuf0FL9yKfoQ69Sxw3t5lLlkLm3KSmT-cg3QzL_JQ"
 const TMDB_BASE_URL = "https://api.themoviedb.org/3"
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p"
 
@@ -76,7 +74,7 @@ export class TMDBClient {
   }
 
   private getAuthToken(): string {
-    const token = process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY
+    const token = process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMBD_API_KEY
     if (!token) {
       throw new Error("TMDB API Read Access Token is required")
     }
