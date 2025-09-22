@@ -81,9 +81,20 @@ export class TMDBClient {
     return token
   }
 
+  private isV3ApiKey(token: string): boolean {
+    // v3 API keys are typically 32 characters long and alphanumeric
+    // v4 Read Access Tokens are much longer JWT-like tokens
+    return token.length <= 40 && !token.includes(".")
+  }
+
   private async request(endpoint: string, params: Record<string, string> = {}) {
     const token = this.getAuthToken()
     const url = new URL(`${this.baseUrl}${endpoint}`)
+
+    if (this.isV3ApiKey(token)) {
+      // v3 API key goes as query parameter
+      url.searchParams.append("api_key", token)
+    }
 
     Object.entries(params).forEach(([key, value]) => {
       if (value) url.searchParams.append(key, value)
@@ -92,12 +103,15 @@ export class TMDBClient {
     console.log("[v0] TMDB API request:", url.toString())
 
     try {
-      const response = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          accept: "application/json",
-        },
-      })
+      const headers: Record<string, string> = {
+        accept: "application/json",
+      }
+
+      if (!this.isV3ApiKey(token)) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
+      const response = await fetch(url.toString(), { headers })
 
       // Get response text first to handle both JSON and HTML responses
       const responseText = await response.text()
