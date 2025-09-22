@@ -89,7 +89,7 @@ export function MovieMatchCard({
     console.log("[v0] Yes button clicked - creating match")
     setIsLoading(true)
     try {
-      const response = await fetch("/api/reel-club/matches", {
+      const response = await fetch("/api/reel-club/watch-party", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,12 +99,14 @@ export function MovieMatchCard({
           media_type,
           title,
           poster_path,
-          friend_ids: matched_friends.map((f) => f.id),
+          participants: matched_friends.map((f) => f.id),
         }),
       })
 
       console.log("[v0] Create match response status:", response.status)
       if (response.ok) {
+        const data = await response.json()
+        console.log("[v0] Watch party created:", data)
         toast({
           title: "Match Created!",
           description: `Sent "Do you want to watch this together?" to your friends.`,
