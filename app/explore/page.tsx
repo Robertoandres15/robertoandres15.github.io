@@ -367,6 +367,7 @@ export default function ExplorePage() {
       if (page === 1) {
         setResults(results)
         setDirectorResults(directors)
+        setTotalPages(data.total_pages || 1)
       } else {
         setResults((prev) => [...prev, ...results])
         // Don't append directors on pagination, they're only shown on first page
@@ -414,7 +415,9 @@ export default function ExplorePage() {
 
   const loadMore = () => {
     if (currentPage < totalPages) {
-      handleSearch(currentPage + 1)
+      const nextPage = currentPage + 1
+      setCurrentPage(nextPage)
+      handleSearch(nextPage)
     }
   }
 

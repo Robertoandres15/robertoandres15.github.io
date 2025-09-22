@@ -70,8 +70,7 @@ export async function GET(request: NextRequest) {
 
     if (comingSoon) {
       const today = new Date()
-      // Ensure we're using the correct current date (2025-09-21)
-      const currentDateString = "2025-09-21" // Use the actual current date
+      const currentDateString = today.toISOString().split("T")[0] // This will be 2025-09-21
       const sixMonthsFromNow = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
 
       if (type === "movie") {
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest) {
     const results = type === "tv" ? await tmdb.discoverTV(params) : await tmdb.discoverMovies(params)
 
     if (comingSoon && results.results) {
-      const currentDateString = "2025-09-21" // Use the actual current date
+      const currentDateString = new Date().toISOString().split("T")[0]
 
       console.log(`[v0] Current date for comparison: ${currentDateString}`)
 
