@@ -69,15 +69,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (comingSoon) {
-      const today = new Date()
-      const sixMonthsFromNow = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1) // Start from tomorrow
+      const sixMonthsFromNow = new Date(tomorrow.getTime() + 180 * 24 * 60 * 60 * 1000)
 
       if (type === "movie") {
-        params.release_date_gte = today.toISOString().split("T")[0]
+        params.release_date_gte = tomorrow.toISOString().split("T")[0]
         params.release_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
       } else {
         // For TV shows, use first_air_date
-        params.first_air_date_gte = today.toISOString().split("T")[0]
+        params.first_air_date_gte = tomorrow.toISOString().split("T")[0]
         params.first_air_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
       }
     }
