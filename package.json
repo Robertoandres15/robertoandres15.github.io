@@ -12,6 +12,12 @@
     "cap:sync": "npx cap sync",
     "dev": "next dev",
     "lint": "next lint",
+    "mobile:android": "npm run build:mobile && npx cap open android",
+    "mobile:build": "node scripts/build-mobile.js",
+    "mobile:ios": "npm run build:mobile && npx cap open ios",
+    "mobile:run:android": "npm run build:mobile && npx cap run android",
+    "mobile:run:ios": "npm run build:mobile && npx cap run ios",
+    "mobile:setup": "node scripts/setup-mobile.js",
     "start": "next start"
   },
   "dependencies": {
@@ -41,6 +47,7 @@
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
     "@vercel/blob": "latest",
+    "child_process": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fs": "latest",
