@@ -52,6 +52,9 @@ export default function ExplorePage() {
   const [selectedStreamingServices, setSelectedStreamingServices] = useState<string[]>([])
   const [movieDuration, setMovieDuration] = useState("any")
   const [recommendedBy, setRecommendedBy] = useState("0")
+  const [selectedDirector, setSelectedDirector] = useState("")
+  const [availableDirectors, setAvailableDirectors] = useState<{ id: number; name: string }[]>([])
+  const [directorSearchQuery, setDirectorSearchQuery] = useState("")
   const [friends, setFriends] = useState<Friend[]>([])
   const [results, setResults] = useState<MediaItem[]>([])
   const [directorResults, setDirectorResults] = useState<DirectorResult[]>([])
@@ -122,7 +125,39 @@ export default function ExplorePage() {
     recommendedBy,
     inTheaters,
     comingSoon,
+    selectedDirector,
   ])
+
+  const searchDirectors = async (query: string) => {
+    if (!query.trim()) {
+      setAvailableDirectors([])
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`)
+      const data = await response.json()
+
+      if (response.ok && data.directors) {
+        const directors = data.directors.map((dirResult: any) => ({
+          id: dirResult.director.id,
+          name: dirResult.director.name,
+        }))
+        setAvailableDirectors(directors)
+      }
+    } catch (error) {
+      console.error("Failed to search directors:", error)
+      setAvailableDirectors([])
+    }
+  }
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchDirectors(directorSearchQuery)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [directorSearchQuery])
 
   const loadGenres = async () => {
     try {
@@ -281,6 +316,7 @@ export default function ExplorePage() {
         comingSoon,
         selectedStreamingServices,
         movieDuration,
+        selectedDirector,
       })
 
       const controller = new AbortController()
@@ -297,6 +333,12 @@ export default function ExplorePage() {
         url = "/api/recommendations"
         params.append("friend_id", recommendedBy)
         console.log("[v0] Using recommendations API for friend:", recommendedBy)
+      } else if (selectedDirector) {
+        url = "/api/tmdb/search"
+        const directorName =
+          availableDirectors.find((d) => d.id.toString() === selectedDirector)?.name || selectedDirector
+        params.append("q", directorName)
+        console.log("[v0] Using search API for director:", directorName)
       } else {
         url = "/api/tmdb/discover"
         console.log("[v0] Using discover API")
@@ -405,6 +447,9 @@ export default function ExplorePage() {
     setSelectedStreamingServices([])
     setMovieDuration("any")
     setRecommendedBy("0")
+    setSelectedDirector("")
+    setDirectorSearchQuery("")
+    setAvailableDirectors([])
     setCurrentPage(1)
     setResults([]) // Clear results first
     setTimeout(() => loadTrending(), 100) // Delay to prevent race condition
@@ -888,7 +933,7 @@ export default function ExplorePage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
-              placeholder="Search for movies, TV shows, directors..."
+              placeholder="Search for movies, TV shows..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
@@ -1208,6 +1253,366 @@ export default function ExplorePage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Mobile filters section */}
+        {isMobile && (
+          <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 bg-slate-800/60 flex-1 sm:flex-none"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-slate-900 border-slate-700 max-h-[85vh]">
+              <SheetClose asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-4 top-4 z-10 h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </SheetClose>
+              <SheetHeader>
+                <SheetTitle className="text-white">Filters</SheetTitle>
+              </SheetHeader>
+              <div className="overflow-y-auto max-h-[calc(85vh-80px)] px-4 pb-6">
+                <div className="space-y-6 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Type</label>
+                      <Select value={mediaType} onValueChange={(value: "all" | "movie" | "tv") => setMediaType(value)}>
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                          <SelectItem
+                            value="all"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            All
+                          </SelectItem>
+                          <SelectItem
+                            value="movie"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Movies
+                          </SelectItem>
+                          <SelectItem
+                            value="tv"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            TV Shows
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Genre</label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (selectedGenres.includes(value)) {
+                            setSelectedGenres(selectedGenres.filter((id) => id !== value))
+                          } else {
+                            setSelectedGenres([...selectedGenres, value])
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue
+                            placeholder={
+                              selectedGenres.length === 0
+                                ? "Any Genre"
+                                : selectedGenres.length === 1
+                                  ? genres.find((g) => g.id.toString() === selectedGenres[0])?.name || "Any Genre"
+                                  : `${selectedGenres.length} genres selected`
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                          {genres.map((genre) => (
+                            <SelectItem
+                              key={genre.id}
+                              value={genre.id.toString()}
+                              className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                                selectedGenres.includes(genre.id.toString()) ? "bg-purple-600 text-white" : ""
+                              }`}
+                            >
+                              {selectedGenres.includes(genre.id.toString()) ? "✓ " : ""}
+                              {genre.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Year</label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (selectedYears.includes(value)) {
+                            setSelectedYears(selectedYears.filter((y) => y !== value))
+                          } else {
+                            setSelectedYears([...selectedYears, value])
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue
+                            placeholder={
+                              selectedYears.length === 0
+                                ? "Any Year"
+                                : selectedYears.length === 1
+                                  ? selectedYears[0]
+                                  : `${selectedYears.length} years selected`
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                          {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <SelectItem
+                              key={year}
+                              value={year.toString()}
+                              className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                                selectedYears.includes(year.toString()) ? "bg-purple-600 text-white" : ""
+                              }`}
+                            >
+                              {selectedYears.includes(year.toString()) ? "✓ " : ""}
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Sort By</label>
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                          <SelectItem
+                            value="popularity.desc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Most Popular
+                          </SelectItem>
+                          <SelectItem
+                            value="vote_average.desc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Highest Rated
+                          </SelectItem>
+                          <SelectItem
+                            value="release_date.desc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Newest
+                          </SelectItem>
+                          <SelectItem
+                            value="title.asc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            A-Z
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Duration</label>
+                      <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
+                        <SelectTrigger
+                          className={
+                            mediaType === "tv"
+                              ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
+                              : "bg-white/10 border-white/20 text-white"
+                          }
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                          <SelectItem
+                            value="any"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Any Duration
+                          </SelectItem>
+                          <SelectItem
+                            value="0-90"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Under 90 min
+                          </SelectItem>
+                          <SelectItem
+                            value="90-120"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            90-120 min
+                          </SelectItem>
+                          <SelectItem
+                            value="120-150"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            120-150 min
+                          </SelectItem>
+                          <SelectItem
+                            value="150-999"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Over 150 min
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Director</label>
+                    <div className="relative">
+                      <Input
+                        placeholder="Search directors..."
+                        value={directorSearchQuery}
+                        onChange={(e) => setDirectorSearchQuery(e.target.value)}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                      />
+                      {availableDirectors.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-[9999] bg-slate-800 border border-slate-600 rounded-md mt-1 max-h-40 overflow-y-auto">
+                          {availableDirectors.map((director) => (
+                            <button
+                              key={director.id}
+                              onClick={() => {
+                                setSelectedDirector(director.id.toString())
+                                setDirectorSearchQuery(director.name)
+                                setAvailableDirectors([])
+                              }}
+                              className="w-full text-left px-3 py-2 text-slate-200 hover:bg-slate-700"
+                            >
+                              {director.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {selectedDirector && (
+                        <button
+                          onClick={() => {
+                            setSelectedDirector("")
+                            setDirectorSearchQuery("")
+                          }}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Recommended By</label>
+                    <Select value={recommendedBy} onValueChange={setRecommendedBy}>
+                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                        <SelectItem
+                          value="0"
+                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                        >
+                          Anyone
+                        </SelectItem>
+                        {friends.map((friend) => (
+                          <SelectItem
+                            key={friend.id}
+                            value={friend.id}
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            {friend.display_name} (@{friend.username})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Availability</label>
+                    <div className="space-y-2">
+                      <Button
+                        variant={inTheaters ? "default" : "outline"}
+                        onClick={() => setInTheaters(!inTheaters)}
+                        disabled={mediaType === "tv"}
+                        className={
+                          mediaType === "tv"
+                            ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                            : inTheaters
+                              ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                              : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                        }
+                      >
+                        {inTheaters ? "✓ " : ""}In Theaters
+                      </Button>
+                      <Button
+                        variant={comingSoon ? "default" : "outline"}
+                        onClick={() => setComingSoon(!comingSoon)}
+                        className={
+                          comingSoon
+                            ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                            : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                        }
+                      >
+                        {comingSoon ? "✓ " : ""}Coming Soon
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Streaming Services</label>
+                    <div className="flex flex-wrap gap-2">
+                      {streamingServices.map((service) => (
+                        <Button
+                          key={service.id}
+                          variant={selectedStreamingServices.includes(service.id) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleStreamingService(service.id)}
+                          className={
+                            selectedStreamingServices.includes(service.id)
+                              ? "bg-purple-600 hover:bg-purple-700 text-white text-xs h-8"
+                              : "border-white/20 text-white hover:bg-white/20 bg-white/10 text-xs h-8"
+                          }
+                        >
+                          {selectedStreamingServices.includes(service.id) ? "✓ " : ""}
+                          {service.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900 pb-4">
+                    <Button onClick={handleApplyFilters} className="bg-purple-600 hover:bg-purple-700 h-12">
+                      Apply Filters
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleClearFilters}
+                      className="border-white/20 text-white hover:bg-white/20 bg-white/10 h-12"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         )}
 
         {error && (
