@@ -1171,6 +1171,46 @@ export default function ExplorePage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <label className="text-white text-sm mb-2 block">Director</label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Search directors..."
+                      value={directorSearchQuery}
+                      onChange={(e) => setDirectorSearchQuery(e.target.value)}
+                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                    />
+                    {availableDirectors.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-[9999] bg-slate-800 border border-slate-600 rounded-md mt-1 max-h-40 overflow-y-auto">
+                        {availableDirectors.map((director) => (
+                          <button
+                            key={director.id}
+                            onClick={() => {
+                              setSelectedDirector(director.id.toString())
+                              setDirectorSearchQuery(director.name)
+                              setAvailableDirectors([])
+                            }}
+                            className="w-full text-left px-3 py-2 text-slate-200 hover:bg-slate-700"
+                          >
+                            {director.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {selectedDirector && (
+                      <button
+                        onClick={() => {
+                          setSelectedDirector("")
+                          setDirectorSearchQuery("")
+                        }}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -1244,6 +1284,9 @@ export default function ExplorePage() {
                     setSelectedStreamingServices([])
                     setMovieDuration("any")
                     setRecommendedBy("0")
+                    setSelectedDirector("")
+                    setDirectorSearchQuery("")
+                    setAvailableDirectors([])
                     loadTrending()
                   }}
                   className="border-white/20 text-white hover:bg-white/20 bg-white/10"
