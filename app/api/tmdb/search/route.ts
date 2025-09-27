@@ -100,23 +100,27 @@ export async function GET(request: NextRequest) {
     console.log("[v0] Person search results:", personResults.results?.length, "items")
 
     const directorResults = []
-    for (const person of personResults.results || []) {
-      if (person.known_for_department === "Directing" || person.known_for?.some((work) => work.title || work.name)) {
-        try {
-          const credits = await tmdb.getPersonCredits(person.id)
-          // Get movies/shows they directed
-          const directedWorks =
-            credits.crew?.filter((work) => work.job === "Director" || work.department === "Directing") || []
+    const maxDirectors = 3 // Limit to 3 directors to prevent rate limiting
+    const relevantDirectors = (personResults.results || [])
+      .filter((person) => person.known_for_department === "Directing")
+      .slice(0, maxDirectors)
 
-          if (directedWorks.length > 0) {
-            directorResults.push({
-              director: person,
-              works: directedWorks.slice(0, 10), // Limit to top 10 works
-            })
-          }
-        } catch (error) {
-          console.error("[v0] Error fetching credits for director:", person.name, error)
+    for (const person of relevantDirectors) {
+      try {
+        const credits = await tmdb.getPersonCredits(person.id)
+        // Get movies/shows they directed
+        const directedWorks =
+          credits.crew?.filter((work) => work.job === "Director" || work.department === "Directing") || []
+
+        if (directedWorks.length > 0) {
+          directorResults.push({
+            director: person,
+            works: directedWorks.slice(0, 5), // Reduced to top 5 works
+          })
         }
+      } catch (error) {
+        console.error("[v0] Error fetching credits for director:", person.name, error)
+        continue
       }
     }
 

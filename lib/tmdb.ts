@@ -91,6 +91,12 @@ export interface TMDBWatchProviders {
 
 export class TMDBClient {
   private baseUrl: string
+  private requestQueue: Array<() => Promise<any>> = []
+  private isProcessingQueue = false
+  private lastRequestTime = 0
+  private minRequestInterval = 250 // 250ms between requests (4 requests per second)
+  private cache = new Map<string, { data: any; timestamp: number }>()
+  private cacheTimeout = 5 * 60 * 1000 // 5 minutes
 
   constructor() {
     this.baseUrl = TMDB_BASE_URL
@@ -124,6 +130,57 @@ export class TMDBClient {
   }
 
   private async request(endpoint: string, params: Record<string, string> = {}) {
+    const cacheKey = `${endpoint}?${new URLSearchParams(params).toString()}`
+
+    // Check cache first
+    const cached = this.cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log("[v0] Using cached TMDB response for:", endpoint)
+      return cached.data
+    }
+
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push(async () => {
+        try {
+          const result = await this.makeRequest(endpoint, params)
+          // Cache the result
+          this.cache.set(cacheKey, { data: result, timestamp: Date.now() })
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
+      })
+
+      this.processQueue()
+    })
+  }
+
+  private async processQueue() {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return
+    }
+
+    this.isProcessingQueue = true
+
+    while (this.requestQueue.length > 0) {
+      const now = Date.now()
+      const timeSinceLastRequest = now - this.lastRequestTime
+
+      if (timeSinceLastRequest < this.minRequestInterval) {
+        await new Promise((resolve) => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest))
+      }
+
+      const request = this.requestQueue.shift()
+      if (request) {
+        this.lastRequestTime = Date.now()
+        await request()
+      }
+    }
+
+    this.isProcessingQueue = false
+  }
+
+  private async makeRequest(endpoint: string, params: Record<string, string> = {}) {
     const token = this.getAuthToken()
     const url = new URL(`${this.baseUrl}${endpoint}`)
 
