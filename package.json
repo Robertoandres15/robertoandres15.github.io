@@ -62,7 +62,8 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vue": "latest",
-    "vue-router": "latest"
+    "vue-router": "latest",
+    "web-push": "latest"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",
