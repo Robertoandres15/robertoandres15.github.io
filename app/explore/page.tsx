@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useIsMobile } from "@/components/ui/use-mobile"
 import type { TMDBMovie, TMDBTVShow, TMDBGenre } from "@/lib/tmdb"
 import MobileNavigation from "@/components/MobileNavigation"
+import { createClient } from "@/lib/supabase/client"
 
 interface MediaItem extends TMDBMovie, TMDBTVShow {
   media_type?: "movie" | "tv"
@@ -74,6 +75,9 @@ export default function ExplorePage() {
   const [hasMore, setHasMore] = useState(true)
   const [expandedDirectors, setExpandedDirectors] = useState<Set<number>>(new Set())
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
+
   const streamingServices = [
     { id: "8", name: "Netflix" },
     { id: "9", name: "Amazon Prime Video" },
@@ -87,11 +91,19 @@ export default function ExplorePage() {
   ]
 
   useEffect(() => {
+    checkAuthentication()
+  }, [])
+
+  useEffect(() => {
+    if (authLoading) return
+
     loadGenres()
     loadUserLists()
-    loadFriends()
+    if (isAuthenticated) {
+      loadFriends()
+    }
     loadTrending()
-  }, [])
+  }, [authLoading, isAuthenticated])
 
   useEffect(() => {
     if (mediaType === "tv") {
@@ -225,7 +237,36 @@ export default function ExplorePage() {
     }
   }
 
+  const checkAuthentication = async () => {
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
+
+      if (error) {
+        console.error("[v0] Auth check error:", error)
+        setIsAuthenticated(false)
+      } else {
+        setIsAuthenticated(!!user)
+        console.log("[v0] Authentication status:", !!user)
+      }
+    } catch (error) {
+      console.error("[v0] Authentication check failed:", error)
+      setIsAuthenticated(false)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   const loadFriends = async () => {
+    if (!isAuthenticated) {
+      console.log("[v0] Skipping friends load - user not authenticated")
+      setFriends([])
+      return
+    }
+
     try {
       console.log("[v0] Loading friends for Recommended By filter")
       const controller = new AbortController()
@@ -828,16 +869,26 @@ export default function ExplorePage() {
                             >
                               Anyone
                             </SelectItem>
-                            {friends.map((friend) => (
-                              <SelectItem
-                                key={friend.id}
-                                value={friend.id}
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                                onClick={() => console.log("[v0] Friend selected:", friend.display_name, friend.id)}
-                              >
-                                {friend.display_name} (@{friend.username})
+                            {!isAuthenticated ? (
+                              <SelectItem value="login" className="text-slate-400 cursor-not-allowed" disabled>
+                                Login to see friends
                               </SelectItem>
-                            ))}
+                            ) : friends.length === 0 ? (
+                              <SelectItem value="no-friends" className="text-slate-400 cursor-not-allowed" disabled>
+                                No friends yet
+                              </SelectItem>
+                            ) : (
+                              friends.map((friend) => (
+                                <SelectItem
+                                  key={friend.id}
+                                  value={friend.id}
+                                  className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                                  onClick={() => console.log("[v0] Friend selected:", friend.display_name, friend.id)}
+                                >
+                                  {friend.display_name} (@{friend.username})
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1161,15 +1212,25 @@ export default function ExplorePage() {
                       >
                         Anyone
                       </SelectItem>
-                      {friends.map((friend) => (
-                        <SelectItem
-                          key={friend.id}
-                          value={friend.id}
-                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                        >
-                          {friend.display_name || friend.username}
+                      {!isAuthenticated ? (
+                        <SelectItem value="login" className="text-slate-400 cursor-not-allowed" disabled>
+                          Login to see friends
                         </SelectItem>
-                      ))}
+                      ) : friends.length === 0 ? (
+                        <SelectItem value="no-friends" className="text-slate-400 cursor-not-allowed" disabled>
+                          No friends yet
+                        </SelectItem>
+                      ) : (
+                        friends.map((friend) => (
+                          <SelectItem
+                            key={friend.id}
+                            value={friend.id}
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            {friend.display_name || friend.username}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1576,15 +1637,25 @@ export default function ExplorePage() {
                         >
                           Anyone
                         </SelectItem>
-                        {friends.map((friend) => (
-                          <SelectItem
-                            key={friend.id}
-                            value={friend.id}
-                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                          >
-                            {friend.display_name} (@{friend.username})
+                        {!isAuthenticated ? (
+                          <SelectItem value="login" className="text-slate-400 cursor-not-allowed" disabled>
+                            Login to see friends
                           </SelectItem>
-                        ))}
+                        ) : friends.length === 0 ? (
+                          <SelectItem value="no-friends" className="text-slate-400 cursor-not-allowed" disabled>
+                            No friends yet
+                          </SelectItem>
+                        ) : (
+                          friends.map((friend) => (
+                            <SelectItem
+                              key={friend.id}
+                              value={friend.id}
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              {friend.display_name} (@{friend.username})
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
