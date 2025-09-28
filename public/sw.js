@@ -77,3 +77,86 @@ self.addEventListener("activate", (event) => {
       }),
   )
 })
+
+// Push event - handle incoming push notifications
+self.addEventListener("push", (event) => {
+  if (!event.data) {
+    return
+  }
+
+  const data = event.data.json()
+  const options = {
+    body: data.body,
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
+    data: data.data || {},
+    actions: [
+      {
+        action: "view",
+        title: "View",
+        icon: "/icon-192.png",
+      },
+      {
+        action: "dismiss",
+        title: "Dismiss",
+      },
+    ],
+    requireInteraction: true,
+    tag: data.data?.type || "default",
+  }
+
+  event.waitUntil(self.registration.showNotification(data.title, options))
+})
+
+// Notification click event - handle notification interactions
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+
+  const data = event.notification.data
+  let url = "/"
+
+  // Route to appropriate page based on notification type
+  switch (data.type) {
+    case "friend_request_received":
+    case "friend_request_accepted":
+      url = "/friends"
+      break
+    case "mutual_match":
+      url = "/explore"
+      break
+    case "list_comment":
+    case "list_like":
+    case "list_shared":
+      url = data.relatedId ? `/lists/${data.relatedId}` : "/lists"
+      break
+    case "recommendation_added_to_wishlist":
+      url = "/profile"
+      break
+    default:
+      url = "/"
+  }
+
+  if (event.action === "view" || !event.action) {
+    event.waitUntil(
+      clients.matchAll({ type: "window" }).then((clientList) => {
+        // Check if there's already a window/tab open
+        for (const client of clientList) {
+          if (client.url.includes(url) && "focus" in client) {
+            return client.focus()
+          }
+        }
+        // If no matching window, open a new one
+        if (clients.openWindow) {
+          return clients.openWindow(url)
+        }
+      }),
+    )
+  }
+
+  // Mark notification as read
+  if (data.notificationId) {
+    fetch(`/api/notifications/${data.notificationId}/read`, {
+      method: "POST",
+    }).catch(console.error)
+  }
+})

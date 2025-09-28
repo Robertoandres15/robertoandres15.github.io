@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { notifyRecommendationAddedToWishlist } from "@/lib/notifications"
 
 export async function POST(request: NextRequest) {
   try {
     const requestData = await request.json()
-    const { action, tmdb_id, media_type, title, poster_path, release_date, recommended_by } = requestData
+    const { action, tmdb_id, media_type, title, poster_path, release_date, recommended_by, recommender_id } =
+      requestData
 
     const supabase = await createClient()
 
@@ -60,6 +62,26 @@ export async function POST(request: NextRequest) {
 
         if (wishlistError) {
           return NextResponse.json({ error: "Failed to add to wishlist" }, { status: 500 })
+        }
+
+        if (recommender_id && recommender_id !== user.id) {
+          try {
+            const { data: userProfile } = await supabase
+              .from("profiles")
+              .select("display_name")
+              .eq("id", user.id)
+              .single()
+
+            await notifyRecommendationAddedToWishlist(
+              recommender_id,
+              user.id,
+              title,
+              userProfile?.display_name || "Someone",
+            )
+          } catch (notificationError) {
+            console.error("Failed to send recommendation notification:", notificationError)
+            // Don't fail the request if notification fails
+          }
         }
 
         return NextResponse.json({ success: true })

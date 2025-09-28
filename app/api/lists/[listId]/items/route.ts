@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { notifyMutualMatch } from "@/lib/notifications"
 
 export async function POST(request: NextRequest, { params }: { params: { listId: string } }) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: { listId:
     // Verify the list belongs to the user
     const { data: list, error: listError } = await supabase
       .from("lists")
-      .select("id, user_id")
+      .select("id, user_id, type")
       .eq("id", listId)
       .eq("user_id", user.id)
       .single()
@@ -67,6 +68,66 @@ export async function POST(request: NextRequest, { params }: { params: { listId:
     if (error) {
       console.error("Add list item error:", error)
       return NextResponse.json({ error: "Failed to add item to list" }, { status: 500 })
+    }
+
+    if (list.type === "wishlist") {
+      try {
+        // Get user's friends
+        const { data: friendships } = await supabase
+          .from("friends")
+          .select("user_id, friend_id")
+          .or(`and(user_id.eq.${user.id},status.eq.accepted),and(friend_id.eq.${user.id},status.eq.accepted)`)
+
+        if (friendships && friendships.length > 0) {
+          // Get friend IDs
+          const friendIds = friendships.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id))
+
+          // Check if any friends have this same item in their wishlist
+          const { data: friendWishlists } = await supabase
+            .from("lists")
+            .select("id, user_id")
+            .eq("type", "wishlist")
+            .in("user_id", friendIds)
+
+          if (friendWishlists && friendWishlists.length > 0) {
+            const friendWishlistIds = friendWishlists.map((w) => w.id)
+
+            // Check for matching items
+            const { data: matchingItems } = await supabase
+              .from("list_items")
+              .select(`
+                id,
+                list_id,
+                lists!inner(user_id, users!inner(id, display_name))
+              `)
+              .in("list_id", friendWishlistIds)
+              .eq("tmdb_id", tmdb_id)
+              .eq("media_type", media_type)
+
+            if (matchingItems && matchingItems.length > 0) {
+              // Get current user's profile
+              const { data: userProfile } = await supabase
+                .from("profiles")
+                .select("display_name")
+                .eq("id", user.id)
+                .single()
+
+              const userName = userProfile?.display_name || "Someone"
+
+              // Notify each friend with a matching item
+              for (const matchingItem of matchingItems) {
+                const friendId = matchingItem.lists.user_id
+                const friendName = matchingItem.lists.users.display_name || "Someone"
+
+                await notifyMutualMatch(user.id, friendId, title, userName, friendName)
+              }
+            }
+          }
+        }
+      } catch (matchError) {
+        console.error("Failed to check for mutual matches:", matchError)
+        // Don't fail the request if mutual match check fails
+      }
     }
 
     return NextResponse.json({ listItem })

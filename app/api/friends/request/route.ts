@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { notifyFriendRequest } from "@/lib/notifications"
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Friendship already exists" }, { status: 400 })
     }
 
+    const { data: senderProfile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single()
+
     // Create friend request
     const { error } = await supabase.from("friends").insert({
       user_id: user.id,
@@ -43,6 +46,13 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Create friend request error:", error)
       return NextResponse.json({ error: "Failed to send friend request" }, { status: 500 })
+    }
+
+    try {
+      await notifyFriendRequest(user.id, friendId, senderProfile?.display_name || "Someone")
+    } catch (notificationError) {
+      console.error("Failed to send friend request notification:", notificationError)
+      // Don't fail the request if notification fails
     }
 
     return NextResponse.json({ success: true })

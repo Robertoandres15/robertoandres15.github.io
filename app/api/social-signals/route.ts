@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { notifyListLike, notifyListComment } from "@/lib/notifications"
 
 export async function GET(request: NextRequest) {
   try {
@@ -123,6 +124,48 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: "Failed to create social signal" }, { status: 500 })
+    }
+
+    if (target_type === "list" && signal_type === "like") {
+      try {
+        // Get list details and owner info
+        const { data: list } = await supabase.from("lists").select("user_id, name").eq("id", target_id).single()
+
+        if (list && list.user_id !== user.id) {
+          // Get user's profile for notification
+          const { data: userProfile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", user.id)
+            .single()
+
+          await notifyListLike(list.user_id, user.id, userProfile?.display_name || "Someone", list.name, target_id)
+        }
+      } catch (notificationError) {
+        console.error("Failed to send list like notification:", notificationError)
+        // Don't fail the request if notification fails
+      }
+    }
+
+    if (target_type === "list" && signal_type === "comment") {
+      try {
+        // Get list details and owner info
+        const { data: list } = await supabase.from("lists").select("user_id, name").eq("id", target_id).single()
+
+        if (list && list.user_id !== user.id) {
+          // Get user's profile for notification
+          const { data: userProfile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", user.id)
+            .single()
+
+          await notifyListComment(list.user_id, user.id, userProfile?.display_name || "Someone", list.name, target_id)
+        }
+      } catch (notificationError) {
+        console.error("Failed to send list comment notification:", notificationError)
+        // Don't fail the request if notification fails
+      }
     }
 
     return NextResponse.json({ signal, action: signal_type === "like" ? "liked" : "created" })
