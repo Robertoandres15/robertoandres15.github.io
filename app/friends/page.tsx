@@ -56,9 +56,8 @@ export default function FriendsPage() {
 
       const authenticatedUser = authData?.user
       if (!authenticatedUser) {
-        console.error("[v0] Auth session missing!")
-        setAuthError("Please log in to access friends")
-        setAuthLoading(false)
+        console.log("[v0] No auth session found, redirecting to login")
+        router.push("/auth/login")
         return
       }
 
