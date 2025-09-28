@@ -334,11 +334,8 @@ export default function ExplorePage() {
         params.append("friend_id", recommendedBy)
         console.log("[v0] Using recommendations API for friend:", recommendedBy)
       } else if (selectedDirector) {
-        url = "/api/tmdb/search"
-        const directorName =
-          availableDirectors.find((d) => d.id.toString() === selectedDirector)?.name || selectedDirector
-        params.append("q", directorName)
-        console.log("[v0] Using search API for director:", directorName)
+        url = `/api/tmdb/director/${selectedDirector}`
+        console.log("[v0] Using director API for director ID:", selectedDirector)
       } else {
         url = "/api/tmdb/discover"
         console.log("[v0] Using discover API")
@@ -400,6 +397,11 @@ export default function ExplorePage() {
         results = data.results || []
         directors = data.directors || []
         console.log("[v0] Search results received:", results.length, "media items,", directors.length, "directors")
+      } else if (url.startsWith("/api/tmdb/director/")) {
+        // Director API returns { director: {...}, works: [...] }
+        results = data.works || []
+        directors = data.director ? [data.director] : [] // Wrap director in an array for consistency
+        console.log("[v0] Director API results received:", results.length, "works,", directors.length, "director info")
       } else {
         results = data.results || []
         console.log("[v0] Discover results received:", results.length, "media items")
@@ -407,7 +409,9 @@ export default function ExplorePage() {
 
       if (page === 1) {
         setResults(results)
-        setDirectorResults(directors)
+        setDirectorResults(
+          directors.map((d) => ({ director: d, works: results.filter((r) => r.director_id === d.id) })),
+        ) // Map director results correctly
         setTotalPages(data.total_pages || 1)
       } else {
         setResults((prev) => [...prev, ...results])
