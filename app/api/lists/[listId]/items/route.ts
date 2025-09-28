@@ -32,15 +32,19 @@ export async function POST(request: NextRequest, { params }: { params: { listId:
     }
 
     // Check if item already exists in the list
-    const { data: existingItem } = await supabase
+    const { data: existingItems, error: existingError } = await supabase
       .from("list_items")
       .select("id")
       .eq("list_id", listId)
       .eq("tmdb_id", tmdb_id)
       .eq("media_type", media_type)
-      .single()
 
-    if (existingItem) {
+    if (existingError) {
+      console.error("Error checking existing item:", existingError)
+      return NextResponse.json({ error: "Failed to check existing items" }, { status: 500 })
+    }
+
+    if (existingItems && existingItems.length > 0) {
       return NextResponse.json({ error: "Item already exists in this list" }, { status: 400 })
     }
 
