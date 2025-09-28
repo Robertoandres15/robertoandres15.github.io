@@ -278,7 +278,7 @@ function CreateNewListForm({ actionType, onCreateList, isLoading }: CreateNewLis
       <Button
         onClick={() => setIsCreating(true)}
         variant="outline"
-        className="w-full border-white/20 text-white hover:bg-white/10"
+        className="w-full border-slate-600 bg-slate-800/50 text-white hover:bg-slate-700/50 hover:border-slate-500"
         disabled={isLoading}
       >
         <Plus className="h-4 w-4 mr-2" />
