@@ -398,9 +398,8 @@ export default function ExplorePage() {
         directors = data.directors || []
         console.log("[v0] Search results received:", results.length, "media items,", directors.length, "directors")
       } else if (url.startsWith("/api/tmdb/director/")) {
-        // Director API returns { director: {...}, works: [...] }
-        results = data.works || []
-        directors = data.director ? [data.director] : [] // Wrap director in an array for consistency
+        results = data.results || []
+        directors = data.directors || [] // Use data.directors array instead of wrapping single director
         console.log("[v0] Director API results received:", results.length, "works,", directors.length, "director info")
       } else {
         results = data.results || []
