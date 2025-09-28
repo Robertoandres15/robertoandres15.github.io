@@ -231,7 +231,7 @@ export default function ExplorePage() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
-      const response = await fetch("/api/friends/list", { signal: controller.signal })
+      const response = await fetch("/api/friends/list?type=friends", { signal: controller.signal })
       clearTimeout(timeoutId)
 
       const data = await response.json()
