@@ -39,7 +39,7 @@ export default function FriendsPage() {
       const supabase = createClient()
 
       if (!supabase) {
-        console.error("[v0] Supabase client not available")
+        console.log("[v0] Supabase client not available")
         setAuthError("Unable to connect to database")
         setAuthLoading(false)
         return
@@ -48,7 +48,7 @@ export default function FriendsPage() {
       const { data: authData, error: authError } = await supabase.auth.getUser()
 
       if (authError) {
-        console.error("[v0] Auth error:", authError)
+        console.log("[v0] Auth error:", authError.message)
         setAuthError("Authentication failed")
         setAuthLoading(false)
         return
@@ -56,18 +56,19 @@ export default function FriendsPage() {
 
       const authenticatedUser = authData?.user
       if (!authenticatedUser) {
-        console.log("[v0] No auth session found, redirecting to login")
-        router.push("/auth/login")
+        console.log("[v0] No authenticated user found, redirecting to login")
+        setAuthLoading(false)
+        router.replace("/auth/login")
         return
       }
 
       console.log("[v0] User authenticated:", authenticatedUser.id)
       setUser(authenticatedUser)
       setAuthError(null)
+      setAuthLoading(false)
     } catch (error) {
-      console.error("[v0] Auth check error:", error)
+      console.log("[v0] Auth check failed:", error instanceof Error ? error.message : "Unknown error")
       setAuthError("Authentication check failed")
-    } finally {
       setAuthLoading(false)
     }
   }
@@ -369,23 +370,12 @@ export default function FriendsPage() {
     )
   }
 
-  if (authError) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-400 mb-4">{authError}</div>
-          <div className="space-x-4">
-            <Button onClick={() => router.push("/auth/login")} className="bg-purple-600 hover:bg-purple-700">
-              Log In
-            </Button>
-            <Button
-              onClick={() => router.push("/feed")}
-              variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              Go to Feed
-            </Button>
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="text-white">Redirecting to login...</div>
         </div>
       </div>
     )
