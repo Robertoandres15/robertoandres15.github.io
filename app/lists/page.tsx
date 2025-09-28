@@ -693,18 +693,18 @@ export default function ListsPage() {
                           <CardTitle className="text-white">{list.name}</CardTitle>
                           {list.description && <p className="text-slate-300 text-sm mt-1">{list.description}</p>}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                           <Badge variant={list.is_public ? "default" : "secondary"}>
                             {list.is_public ? "Public" : "Private"}
                           </Badge>
-                          <Badge variant="outline" className="border-purple-400 text-purple-400">
+                          <Badge variant="outline" className="border-purple-400 text-purple-400 whitespace-nowrap">
                             {list.list_items.length} items
                           </Badge>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setShowDeleteDialog(list.id)}
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -857,18 +857,18 @@ export default function ListsPage() {
                           <CardTitle className="text-white">{list.name}</CardTitle>
                           {list.description && <p className="text-slate-300 text-sm mt-1">{list.description}</p>}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                           <Badge variant={list.is_public ? "default" : "secondary"}>
                             {list.is_public ? "Public" : "Private"}
                           </Badge>
-                          <Badge variant="outline" className="border-purple-400 text-purple-400">
+                          <Badge variant="outline" className="border-purple-400 text-purple-400 whitespace-nowrap">
                             {list.list_items.length} items
                           </Badge>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setShowDeleteDialog(list.id)}
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

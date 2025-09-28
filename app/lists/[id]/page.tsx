@@ -194,14 +194,14 @@ export default function ListDetailPage() {
         <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <Badge variant={list.is_public ? "default" : "secondary"}>
                   {list.is_public ? "Public" : "Private"}
                 </Badge>
-                <Badge variant="outline" className="border-purple-400 text-purple-400">
+                <Badge variant="outline" className="border-purple-400 text-purple-400 whitespace-nowrap">
                   {list.type === "wishlist" ? "Wishlist" : "Recommendations"}
                 </Badge>
-                <Badge variant="outline" className="border-slate-400 text-slate-400">
+                <Badge variant="outline" className="border-slate-400 text-slate-400 whitespace-nowrap">
                   {list.list_items.length} items
                 </Badge>
               </div>
