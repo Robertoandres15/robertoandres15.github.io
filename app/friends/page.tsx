@@ -387,7 +387,14 @@ export default function FriendsPage() {
                                 onClick={() => selectSuggestion(user)}
                               >
                                 <Avatar className="h-8 w-8">
-                                  <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                                  <AvatarImage
+                                    src={user.avatar_url || "/placeholder.svg"}
+                                    alt={user.display_name}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement
+                                      target.style.display = "none"
+                                    }}
+                                  />
                                   <AvatarFallback className="text-xs bg-purple-600 text-white">
                                     {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
                                   </AvatarFallback>
@@ -503,7 +510,14 @@ export default function FriendsPage() {
                     {searchResults.map((user: any) => (
                       <div key={user.id} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
                         <Avatar>
-                          <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                          <AvatarImage
+                            src={user.avatar_url || "/placeholder.svg"}
+                            alt={user.display_name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = "none"
+                            }}
+                          />
                           <AvatarFallback className="bg-purple-600 text-white">
                             {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
                           </AvatarFallback>
@@ -537,6 +551,10 @@ export default function FriendsPage() {
                           <AvatarImage
                             src={friend.friend?.avatar_url || "/placeholder.svg"}
                             alt={friend.friend?.display_name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = "none"
+                            }}
                           />
                           <AvatarFallback className="bg-purple-600 text-white">
                             {friend.friend?.display_name?.charAt(0) || friend.friend?.username?.charAt(0) || "F"}
@@ -579,6 +597,10 @@ export default function FriendsPage() {
                           <AvatarImage
                             src={request.user?.avatar_url || "/placeholder.svg"}
                             alt={request.user?.display_name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = "none"
+                            }}
                           />
                           <AvatarFallback className="bg-purple-600 text-white">
                             {request.user?.display_name?.charAt(0) || request.user?.username?.charAt(0) || "R"}
