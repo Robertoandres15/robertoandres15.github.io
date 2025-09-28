@@ -83,7 +83,20 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
             targetList = newList.list
             setUserLists((prev) => [...prev, targetList!])
           } else {
-            throw new Error(`Failed to create ${actionType} list`)
+            if (createResponse.status === 401) {
+              toast({
+                title: "Please log in",
+                description: "You need to be logged in to create lists. Redirecting to login...",
+                variant: "destructive",
+              })
+              // Redirect to login after a short delay
+              setTimeout(() => {
+                window.location.href = "/login"
+              }, 2000)
+              return
+            }
+            const errorData = await createResponse.json().catch(() => ({}))
+            throw new Error(errorData.error || `Failed to create ${actionType} list`)
           }
         } else {
           // Use first existing list of this type
@@ -120,6 +133,17 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
         setIsDialogOpen(false)
         onSuccess?.()
       } else {
+        if (response.status === 401) {
+          toast({
+            title: "Please log in",
+            description: "You need to be logged in to add items to lists. Redirecting to login...",
+            variant: "destructive",
+          })
+          setTimeout(() => {
+            window.location.href = "/login"
+          }, 2000)
+          return
+        }
         toast({
           title: `Failed to add to ${actionType}`,
           description: data.error || "An error occurred",
@@ -128,9 +152,10 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
       }
     } catch (error) {
       console.error(`Failed to add to ${actionType}:`, error)
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
       toast({
         title: `Failed to add to ${actionType}`,
-        description: `An error occurred while adding to your ${actionType}`,
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -156,12 +181,26 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
         setUserLists((prev) => [...prev, newList.list])
         await addToList(newList.list.id)
       } else {
-        throw new Error("Failed to create new list")
+        if (response.status === 401) {
+          toast({
+            title: "Please log in",
+            description: "You need to be logged in to create lists. Redirecting to login...",
+            variant: "destructive",
+          })
+          setTimeout(() => {
+            window.location.href = "/login"
+          }, 2000)
+          return
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to create new list")
       }
     } catch (error) {
+      console.error("Failed to create list:", error)
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
       toast({
         title: "Failed to create list",
-        description: "An error occurred while creating the new list",
+        description: errorMessage,
         variant: "destructive",
       })
     }
