@@ -23,10 +23,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("notifications")
-      .select(`
-        *,
-        from_user:from_user_id(display_name, username, avatar_url)
-      `)
+      .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
@@ -42,6 +39,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 })
     }
 
+    const notificationsWithUsers = await Promise.all(
+      notifications.map(async (notification) => {
+        if (notification.from_user_id) {
+          const { data: fromUser } = await supabase
+            .from("users")
+            .select("display_name, username, avatar_url")
+            .eq("id", notification.from_user_id)
+            .single()
+
+          return {
+            ...notification,
+            from_user: fromUser,
+          }
+        }
+        return notification
+      }),
+    )
+
     // Get unread count
     const { count: unreadCount } = await supabase
       .from("notifications")
@@ -50,7 +65,7 @@ export async function GET(request: NextRequest) {
       .eq("read", false)
 
     return NextResponse.json({
-      notifications,
+      notifications: notificationsWithUsers,
       unreadCount: unreadCount || 0,
       page,
       hasMore: notifications.length === limit,
