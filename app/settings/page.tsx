@@ -1334,6 +1334,25 @@ export default function SettingsPage() {
 
                     <Separator className="bg-white/20" />
 
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-5 w-5 text-purple-400" />
+                        <div>
+                          <h3 className="text-white font-medium">Sign Out</h3>
+                          <p className="text-gray-300 text-sm">Sign out of your account on this device</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                        onClick={handleSignOut}
+                      >
+                        Sign Out
+                      </Button>
+                    </div>
+
+                    <Separator className="bg-white/20" />
+
                     <div className="flex items-center justify-between p-4 bg-red-500/10 rounded-lg border border-red-500/20">
                       <div className="flex items-center gap-3">
                         <Trash2 className="h-5 w-5 text-red-400" />
@@ -1346,26 +1365,6 @@ export default function SettingsPage() {
                         Delete
                       </Button>
                     </div>
-
-                    {showDeleteConfirm && (
-                      <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-                        <p className="text-white mb-4">
-                          Are you sure you want to delete your account? This action cannot be undone.
-                        </p>
-                        <div className="flex gap-3">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowDeleteConfirm(false)}
-                            className="border-white/20 text-white hover:bg-white/10"
-                          >
-                            Cancel
-                          </Button>
-                          <Button variant="destructive" onClick={handleDeleteAccount}>
-                            Yes, Delete Account
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
