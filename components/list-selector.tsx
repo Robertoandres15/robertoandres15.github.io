@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Heart, ListIcon, ChevronDown } from "lucide-react"
+import { Plus, Heart, ListIcon, ChevronDown, Check, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface MediaItem {
@@ -31,6 +31,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
   const [userLists, setUserLists] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const { toast } = useToast()
 
   const title = mediaItem.title || mediaItem.name || "Unknown"
@@ -57,12 +58,10 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
     try {
       let targetList = listId ? userLists.find((list) => list.id === listId) : null
 
-      // If no specific list provided or list not found, create/find default list
       if (!targetList) {
         const existingLists = userLists.filter((list) => list.type === actionType)
 
         if (existingLists.length === 0) {
-          // Create default list
           const defaultName = actionType === "wishlist" ? "My Wishlist" : "My Recommendations"
           const createResponse = await fetch("/api/lists", {
             method: "POST",
@@ -89,7 +88,6 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
                 description: "You need to be logged in to create lists. Redirecting to login...",
                 variant: "destructive",
               })
-              // Redirect to login after a short delay
               setTimeout(() => {
                 window.location.href = "/auth/login"
               }, 2000)
@@ -99,7 +97,6 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
             throw new Error(errorData.error || `Failed to create ${actionType} list`)
           }
         } else {
-          // Use first existing list of this type
           targetList = existingLists[0]
         }
       }
@@ -108,7 +105,6 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
         throw new Error("No target list available")
       }
 
-      // Add item to the selected list
       const response = await fetch(`/api/lists/${targetList.id}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,12 +122,26 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
       const data = await response.json()
 
       if (response.ok) {
+        setShowSuccess(true)
+
         toast({
-          title: `Added to ${targetList.name}`,
-          description: `${title} has been added to your ${targetList.name.toLowerCase()}`,
+          title: "✅ Successfully Added!",
+          description: (
+            <div className="space-y-1">
+              <div className="font-medium">{title}</div>
+              <div className="text-sm opacity-90">Added to "{targetList.name}"</div>
+              {data.mutualMatch && (
+                <div className="text-sm text-green-400 font-medium">🎉 You and a friend both want to watch this!</div>
+              )}
+            </div>
+          ),
+          className: "border-green-500/20 bg-green-950/50",
         })
+
         setIsDialogOpen(false)
         onSuccess?.()
+
+        setTimeout(() => setShowSuccess(false), 2000)
       } else {
         if (response.status === 401) {
           toast({
@@ -208,43 +218,55 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
 
   const relevantLists = userLists.filter((list) => list.type === actionType)
   const hasMultipleLists = relevantLists.length > 1
-  const ButtonIcon = actionType === "wishlist" ? Plus : Heart
-  const buttonText = actionType === "wishlist" ? "Add to Wishlist" : "Recommend"
 
-  // If user has 0 or 1 list, use simple button
+  const getButtonIcon = () => {
+    if (showSuccess) return Check
+    if (isLoading) return Loader2
+    return actionType === "wishlist" ? Plus : Heart
+  }
+
+  const getButtonText = () => {
+    if (showSuccess) return "Added!"
+    if (isLoading) return "Adding..."
+    return actionType === "wishlist" ? "Add to Wishlist" : "Recommend"
+  }
+
+  const getButtonClassName = () => {
+    const baseClass =
+      actionType === "wishlist"
+        ? "bg-purple-600 hover:bg-purple-700"
+        : "bg-slate-700 hover:bg-slate-600 border-white/20 text-white"
+
+    if (showSuccess) {
+      return "bg-green-600 hover:bg-green-700 transition-all duration-300"
+    }
+
+    return baseClass
+  }
+
+  const ButtonIcon = getButtonIcon()
+
   if (!hasMultipleLists) {
     return (
       <Button
         onClick={() => addToList()}
-        disabled={isLoading}
-        className={
-          actionType === "wishlist"
-            ? "bg-purple-600 hover:bg-purple-700"
-            : "bg-slate-700 hover:bg-slate-600 border-white/20 text-white"
-        }
+        disabled={isLoading || showSuccess}
+        className={getButtonClassName()}
         variant="default"
       >
-        <ButtonIcon className="h-4 w-4 mr-2" />
-        {isLoading ? "Adding..." : buttonText}
+        <ButtonIcon className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : showSuccess ? "animate-pulse" : ""}`} />
+        {getButtonText()}
       </Button>
     )
   }
 
-  // If user has multiple lists, show selection dialog
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button
-          className={
-            actionType === "wishlist"
-              ? "bg-purple-600 hover:bg-purple-700"
-              : "bg-slate-700 hover:bg-slate-600 border-white/20 text-white"
-          }
-          variant="default"
-        >
-          <ButtonIcon className="h-4 w-4 mr-2" />
-          {buttonText}
-          <ChevronDown className="h-4 w-4 ml-2" />
+        <Button className={getButtonClassName()} variant="default" disabled={showSuccess}>
+          <ButtonIcon className={`h-4 w-4 mr-2 ${showSuccess ? "animate-pulse" : ""}`} />
+          {showSuccess ? "Added!" : actionType === "wishlist" ? "Add to Wishlist" : "Recommend"}
+          {!showSuccess && <ChevronDown className="h-4 w-4 ml-2" />}
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
@@ -263,7 +285,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
                 key={list.id}
                 onClick={() => addToList(list.id)}
                 disabled={isLoading}
-                className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-slate-600/50 hover:border-slate-500/50"
+                className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-slate-600/50 hover:border-slate-500/50 disabled:opacity-50"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -278,6 +300,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
                       )}
                     </div>
                   </div>
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin text-purple-400" />}
                 </div>
               </button>
             ))}
