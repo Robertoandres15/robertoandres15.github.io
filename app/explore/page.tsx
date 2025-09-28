@@ -246,14 +246,14 @@ export default function ExplorePage() {
       } = await supabase.auth.getUser()
 
       if (error) {
-        console.error("[v0] Auth check error:", error)
+        console.log("[v0] Auth check error (non-critical for explore):", error.message)
         setIsAuthenticated(false)
       } else {
         setIsAuthenticated(!!user)
         console.log("[v0] Authentication status:", !!user)
       }
     } catch (error) {
-      console.error("[v0] Authentication check failed:", error)
+      console.log("[v0] Authentication check failed (non-critical for explore):", error)
       setIsAuthenticated(false)
     } finally {
       setAuthLoading(false)

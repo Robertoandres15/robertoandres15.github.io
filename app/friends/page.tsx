@@ -11,6 +11,8 @@ import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User, Lo
 import { useToast } from "@/hooks/use-toast"
 import { MobileNavigation } from "@/components/mobile-navigation"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -25,9 +27,59 @@ export default function FriendsPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [authError, setAuthError] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
+
+  const checkAuthentication = async () => {
+    try {
+      console.log("[v0] Checking authentication...")
+      const supabase = createClient()
+
+      if (!supabase) {
+        console.error("[v0] Supabase client not available")
+        setAuthError("Unable to connect to database")
+        setAuthLoading(false)
+        return
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+
+      if (authError) {
+        console.error("[v0] Auth error:", authError)
+        setAuthError("Authentication failed")
+        setAuthLoading(false)
+        return
+      }
+
+      const authenticatedUser = authData?.user
+      if (!authenticatedUser) {
+        console.error("[v0] Auth session missing!")
+        setAuthError("Please log in to access friends")
+        setAuthLoading(false)
+        return
+      }
+
+      console.log("[v0] User authenticated:", authenticatedUser.id)
+      setUser(authenticatedUser)
+      setAuthError(null)
+    } catch (error) {
+      console.error("[v0] Auth check error:", error)
+      setAuthError("Authentication check failed")
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    checkAuthentication()
+  }, [])
 
   const handleAutoSuggest = async (query: string) => {
+    if (!user) return
+
     if (query.trim().length < 2) {
       setAutoSuggestResults([])
       setShowAutoSuggest(false)
@@ -90,6 +142,8 @@ export default function FriendsPage() {
   }, [])
 
   const searchUsers = async () => {
+    if (!user) return
+
     setIsSearching(true)
     try {
       const response = await fetch(`/api/friends/search?q=${encodeURIComponent(searchQuery)}`)
@@ -109,6 +163,8 @@ export default function FriendsPage() {
   }
 
   const sendFriendRequest = async (friendId: string) => {
+    if (!user) return
+
     try {
       const response = await fetch("/api/friends/request", {
         method: "POST",
@@ -150,6 +206,8 @@ export default function FriendsPage() {
   }
 
   const respondToRequest = async (friendshipId: string, action: "accept" | "decline") => {
+    if (!user) return
+
     try {
       const response = await fetch("/api/friends/respond", {
         method: "POST",
@@ -190,6 +248,8 @@ export default function FriendsPage() {
   }
 
   const fetchFriendsAndRequests = async () => {
+    if (!user) return
+
     setIsLoading(true)
     try {
       const friendsResponse = await fetch("/api/friends/list?type=friends")
@@ -212,8 +272,10 @@ export default function FriendsPage() {
   }
 
   useEffect(() => {
-    fetchFriendsAndRequests()
-  }, [])
+    if (user) {
+      fetchFriendsAndRequests()
+    }
+  }, [user])
 
   const openNativeSMS = () => {
     const inviteLink = `${window.location.origin}/signup?ref=${btoa(Date.now().toString())}`
@@ -295,6 +357,39 @@ export default function FriendsPage() {
           </Button>
         )
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="text-white">Loading...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">{authError}</div>
+          <div className="space-x-4">
+            <Button onClick={() => router.push("/auth/login")} className="bg-purple-600 hover:bg-purple-700">
+              Log In
+            </Button>
+            <Button
+              onClick={() => router.push("/feed")}
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Go to Feed
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
