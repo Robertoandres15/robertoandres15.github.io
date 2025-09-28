@@ -28,21 +28,24 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit
 
-    let query = supabase
+    // Build the base query with explicit column selection
+    let baseQuery = supabase
       .from("notifications")
-      .select("*")
+      .select("id, user_id, from_user_id, type, title, message, data, read, created_at, updated_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
 
     if (unreadOnly) {
-      query = query.eq("read", false)
+      baseQuery = baseQuery.eq("read", false)
     }
+
+    // Apply pagination
+    const query = baseQuery.range(offset, offset + limit - 1)
 
     console.log("[v0] Notifications API - About to execute query")
     console.log("[v0] Notifications API - Query details:", {
       table: "notifications",
-      select: "*",
+      select: "id, user_id, from_user_id, type, title, message, data, read, created_at, updated_at",
       filters: { user_id: user.id, ...(unreadOnly && { read: false }) },
       order: "created_at desc",
       range: [offset, offset + limit - 1],
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
     console.log("[v0] Notifications API - Query successful, found:", notifications?.length || 0, "notifications")
 
     const notificationsWithUsers = await Promise.all(
-      notifications.map(async (notification) => {
+      (notifications || []).map(async (notification) => {
         if (notification.from_user_id) {
           try {
             console.log("[v0] Notifications API - Fetching user data for:", notification.from_user_id)
@@ -97,7 +100,7 @@ export async function GET(request: NextRequest) {
       console.log("[v0] Notifications API - Fetching unread count")
       const { count, error: countError } = await supabase
         .from("notifications")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("read", false)
 
@@ -116,7 +119,7 @@ export async function GET(request: NextRequest) {
       notifications: notificationsWithUsers,
       unreadCount,
       page,
-      hasMore: notifications.length === limit,
+      hasMore: (notifications || []).length === limit,
     })
   } catch (error) {
     console.error("[v0] Notifications API - Unexpected error:", error)
