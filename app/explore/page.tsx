@@ -326,9 +326,9 @@ export default function ExplorePage() {
       const params = new URLSearchParams({ page: page.toString() })
 
       if (searchQuery.trim()) {
-        url = "/api/tmdb/search"
-        params.append("q", searchQuery.trim())
-        console.log("[v0] Using search API")
+        url = "/api/tmdb/discover"
+        params.append("query", searchQuery.trim()) // Pass search query as a filter parameter
+        console.log("[v0] Using discover API for title search")
       } else if (recommendedBy !== "0") {
         url = "/api/recommendations"
         params.append("friend_id", recommendedBy)
@@ -342,6 +342,9 @@ export default function ExplorePage() {
       } else {
         url = "/api/tmdb/discover"
         console.log("[v0] Using discover API")
+      }
+
+      if (url === "/api/tmdb/discover") {
         if (mediaType !== "all") params.append("type", mediaType)
         if (selectedGenres.length > 0) params.append("genre", selectedGenres.join(","))
         if (selectedYears.length > 0) params.append("year", selectedYears.join(","))
@@ -393,17 +396,19 @@ export default function ExplorePage() {
           genre_ids: rec.genre_ids || [],
           recommending_friends: rec.recommending_friends || [],
         }))
-      } else {
-        // Discover/Search APIs return { results: [...] }
+      } else if (selectedDirector && url === "/api/tmdb/search") {
         results = data.results || []
         directors = data.directors || []
         console.log(
-          "[v0] Discover/Search results received:",
+          "[v0] Director search results received:",
           results.length,
           "media items,",
           directors.length,
           "directors",
         )
+      } else {
+        results = data.results || []
+        console.log("[v0] Discover results received:", results.length, "media items")
       }
 
       if (page === 1) {
