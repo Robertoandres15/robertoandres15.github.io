@@ -29,7 +29,6 @@ export default function FriendsPage() {
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [authLoading, setAuthLoading] = useState(true)
-  const [authError, setAuthError] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -40,7 +39,6 @@ export default function FriendsPage() {
 
       if (!supabase) {
         console.log("[v0] Supabase client not available")
-        setAuthError("Unable to connect to database")
         setAuthLoading(false)
         return
       }
@@ -49,26 +47,23 @@ export default function FriendsPage() {
 
       if (authError) {
         console.log("[v0] Auth error:", authError.message)
-        setAuthError("Authentication failed")
-        setAuthLoading(false)
+        router.push("/auth/login")
         return
       }
 
       const authenticatedUser = authData?.user
       if (!authenticatedUser) {
-        console.log("[v0] No authenticated user found, redirecting to login")
-        setAuthLoading(false)
-        router.replace("/auth/login")
+        console.log("[v0] No auth session found, redirecting to login")
+        router.push("/auth/login")
         return
       }
 
       console.log("[v0] User authenticated:", authenticatedUser.id)
       setUser(authenticatedUser)
-      setAuthError(null)
-      setAuthLoading(false)
     } catch (error) {
-      console.log("[v0] Auth check failed:", error instanceof Error ? error.message : "Unknown error")
-      setAuthError("Authentication check failed")
+      console.log("[v0] Auth check error:", error)
+      router.push("/auth/login")
+    } finally {
       setAuthLoading(false)
     }
   }
@@ -365,17 +360,6 @@ export default function FriendsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <div className="text-white">Loading...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <div className="text-white">Redirecting to login...</div>
         </div>
       </div>
     )
