@@ -91,7 +91,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
               })
               // Redirect to login after a short delay
               setTimeout(() => {
-                window.location.href = "/login"
+                window.location.href = "/auth/login"
               }, 2000)
               return
             }
@@ -140,7 +140,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
             variant: "destructive",
           })
           setTimeout(() => {
-            window.location.href = "/login"
+            window.location.href = "/auth/login"
           }, 2000)
           return
         }
@@ -188,7 +188,7 @@ export function ListSelector({ mediaItem, actionType, onSuccess }: ListSelectorP
             variant: "destructive",
           })
           setTimeout(() => {
-            window.location.href = "/login"
+            window.location.href = "/auth/login"
           }, 2000)
           return
         }
