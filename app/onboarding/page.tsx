@@ -7,9 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Film, User, ArrowRight, MapPin, Popcorn } from "lucide-react"
+import { Film, User, ArrowRight, MapPin } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 
@@ -24,12 +22,6 @@ export default function OnboardingPage() {
   const [state, setState] = useState("")
   const [zipCode, setZipCode] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [streamingServices, setStreamingServices] = useState<string[]>([])
-  const [likesTheaters, setLikesTheaters] = useState("")
-  const [theaterCompanion, setTheaterCompanion] = useState("")
-  const [likesSeries, setLikesSeries] = useState("")
-  const [seriesGenres, setSeriesGenres] = useState<string[]>([])
-  const [movieGenres, setMovieGenres] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1)
@@ -162,7 +154,7 @@ export default function OnboardingPage() {
         throw updateError
       }
 
-      console.log("[v0] Profile setup successful, moving to step 2")
+      console.log("[v0] Profile setup successful, moving to completion step")
       setStep(2)
     } catch (error: unknown) {
       console.error("[v0] Profile setup error:", error)
@@ -172,76 +164,8 @@ export default function OnboardingPage() {
     }
   }
 
-  const handlePreferenceSetup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      console.log("[v0] Starting preference setup for user:", user.id)
-
-      if (!supabase) {
-        console.log("[v0] Supabase not available, skipping preference save")
-        setError("Preferences saved locally. Will sync when authentication service is restored.")
-        setStep(3)
-        setIsLoading(false)
-        return
-      }
-
-      const preferenceData = {
-        streaming_services: streamingServices.length > 0 ? streamingServices : null,
-        likes_theaters: likesTheaters || null,
-        theater_companion: theaterCompanion || null,
-        likes_series: likesSeries || null,
-        preferred_series_genres: seriesGenres.length > 0 ? seriesGenres : null,
-        preferred_movie_genres: movieGenres.length > 0 ? movieGenres : null,
-      }
-
-      const { error } = await supabase.from("users").update(preferenceData).eq("id", user.id)
-
-      if (error) {
-        console.error("[v0] Preference update failed:", error)
-        throw error
-      }
-
-      console.log("[v0] Preferences saved successfully, moving to step 3")
-      setStep(3)
-    } catch (error: unknown) {
-      console.error("[v0] Preference setup error:", error)
-      setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleComplete = () => {
     router.push("/feed")
-  }
-
-  const handleStreamingServiceChange = (service: string, checked: boolean) => {
-    if (checked) {
-      setStreamingServices([...streamingServices, service])
-    } else {
-      setStreamingServices(streamingServices.filter((s) => s !== service))
-    }
-  }
-
-  const handleGenreChange = (genre: string, checked: boolean, type: "series" | "movie") => {
-    if (type === "series") {
-      if (checked) {
-        setSeriesGenres([...seriesGenres, genre])
-      } else {
-        setSeriesGenres(seriesGenres.filter((g) => g !== genre))
-      }
-    } else {
-      if (checked) {
-        setMovieGenres([...movieGenres, genre])
-      } else {
-        setMovieGenres(movieGenres.filter((g) => g !== genre))
-      }
-    }
   }
 
   if (!user) {
@@ -390,214 +314,6 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && (
-          <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
-                <Popcorn className="h-5 w-5 text-purple-400" />
-                <CardTitle className="text-white">Your Movie Preferences</CardTitle>
-              </div>
-              <CardDescription className="text-slate-300">
-                Help us recommend the perfect movies and shows for you
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePreferenceSetup} className="space-y-6">
-                {/* Streaming Services */}
-                <div className="space-y-3">
-                  <Label className="text-white font-medium">
-                    What streaming services are you subscribed to? (Optional)
-                  </Label>
-                  <p className="text-xs text-slate-400">We'll make recommendations based on this info</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      "Disney+",
-                      "Hulu",
-                      "Netflix",
-                      "HBO Max",
-                      "Prime Video",
-                      "Apple TV",
-                      "Peacock",
-                      "Paramount+",
-                      "YouTube TV",
-                    ].map((service) => (
-                      <div key={service} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={service}
-                          checked={streamingServices.includes(service)}
-                          onCheckedChange={(checked) => handleStreamingServiceChange(service, checked as boolean)}
-                          className="border-white/20"
-                        />
-                        <Label htmlFor={service} className="text-white text-sm">
-                          {service}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Theater Preferences */}
-                <div className="space-y-3">
-                  <Label className="text-white font-medium">Do you like to go to movie theaters? (Optional)</Label>
-                  <RadioGroup value={likesTheaters} onValueChange={setLikesTheaters}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="theaters-yes" className="border-white/20" />
-                      <Label htmlFor="theaters-yes" className="text-white text-sm">
-                        Yes!
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sometimes" id="theaters-sometimes" className="border-white/20" />
-                      <Label htmlFor="theaters-sometimes" className="text-white text-sm">
-                        Sometimes
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="theaters-no" className="border-white/20" />
-                      <Label htmlFor="theaters-no" className="text-white text-sm">
-                        Not really
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {/* Theater Companion */}
-                {(likesTheaters === "yes" || likesTheaters === "sometimes") && (
-                  <div className="space-y-3">
-                    <Label className="text-white font-medium">When you go to theaters, do you go:</Label>
-                    <RadioGroup value={theaterCompanion} onValueChange={setTheaterCompanion}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="friends-family" id="friends-family" className="border-white/20" />
-                        <Label htmlFor="friends-family" className="text-white text-sm">
-                          With friends and family
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="alone" id="alone" className="border-white/20" />
-                        <Label htmlFor="alone" className="text-white text-sm">
-                          Alone
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="significant-other" id="significant-other" className="border-white/20" />
-                        <Label htmlFor="significant-other" className="text-white text-sm">
-                          With significant other
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                )}
-
-                {/* Series Preference */}
-                <div className="space-y-3">
-                  <Label className="text-white font-medium">Do you like streaming series? (Optional)</Label>
-                  <RadioGroup value={likesSeries} onValueChange={setLikesSeries}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="series-yes" className="border-white/20" />
-                      <Label htmlFor="series-yes" className="text-white text-sm">
-                        Yes
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sometimes" id="series-sometimes" className="border-white/20" />
-                      <Label htmlFor="series-sometimes" className="text-white text-sm">
-                        Sometimes
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="series-no" className="border-white/20" />
-                      <Label htmlFor="series-no" className="text-white text-sm">
-                        No
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {/* Series Genres */}
-                {(likesSeries === "yes" || likesSeries === "sometimes") && (
-                  <div className="space-y-3">
-                    <Label className="text-white font-medium">What series genres do you prefer? (Optional)</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        "Drama",
-                        "Horror",
-                        "Comedy",
-                        "Reality TV",
-                        "Crime",
-                        "Docuseries",
-                        "Mini series",
-                        "Historical",
-                        "Thriller",
-                        "Sci-fi",
-                        "Action/Adventure",
-                        "Anime",
-                      ].map((genre) => (
-                        <div key={genre} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`series-${genre}`}
-                            checked={seriesGenres.includes(genre)}
-                            onCheckedChange={(checked) => handleGenreChange(genre, checked as boolean, "series")}
-                            className="border-white/20"
-                          />
-                          <Label htmlFor={`series-${genre}`} className="text-white text-sm">
-                            {genre}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Movie Genres */}
-                <div className="space-y-3">
-                  <Label className="text-white font-medium">What movie genres do you prefer? (Optional)</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      "Drama",
-                      "Horror",
-                      "Comedy",
-                      "Crime",
-                      "Historical",
-                      "Thriller",
-                      "Sci-fi",
-                      "Action/Adventure",
-                      "Anime",
-                    ].map((genre) => (
-                      <div key={genre} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`movie-${genre}`}
-                          checked={movieGenres.includes(genre)}
-                          onCheckedChange={(checked) => handleGenreChange(genre, checked as boolean, "movie")}
-                          className="border-white/20"
-                        />
-                        <Label htmlFor={`movie-${genre}`} className="text-white text-sm">
-                          {genre}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(3)}
-                    className="flex-1 border-white/20 text-white hover:bg-white/10"
-                  >
-                    Skip
-                  </Button>
-                  <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700" disabled={isLoading}>
-                    {isLoading ? "Saving..." : "Continue"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {step === 3 && (
           <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-600/20">
