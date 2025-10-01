@@ -58,3 +58,27 @@ body {
   color: hsl(var(--foreground));
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* Added mobile-specific fixes for fixed positioning and viewport stability */
+html {
+  /* Prevent iOS Safari from adjusting font sizes */
+  -webkit-text-size-adjust: 100%;
+  /* Ensure smooth scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  /* Prevent body from having transforms that break fixed positioning */
+  transform: none;
+  /* Ensure body doesn't create a new stacking context */
+  position: relative;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+}
+
+/* Support for safe area insets on iOS */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
