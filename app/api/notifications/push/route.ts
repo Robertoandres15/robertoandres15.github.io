@@ -1,15 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import webpush from "web-push"
 
-// Configure web-push with VAPID keys
-webpush.setVapidDetails(
-  "mailto:your-email@example.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-)
-
 export async function POST(request: NextRequest) {
   try {
+    // Configure web-push with VAPID keys at runtime
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    const privateKey = process.env.VAPID_PRIVATE_KEY
+
+    if (!publicKey || !privateKey) {
+      console.error("[v0] Missing VAPID keys")
+      return NextResponse.json({ error: "Push notifications not configured" }, { status: 500 })
+    }
+
+    webpush.setVapidDetails("mailto:your-email@example.com", publicKey, privateKey)
+
     const { subscription, payload } = await request.json()
 
     if (!subscription || !payload) {
