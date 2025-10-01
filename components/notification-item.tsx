@@ -82,7 +82,7 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
     setIsMarking(true)
     try {
       const response = await fetch(`/api/notifications/${notification.id}/read`, {
-        method: "POST",
+        method: "PATCH",
       })
 
       if (response.ok) {
@@ -98,7 +98,7 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
   const NotificationContent = () => (
     <Card
       className={cn(
-        "p-4 transition-all hover:bg-slate-800/50 cursor-pointer",
+        "p-4 transition-all hover:bg-slate-800/50 cursor-pointer border-slate-700",
         !notification.read && "bg-slate-800/30 border-purple-500/20",
       )}
     >
@@ -120,10 +120,17 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h4 className={cn("text-sm font-medium text-white mb-1", !notification.read && "font-semibold")}>
-                {notification.title}
+              <h4
+                className={cn(
+                  "text-sm font-medium mb-1",
+                  !notification.read ? "text-white font-semibold" : "text-slate-200",
+                )}
+              >
+                {notification.title || "Notification"}
               </h4>
-              <p className="text-sm text-slate-300 leading-relaxed">{notification.message}</p>
+              <p className={cn("text-sm leading-relaxed", !notification.read ? "text-slate-200" : "text-slate-400")}>
+                {notification.message || "You have a new notification"}
+              </p>
               <p className="text-xs text-slate-500 mt-2">
                 {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
               </p>

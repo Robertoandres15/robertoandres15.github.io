@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { TMDBClient } from "@/lib/tmdb"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] Discover API route called")
