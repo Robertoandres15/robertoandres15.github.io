@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import webpush from "web-push"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     // Configure web-push with VAPID keys at runtime
