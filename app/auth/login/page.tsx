@@ -48,17 +48,22 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const redirectUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || window.location.origin
-
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${redirectUrl}/auth/callback?next=/feed`,
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       })
+
       if (error) throw error
+
+      console.log("[v0] OAuth redirect initiated", data)
     } catch (error: unknown) {
+      console.error("[v0] OAuth error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
       setIsLoading(false)
     }
