@@ -14,7 +14,7 @@ function CapacitorInitializer() {
   return null
 }
 
-export function ClientLayout({
+export default function ClientLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
