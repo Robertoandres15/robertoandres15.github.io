@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { notifyListShared } from "@/lib/notifications"
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,23 +36,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "List not found or access denied" }, { status: 404 })
     }
 
-    // Create notifications for each friend
-    const notifications = friend_ids.map((friend_id: string) => ({
-      user_id: friend_id,
-      type: "list_shared",
-      title: "List shared with you",
-      message: `${user.user_metadata?.display_name || user.email} shared a list "${list.name}" with you`,
-      data: {
-        list_id: list.id,
-        shared_by: user.id,
-        shared_by_name: user.user_metadata?.display_name || user.email,
-      },
-    }))
+    const { data: userProfile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single()
 
-    const { error: notificationError } = await supabase.from("notifications").insert(notifications)
+    const senderName = userProfile?.display_name || user.user_metadata?.display_name || user.email || "Someone"
 
-    if (notificationError) {
-      console.error("[v0] Failed to create notifications:", notificationError)
+    try {
+      await Promise.all(
+        friend_ids.map((friend_id: string) => notifyListShared(friend_id, user.id, senderName, list.name, list.id)),
+      )
+    } catch (notificationError) {
+      console.error("[v0] Failed to send notifications:", notificationError)
       return NextResponse.json({ error: "Failed to notify friends" }, { status: 500 })
     }
 

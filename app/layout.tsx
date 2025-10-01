@@ -1,10 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { Suspense } from "react"
-import { MobileInitializer } from "@/components/mobile-initializer"
 import "./globals.css"
+import ClientLayout from "./client-layout"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,26 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${inter.variable}`}>
-        <MobileInitializer />
-        <Suspense fallback={null}>{children}</Suspense>
-        <Analytics />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
-                    });
-                });
-              }
-            `,
-          }}
-        />
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   )

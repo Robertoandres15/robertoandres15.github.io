@@ -1,5 +1,3 @@
-const TMDB_API_READ_ACCESS_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzYWYzOTcwNTY0NGIxOTcwN2ExZWJlOWJkMWFmZDY2NiIsIm5iZiI6MTc1NjY4NTE0Ny42MTEsInN1YiI6IjY4YjRlMzViMGI4YTRhY2VhNzU0ZTQ2NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.GSeuf0FL9yKfoQ69Sxw3t5lLlkLm3KSmT-cg3QzL_JQ"
 const TMDB_BASE_URL = "https://api.themoviedb.org/3"
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p"
 
@@ -44,6 +42,29 @@ export interface TMDBSearchResponse {
   total_results: number
 }
 
+export interface TMDBPerson {
+  id: number
+  name: string
+  profile_path: string | null
+  adult: boolean
+  known_for_department: string
+  known_for: (TMDBMovie | TMDBTVShow)[]
+  popularity: number
+}
+
+export interface TMDBPersonSearchResponse {
+  page: number
+  results: TMDBPerson[]
+  total_pages: number
+  total_results: number
+}
+
+export interface TMDBPersonCredits {
+  id: number
+  cast: (TMDBMovie | TMDBTVShow)[]
+  crew: (TMDBMovie | (TMDBTVShow & { job: string; department: string }))[]
+}
+
 export interface TMDBGenre {
   id: number
   name: string
@@ -70,22 +91,103 @@ export interface TMDBWatchProviders {
 
 export class TMDBClient {
   private baseUrl: string
+  private requestQueue: Array<() => Promise<any>> = []
+  private isProcessingQueue = false
+  private lastRequestTime = 0
+  private minRequestInterval = 250 // 250ms between requests (4 requests per second)
+  private cache = new Map<string, { data: any; timestamp: number }>()
+  private cacheTimeout = 5 * 60 * 1000 // 5 minutes
 
   constructor() {
     this.baseUrl = TMDB_BASE_URL
   }
 
   private getAuthToken(): string {
-    const token = TMDB_API_READ_ACCESS_TOKEN
+    const readAccessToken = process.env.TMDB_API_READ_ACCESS_TOKEN
+    const apiKey = process.env.TMBD_API_KEY || process.env.TMDB_API_KEY
+
+    console.log("[v0] Environment check - TMDB token exists:", !!(readAccessToken || apiKey))
+    console.log("[v0] Environment check - TMDB token length:", (readAccessToken || apiKey)?.length || 0)
+
+    const token = readAccessToken || apiKey
     if (!token) {
-      throw new Error("TMDB API Read Access Token is required")
+      console.error("[v0] No TMDB API credentials found. Please check environment variables.")
+      throw new Error(
+        "TMDB API credentials are required. Please add TMDB_API_READ_ACCESS_TOKEN or TMDB_API_KEY to your environment variables.",
+      )
     }
+
+    console.log("[v0] Using token type:", this.isV3ApiKey(token) ? "v3 API Key" : "v4 Read Access Token")
+    console.log("[v0] Token length:", token.length)
+
     return token
   }
 
+  private isV3ApiKey(token: string): boolean {
+    // v3 API keys are typically 32 characters long and alphanumeric
+    // v4 Read Access Tokens are much longer JWT-like tokens
+    return token.length <= 40 && !token.includes(".")
+  }
+
   private async request(endpoint: string, params: Record<string, string> = {}) {
+    const cacheKey = `${endpoint}?${new URLSearchParams(params).toString()}`
+
+    // Check cache first
+    const cached = this.cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log("[v0] Using cached TMDB response for:", endpoint)
+      return cached.data
+    }
+
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push(async () => {
+        try {
+          const result = await this.makeRequest(endpoint, params)
+          // Cache the result
+          this.cache.set(cacheKey, { data: result, timestamp: Date.now() })
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
+      })
+
+      this.processQueue()
+    })
+  }
+
+  private async processQueue() {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return
+    }
+
+    this.isProcessingQueue = true
+
+    while (this.requestQueue.length > 0) {
+      const now = Date.now()
+      const timeSinceLastRequest = now - this.lastRequestTime
+
+      if (timeSinceLastRequest < this.minRequestInterval) {
+        await new Promise((resolve) => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest))
+      }
+
+      const request = this.requestQueue.shift()
+      if (request) {
+        this.lastRequestTime = Date.now()
+        await request()
+      }
+    }
+
+    this.isProcessingQueue = false
+  }
+
+  private async makeRequest(endpoint: string, params: Record<string, string> = {}) {
     const token = this.getAuthToken()
     const url = new URL(`${this.baseUrl}${endpoint}`)
+
+    if (this.isV3ApiKey(token)) {
+      // v3 API key goes as query parameter
+      url.searchParams.append("api_key", token)
+    }
 
     Object.entries(params).forEach(([key, value]) => {
       if (value) url.searchParams.append(key, value)
@@ -94,17 +196,25 @@ export class TMDBClient {
     console.log("[v0] TMDB API request:", url.toString())
 
     try {
-      const response = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          accept: "application/json",
-        },
-      })
+      const headers: Record<string, string> = {
+        accept: "application/json",
+      }
+
+      if (!this.isV3ApiKey(token)) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
+      const response = await fetch(url.toString(), { headers })
 
       // Get response text first to handle both JSON and HTML responses
       const responseText = await response.text()
       console.log("[v0] TMDB API response status:", response.status)
       console.log("[v0] TMDB API response preview:", responseText.substring(0, 200))
+
+      if (responseText.includes("Too Many Requests") || response.status === 429) {
+        console.error("[v0] TMDB API rate limit exceeded")
+        throw new Error("TMDB API rate limit exceeded. Please try again later.")
+      }
 
       if (!response.ok) {
         console.error("[v0] TMDB API error response:", responseText)
@@ -177,6 +287,8 @@ export class TMDBClient {
       release_date_gte?: string
       release_date_lte?: string
       with_release_type?: string
+      first_air_date_gte?: string
+      first_air_date_lte?: string
     } = {},
   ): Promise<TMDBSearchResponse> {
     const queryParams: Record<string, string> = {}
@@ -193,6 +305,8 @@ export class TMDBClient {
     if (params.release_date_gte) queryParams["release_date.gte"] = params.release_date_gte
     if (params.release_date_lte) queryParams["release_date.lte"] = params.release_date_lte
     if (params.with_release_type) queryParams.with_release_type = params.with_release_type
+    if (params.first_air_date_gte) queryParams["first_air_date.gte"] = params.first_air_date_gte
+    if (params.first_air_date_lte) queryParams["first_air_date.lte"] = params.first_air_date_lte
 
     console.log("[v0] Movie discover query params:", queryParams)
     return this.request("/discover/movie", queryParams)
@@ -207,6 +321,8 @@ export class TMDBClient {
       vote_average_gte?: string
       with_watch_providers?: string
       watch_region?: string
+      first_air_date_gte?: string
+      first_air_date_lte?: string
     } = {},
   ): Promise<TMDBSearchResponse> {
     const queryParams: Record<string, string> = {}
@@ -220,6 +336,8 @@ export class TMDBClient {
     if (params.vote_average_gte) queryParams["vote_average.gte"] = params.vote_average_gte
     if (params.with_watch_providers) queryParams.with_watch_providers = params.with_watch_providers
     if (params.watch_region) queryParams.watch_region = params.watch_region
+    if (params.first_air_date_gte) queryParams["first_air_date.gte"] = params.first_air_date_gte
+    if (params.first_air_date_lte) queryParams["first_air_date.lte"] = params.first_air_date_lte
 
     console.log("[v0] TV discover query params:", queryParams)
     return this.request("/discover/tv", queryParams)
@@ -231,6 +349,14 @@ export class TMDBClient {
 
   async getTVWatchProviders(id: number): Promise<TMDBWatchProviders> {
     return this.request(`/tv/${id}/watch/providers`)
+  }
+
+  async searchPerson(query: string, page = 1): Promise<TMDBPersonSearchResponse> {
+    return this.request("/search/person", { query, page: page.toString() })
+  }
+
+  async getPersonCredits(personId: number): Promise<TMDBPersonCredits> {
+    return this.request(`/person/${personId}/combined_credits`)
   }
 
   getImageUrl(path: string | null, size: "w200" | "w300" | "w500" | "w780" | "original" = "w500"): string | null {

@@ -430,6 +430,8 @@ export default function ListsPage() {
         description: "An error occurred while removing the item",
         variant: "destructive",
       })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -658,7 +660,7 @@ export default function ListsPage() {
         </div>
 
         <Tabs defaultValue="wishlists" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white/10">
+          <TabsList className="grid w-full grid-cols-2 gap-2 bg-white/10 p-1">
             <TabsTrigger value="wishlists" className="data-[state=active]:bg-purple-600">
               <BookmarkPlus className="h-4 w-4 mr-2" />
               Wishlists ({wishlists.length})
@@ -688,23 +690,23 @@ export default function ListsPage() {
                 {wishlists.map((list) => (
                   <Card key={list.id} className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex-1">
                           <CardTitle className="text-white">{list.name}</CardTitle>
                           {list.description && <p className="text-slate-300 text-sm mt-1">{list.description}</p>}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <Badge variant={list.is_public ? "default" : "secondary"}>
                             {list.is_public ? "Public" : "Private"}
                           </Badge>
-                          <Badge variant="outline" className="border-purple-400 text-purple-400">
+                          <Badge variant="outline" className="border-purple-400 text-purple-400 whitespace-nowrap">
                             {list.list_items.length} items
                           </Badge>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setShowDeleteDialog(list.id)}
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -852,23 +854,23 @@ export default function ListsPage() {
                 {recommendations.map((list) => (
                   <Card key={list.id} className="bg-slate-800/80 border-slate-600 backdrop-blur-sm">
                     <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex-1">
                           <CardTitle className="text-white">{list.name}</CardTitle>
                           {list.description && <p className="text-slate-300 text-sm mt-1">{list.description}</p>}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <Badge variant={list.is_public ? "default" : "secondary"}>
                             {list.is_public ? "Public" : "Private"}
                           </Badge>
-                          <Badge variant="outline" className="border-purple-400 text-purple-400">
+                          <Badge variant="outline" className="border-purple-400 text-purple-400 whitespace-nowrap">
                             {list.list_items.length} items
                           </Badge>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => setShowDeleteDialog(list.id)}
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 shrink-0"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

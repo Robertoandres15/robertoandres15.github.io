@@ -5,10 +5,11 @@ import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Star, Calendar, Clock, Plus, Heart, Share2, Ticket } from "lucide-react"
+import { ArrowLeft, Star, Calendar, Clock, Share2, Ticket } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import { ListSelector } from "@/components/list-selector"
 
 interface MovieDetails {
   id: number
@@ -24,12 +25,6 @@ interface MovieDetails {
   tagline: string
   status: string
   original_language: string
-}
-
-interface List {
-  id: string
-  name: string
-  type: "wishlist" | "recommendations"
 }
 
 interface WatchProvider {
@@ -56,16 +51,12 @@ export default function MovieDetailPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [movie, setMovie] = useState<MovieDetails | null>(null)
-  const [userLists, setUserLists] = useState<List[]>([])
   const [watchProviders, setWatchProviders] = useState<WatchProviders | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false)
-  const [isAddingToRecommendations, setIsAddingToRecommendations] = useState(false)
 
   useEffect(() => {
     if (params.id) {
       loadMovieDetails()
-      loadUserLists()
       loadWatchProviders()
     }
   }, [params.id])
@@ -90,160 +81,6 @@ export default function MovieDetailPage() {
       })
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const loadUserLists = async () => {
-    try {
-      const response = await fetch("/api/lists")
-      const data = await response.json()
-      if (response.ok) {
-        setUserLists(data.lists || [])
-      }
-    } catch (error) {
-      console.error("Failed to load user lists:", error)
-    }
-  }
-
-  const addToWishlist = async () => {
-    if (!movie) return
-
-    setIsAddingToWishlist(true)
-    try {
-      // Find or create wishlist
-      let wishlist = userLists.find((list) => list.type === "wishlist")
-
-      if (!wishlist) {
-        // Create default wishlist if it doesn't exist
-        const createResponse = await fetch("/api/lists", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: "My Wishlist",
-            type: "wishlist",
-            description: "Movies and shows I want to watch",
-            is_public: false,
-          }),
-        })
-
-        if (createResponse.ok) {
-          const newList = await createResponse.json()
-          wishlist = newList.list
-          setUserLists((prev) => [...prev, wishlist!])
-        } else {
-          throw new Error("Failed to create wishlist")
-        }
-      }
-
-      // Add movie to wishlist
-      const response = await fetch(`/api/lists/${wishlist.id}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tmdb_id: movie.id,
-          media_type: "movie",
-          title: movie.title,
-          poster_path: movie.poster_path,
-          overview: movie.overview,
-          release_date: movie.release_date,
-          rating: movie.vote_average,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast({
-          title: "Added to Wishlist",
-          description: `${movie.title} has been added to your wishlist`,
-        })
-      } else {
-        toast({
-          title: "Failed to add to wishlist",
-          description: data.error || "An error occurred",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Failed to add to wishlist:", error)
-      toast({
-        title: "Failed to add to wishlist",
-        description: "An error occurred while adding to your wishlist",
-        variant: "destructive",
-      })
-    } finally {
-      setIsAddingToWishlist(false)
-    }
-  }
-
-  const addToRecommendations = async () => {
-    if (!movie) return
-
-    setIsAddingToRecommendations(true)
-    try {
-      // Find or create recommendations list
-      let recommendations = userLists.find((list) => list.type === "recommendations")
-
-      if (!recommendations) {
-        // Create default recommendations list if it doesn't exist
-        const createResponse = await fetch("/api/lists", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: "My Recommendations",
-            type: "recommendations",
-            description: "Movies and shows I recommend to others",
-            is_public: true,
-          }),
-        })
-
-        if (createResponse.ok) {
-          const newList = await createResponse.json()
-          recommendations = newList.list
-          setUserLists((prev) => [...prev, recommendations!])
-        } else {
-          throw new Error("Failed to create recommendations list")
-        }
-      }
-
-      // Add movie to recommendations
-      const response = await fetch(`/api/lists/${recommendations.id}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tmdb_id: movie.id,
-          media_type: "movie",
-          title: movie.title,
-          poster_path: movie.poster_path,
-          overview: movie.overview,
-          release_date: movie.release_date,
-          rating: movie.vote_average,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        toast({
-          title: "Added to Recommendations",
-          description: `${movie.title} has been added to your recommendations`,
-        })
-      } else {
-        toast({
-          title: "Failed to add to recommendations",
-          description: data.error || "An error occurred",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      console.error("Failed to add to recommendations:", error)
-      toast({
-        title: "Failed to add to recommendations",
-        description: "An error occurred while adding to your recommendations",
-        variant: "destructive",
-      })
-    } finally {
-      setIsAddingToRecommendations(false)
     }
   }
 
@@ -386,23 +223,30 @@ export default function MovieDetailPage() {
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <Button
-                  onClick={addToWishlist}
-                  disabled={isAddingToWishlist}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {isAddingToWishlist ? "Adding..." : "Add to Wishlist"}
-                </Button>
-                <Button
-                  onClick={addToRecommendations}
-                  disabled={isAddingToRecommendations}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent"
-                >
-                  <Heart className="h-4 w-4 mr-2" />
-                  {isAddingToRecommendations ? "Adding..." : "Recommend"}
-                </Button>
+                <ListSelector
+                  mediaItem={{
+                    id: movie.id,
+                    title: movie.title,
+                    poster_path: movie.poster_path,
+                    overview: movie.overview,
+                    release_date: movie.release_date,
+                    vote_average: movie.vote_average,
+                    media_type: "movie",
+                  }}
+                  actionType="wishlist"
+                />
+                <ListSelector
+                  mediaItem={{
+                    id: movie.id,
+                    title: movie.title,
+                    poster_path: movie.poster_path,
+                    overview: movie.overview,
+                    release_date: movie.release_date,
+                    vote_average: movie.vote_average,
+                    media_type: "movie",
+                  }}
+                  actionType="recommendations"
+                />
                 <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 bg-transparent">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share

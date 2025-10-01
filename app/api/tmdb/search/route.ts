@@ -1,13 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { TMDBClient } from "@/lib/tmdb"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] Search API route called")
-    console.log("[v0] Environment check - TMDB_API_KEY exists:", !!process.env.TMDB_API_KEY)
-    console.log("[v0] Environment check - TMDB_API_KEY length:", process.env.TMDB_API_KEY?.length || 0)
+    console.log("[v0] Environment check - TMDB_API_READ_ACCESS_TOKEN exists:", !!process.env.TMDB_API_READ_ACCESS_TOKEN)
+    console.log("[v0] Environment check - TMBD_API_KEY exists:", !!process.env.TMBD_API_KEY)
 
-    const tmdb = new TMDBClient() // Create instance instead of importing singleton
+    const tmdb = new TMDBClient()
 
     const { searchParams } = new URL(request.url)
     const query = searchParams.get("q")
@@ -18,9 +20,131 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("[v0] Searching for:", query, "page:", page)
-    const results = await tmdb.searchMulti(query, Number.parseInt(page))
-    console.log("[v0] Successfully fetched search results:", results.results?.length, "items")
-    return NextResponse.json(results)
+
+    const directorVariations: Record<string, string[]> = {
+      "christoper nolan": ["christopher nolan"],
+      "chris nolan": ["christopher nolan"],
+      "quentin tarentino": ["quentin tarantino"],
+      "martin scorcese": ["martin scorsese"],
+      "steven speilberg": ["steven spielberg"],
+      "ridley scot": ["ridley scott"],
+      "david fincher": ["david fincher"],
+      "denis villanueve": ["denis villeneuve"],
+      "denis villeneuve": ["denis villeneuve"],
+      "wes anderson": ["wes anderson"],
+      "paul thomas anderson": ["paul thomas anderson"],
+      pta: ["paul thomas anderson"],
+      kubrik: ["stanley kubrick"],
+      "stanley kubrik": ["stanley kubrick"],
+      hitchcock: ["alfred hitchcock"],
+      "alfred hitchock": ["alfred hitchcock"],
+      "coen brothers": ["joel coen", "ethan coen"],
+      "russo brothers": ["anthony russo", "joe russo"],
+      wachowski: ["lana wachowski", "lilly wachowski"],
+      "wachowski brothers": ["lana wachowski", "lilly wachowski"],
+      "wachowski sisters": ["lana wachowski", "lilly wachowski"],
+    }
+
+    const getSearchVariations = (searchQuery: string): string[] => {
+      const normalizedQuery = searchQuery.toLowerCase().trim()
+      const variations = [searchQuery] // Always include original query
+
+      // Check for exact matches in variations dictionary
+      if (directorVariations[normalizedQuery]) {
+        variations.push(...directorVariations[normalizedQuery])
+      }
+
+      // Check for partial matches (if query contains a key)
+      for (const [key, values] of Object.entries(directorVariations)) {
+        if (normalizedQuery.includes(key) || key.includes(normalizedQuery)) {
+          variations.push(...values)
+        }
+      }
+
+      return [...new Set(variations)] // Remove duplicates
+    }
+
+    const searchVariations = getSearchVariations(query)
+    let multiResults: any = null
+    let personResults: any = null
+    let usedQuery = query
+
+    for (const searchQuery of searchVariations) {
+      console.log("[v0] Trying search variation:", searchQuery)
+
+      const [multiRes, personRes] = await Promise.all([
+        tmdb.searchMulti(searchQuery, Number.parseInt(page)),
+        tmdb.searchPerson(searchQuery, Number.parseInt(page)),
+      ])
+
+      // If we found results, use them
+      if (multiRes.results?.length > 0 || personRes.results?.length > 0) {
+        multiResults = multiRes
+        personResults = personRes
+        usedQuery = searchQuery
+        console.log("[v0] Found results with variation:", searchQuery)
+        break
+      }
+    }
+
+    // If no variations worked, use the last attempt
+    if (!multiResults || !personResults) {
+      const [multiRes, personRes] = await Promise.all([
+        tmdb.searchMulti(query, Number.parseInt(page)),
+        tmdb.searchPerson(query, Number.parseInt(page)),
+      ])
+      multiResults = multiRes
+      personResults = personRes
+      usedQuery = query
+    }
+
+    console.log("[v0] Multi search results:", multiResults.results?.length, "items")
+    console.log("[v0] Person search results:", personResults.results?.length, "items")
+
+    const directorResults = []
+    const maxDirectors = 3 // Limit to 3 directors to prevent rate limiting
+    const relevantDirectors = (personResults.results || [])
+      .filter((person) => person.known_for_department === "Directing")
+      .slice(0, maxDirectors)
+
+    for (const person of relevantDirectors) {
+      try {
+        const credits = await tmdb.getPersonCredits(person.id)
+        // Get movies/shows they directed
+        const directedWorks =
+          credits.crew?.filter((work) => work.job === "Director" || work.department === "Directing") || []
+
+        if (directedWorks.length > 0) {
+          directorResults.push({
+            director: person,
+            works: directedWorks.slice(0, 5), // Reduced to top 5 works
+          })
+        }
+      } catch (error) {
+        console.error("[v0] Error fetching credits for director:", person.name, error)
+        continue
+      }
+    }
+
+    const combinedResults = {
+      page: multiResults.page,
+      total_pages: Math.max(multiResults.total_pages, personResults.total_pages),
+      total_results: multiResults.total_results + personResults.total_results,
+      results: multiResults.results || [],
+      directors: directorResults,
+      searchQuery: usedQuery,
+      originalQuery: query,
+      corrected: usedQuery !== query,
+    }
+
+    console.log(
+      "[v0] Combined search results:",
+      combinedResults.results.length,
+      "media items,",
+      directorResults.length,
+      "directors",
+    )
+    return NextResponse.json(combinedResults)
   } catch (error) {
     console.error("[v0] TMDB search error:", error)
     console.error("[v0] Error details:", {

@@ -15,9 +15,19 @@ import { useToast } from "@/hooks/use-toast"
 import { useIsMobile } from "@/components/ui/use-mobile"
 import type { TMDBMovie, TMDBTVShow, TMDBGenre } from "@/lib/tmdb"
 import MobileNavigation from "@/components/MobileNavigation"
+import { createClient } from "@/lib/supabase/client"
 
 interface MediaItem extends TMDBMovie, TMDBTVShow {
   media_type?: "movie" | "tv"
+}
+
+interface DirectorResult {
+  director: {
+    id: number
+    name: string
+    profile_path: string | null
+  }
+  works: MediaItem[]
 }
 
 interface List {
@@ -39,11 +49,16 @@ export default function ExplorePage() {
   const [selectedYears, setSelectedYears] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("popularity.desc")
   const [inTheaters, setInTheaters] = useState(false)
+  const [comingSoon, setComingSoon] = useState(false)
   const [selectedStreamingServices, setSelectedStreamingServices] = useState<string[]>([])
   const [movieDuration, setMovieDuration] = useState("any")
   const [recommendedBy, setRecommendedBy] = useState("0")
+  const [selectedDirector, setSelectedDirector] = useState("")
+  const [directorSearchQuery, setDirectorSearchQuery] = useState("")
+  const [availableDirectors, setAvailableDirectors] = useState<{ id: number; name: string }[]>([])
   const [friends, setFriends] = useState<Friend[]>([])
   const [results, setResults] = useState<MediaItem[]>([])
+  const [directorResults, setDirectorResults] = useState<DirectorResult[]>([])
   const [genres, setGenres] = useState<TMDBGenre[]>([])
   const [userLists, setUserLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -58,26 +73,37 @@ export default function ExplorePage() {
   const isMobile = useIsMobile()
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
+  const [expandedDirectors, setExpandedDirectors] = useState<Set<number>>(new Set())
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
 
   const streamingServices = [
     { id: "8", name: "Netflix" },
     { id: "9", name: "Amazon Prime Video" },
     { id: "337", name: "Disney+" },
-    { id: "384", name: "HBO Max" },
     { id: "15", name: "Hulu" },
     { id: "350", name: "Apple TV+" },
     { id: "531", name: "Paramount+" },
     { id: "387", name: "Peacock" },
     { id: "283", name: "Crunchyroll" },
-    { id: "1899", name: "Max" },
+    { id: "1899", name: "HBO Max" },
   ]
 
   useEffect(() => {
+    checkAuthentication()
+  }, [])
+
+  useEffect(() => {
+    if (authLoading) return
+
     loadGenres()
     loadUserLists()
-    loadFriends()
+    if (isAuthenticated) {
+      loadFriends()
+    }
     loadTrending()
-  }, [])
+  }, [authLoading, isAuthenticated])
 
   useEffect(() => {
     if (mediaType === "tv") {
@@ -102,7 +128,48 @@ export default function ExplorePage() {
 
       return () => clearTimeout(timeoutId)
     }
-  }, [selectedGenres, selectedYears, sortBy, selectedStreamingServices, movieDuration, recommendedBy, inTheaters])
+  }, [
+    selectedGenres,
+    selectedYears,
+    sortBy,
+    selectedStreamingServices,
+    movieDuration,
+    recommendedBy,
+    inTheaters,
+    comingSoon,
+    selectedDirector,
+  ])
+
+  const searchDirectors = async (query: string) => {
+    if (!query.trim()) {
+      setAvailableDirectors([])
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}`)
+      const data = await response.json()
+
+      if (response.ok && data.directors) {
+        const directors = data.directors.map((dirResult: any) => ({
+          id: dirResult.director.id,
+          name: dirResult.director.name,
+        }))
+        setAvailableDirectors(directors)
+      }
+    } catch (error) {
+      console.error("Failed to search directors:", error)
+      setAvailableDirectors([])
+    }
+  }
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchDirectors(directorSearchQuery)
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [directorSearchQuery])
 
   const loadGenres = async () => {
     try {
@@ -170,13 +237,42 @@ export default function ExplorePage() {
     }
   }
 
+  const checkAuthentication = async () => {
+    try {
+      const supabase = createClient()
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
+
+      if (error) {
+        console.log("[v0] Auth check error (non-critical for explore):", error.message)
+        setIsAuthenticated(false)
+      } else {
+        setIsAuthenticated(!!user)
+        console.log("[v0] Authentication status:", !!user)
+      }
+    } catch (error) {
+      console.log("[v0] Authentication check failed (non-critical for explore):", error)
+      setIsAuthenticated(false)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   const loadFriends = async () => {
+    if (!isAuthenticated) {
+      console.log("[v0] Skipping friends load - user not authenticated")
+      setFriends([])
+      return
+    }
+
     try {
       console.log("[v0] Loading friends for Recommended By filter")
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
-      const response = await fetch("/api/friends/list", { signal: controller.signal })
+      const response = await fetch("/api/friends/list?type=friends", { signal: controller.signal })
       clearTimeout(timeoutId)
 
       const data = await response.json()
@@ -258,8 +354,10 @@ export default function ExplorePage() {
         selectedYears,
         sortBy,
         inTheaters,
+        comingSoon,
         selectedStreamingServices,
         movieDuration,
+        selectedDirector,
       })
 
       const controller = new AbortController()
@@ -271,19 +369,26 @@ export default function ExplorePage() {
       if (searchQuery.trim()) {
         url = "/api/tmdb/search"
         params.append("q", searchQuery.trim())
-        console.log("[v0] Using search API")
+        console.log("[v0] Using search API for title search")
       } else if (recommendedBy !== "0") {
         url = "/api/recommendations"
         params.append("friend_id", recommendedBy)
         console.log("[v0] Using recommendations API for friend:", recommendedBy)
+      } else if (selectedDirector) {
+        url = `/api/tmdb/director/${selectedDirector}`
+        console.log("[v0] Using director API for director ID:", selectedDirector)
       } else {
         url = "/api/tmdb/discover"
         console.log("[v0] Using discover API")
+      }
+
+      if (url === "/api/tmdb/discover") {
         if (mediaType !== "all") params.append("type", mediaType)
         if (selectedGenres.length > 0) params.append("genre", selectedGenres.join(","))
         if (selectedYears.length > 0) params.append("year", selectedYears.join(","))
         if (sortBy) params.append("sort_by", sortBy)
         if (inTheaters) params.append("in_theaters", "true")
+        if (comingSoon) params.append("coming_soon", "true")
         if (selectedStreamingServices.length > 0) {
           params.append("streaming_services", selectedStreamingServices.join(","))
         }
@@ -308,6 +413,8 @@ export default function ExplorePage() {
       }
 
       let results = []
+      let directors = []
+
       if (recommendedBy !== "0") {
         // Recommendations API returns { recommendations: [...] }
         results = data.recommendations || []
@@ -327,16 +434,28 @@ export default function ExplorePage() {
           genre_ids: rec.genre_ids || [],
           recommending_friends: rec.recommending_friends || [],
         }))
-      } else {
-        // Discover/Search APIs return { results: [...] }
+      } else if ((searchQuery.trim() || selectedDirector) && url === "/api/tmdb/search") {
         results = data.results || []
-        console.log("[v0] Discover/Search results received:", results.length)
+        directors = data.directors || []
+        console.log("[v0] Search results received:", results.length, "media items,", directors.length, "directors")
+      } else if (url.startsWith("/api/tmdb/director/")) {
+        results = data.results || []
+        directors = data.directors || [] // Use data.directors array instead of wrapping single director
+        console.log("[v0] Director API results received:", results.length, "works,", directors.length, "director info")
+      } else {
+        results = data.results || []
+        console.log("[v0] Discover results received:", results.length, "media items")
       }
 
       if (page === 1) {
         setResults(results)
+        setDirectorResults(
+          directors.map((d) => ({ director: d, works: results.filter((r) => r.director_id === d.id) })),
+        ) // Map director results correctly
+        setTotalPages(data.total_pages || 1)
       } else {
         setResults((prev) => [...prev, ...results])
+        // Don't append directors on pagination, they're only shown on first page
       }
 
       setHasMore(results.length === 20)
@@ -367,9 +486,13 @@ export default function ExplorePage() {
     setSortBy("popularity.desc")
     setMediaType("all")
     setInTheaters(false)
+    setComingSoon(false)
     setSelectedStreamingServices([])
     setMovieDuration("any")
     setRecommendedBy("0")
+    setSelectedDirector("")
+    setDirectorSearchQuery("")
+    setAvailableDirectors([])
     setCurrentPage(1)
     setResults([]) // Clear results first
     setTimeout(() => loadTrending(), 100) // Delay to prevent race condition
@@ -380,7 +503,9 @@ export default function ExplorePage() {
 
   const loadMore = () => {
     if (currentPage < totalPages) {
-      handleSearch(currentPage + 1)
+      const nextPage = currentPage + 1
+      setCurrentPage(nextPage)
+      handleSearch(nextPage)
     }
   }
 
@@ -453,6 +578,18 @@ export default function ExplorePage() {
     setSelectedStreamingServices((prev) =>
       prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId],
     )
+  }
+
+  const toggleDirectorExpansion = (directorId: number) => {
+    setExpandedDirectors((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(directorId)) {
+        newSet.delete(directorId)
+      } else {
+        newSet.add(directorId)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -732,36 +869,59 @@ export default function ExplorePage() {
                             >
                               Anyone
                             </SelectItem>
-                            {friends.map((friend) => (
-                              <SelectItem
-                                key={friend.id}
-                                value={friend.id}
-                                className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                                onClick={() => console.log("[v0] Friend selected:", friend.display_name, friend.id)}
-                              >
-                                {friend.display_name} (@{friend.username})
+                            {!isAuthenticated ? (
+                              <SelectItem value="login" className="text-slate-400 cursor-not-allowed" disabled>
+                                Login to see friends
                               </SelectItem>
-                            ))}
+                            ) : friends.length === 0 ? (
+                              <SelectItem value="no-friends" className="text-slate-400 cursor-not-allowed" disabled>
+                                No friends yet
+                              </SelectItem>
+                            ) : (
+                              friends.map((friend) => (
+                                <SelectItem
+                                  key={friend.id}
+                                  value={friend.id}
+                                  className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                                  onClick={() => console.log("[v0] Friend selected:", friend.display_name, friend.id)}
+                                >
+                                  {friend.display_name} (@{friend.username})
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div>
                         <label className="text-white text-sm mb-2 block">Availability</label>
-                        <Button
-                          variant={inTheaters ? "default" : "outline"}
-                          onClick={() => setInTheaters(!inTheaters)}
-                          disabled={mediaType === "tv"}
-                          className={
-                            mediaType === "tv"
-                              ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
-                              : inTheaters
+                        <div className="space-y-2">
+                          <Button
+                            variant={inTheaters ? "default" : "outline"}
+                            onClick={() => setInTheaters(!inTheaters)}
+                            disabled={mediaType === "tv"}
+                            className={
+                              mediaType === "tv"
+                                ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                                : inTheaters
+                                  ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                                  : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                            }
+                          >
+                            {inTheaters ? "✓ " : ""}In Theaters
+                          </Button>
+                          <Button
+                            variant={comingSoon ? "default" : "outline"}
+                            onClick={() => setComingSoon(!comingSoon)}
+                            className={
+                              comingSoon
                                 ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
                                 : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
-                          }
-                        >
-                          {inTheaters ? "✓ " : ""}In Theaters
-                        </Button>
+                            }
+                          >
+                            {comingSoon ? "✓ " : ""}Coming Soon
+                          </Button>
+                        </div>
                       </div>
 
                       <div>
@@ -1052,37 +1212,100 @@ export default function ExplorePage() {
                       >
                         Anyone
                       </SelectItem>
-                      {friends.map((friend) => (
-                        <SelectItem
-                          key={friend.id}
-                          value={friend.id}
-                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
-                        >
-                          {friend.display_name || friend.username}
+                      {!isAuthenticated ? (
+                        <SelectItem value="login" className="text-slate-400 cursor-not-allowed" disabled>
+                          Login to see friends
                         </SelectItem>
-                      ))}
+                      ) : friends.length === 0 ? (
+                        <SelectItem value="no-friends" className="text-slate-400 cursor-not-allowed" disabled>
+                          No friends yet
+                        </SelectItem>
+                      ) : (
+                        friends.map((friend) => (
+                          <SelectItem
+                            key={friend.id}
+                            value={friend.id}
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            {friend.display_name || friend.username}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <label className="text-white text-sm mb-2 block">Director</label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Search directors..."
+                      value={directorSearchQuery}
+                      onChange={(e) => setDirectorSearchQuery(e.target.value)}
+                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                    />
+                    {availableDirectors.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-[9999] bg-slate-800 border border-slate-600 rounded-md mt-1 max-h-40 overflow-y-auto">
+                        {availableDirectors.map((director) => (
+                          <button
+                            key={director.id}
+                            onClick={() => {
+                              setSelectedDirector(director.id.toString())
+                              setDirectorSearchQuery(director.name)
+                              setAvailableDirectors([])
+                            }}
+                            className="w-full text-left px-3 py-2 text-slate-200 hover:bg-slate-700"
+                          >
+                            {director.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {selectedDirector && (
+                      <button
+                        onClick={() => {
+                          setSelectedDirector("")
+                          setDirectorSearchQuery("")
+                        }}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="text-white text-sm mb-2 block">Availability</label>
-                  <Button
-                    variant={inTheaters ? "default" : "outline"}
-                    onClick={() => setInTheaters(!inTheaters)}
-                    disabled={mediaType === "tv"}
-                    className={
-                      mediaType === "tv"
-                        ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed"
-                        : inTheaters
-                          ? "bg-purple-600 hover:bg-purple-700 text-white"
-                          : "border-white/20 text-white hover:bg-white/20 bg-white/10"
-                    }
-                  >
-                    {inTheaters ? "✓ " : ""}In Theaters
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      variant={inTheaters ? "default" : "outline"}
+                      onClick={() => setInTheaters(!inTheaters)}
+                      disabled={mediaType === "tv"}
+                      className={
+                        mediaType === "tv"
+                          ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                          : inTheaters
+                            ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                            : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                      }
+                    >
+                      {inTheaters ? "✓ " : ""}In Theaters
+                    </Button>
+                    <Button
+                      variant={comingSoon ? "default" : "outline"}
+                      onClick={() => setComingSoon(!comingSoon)}
+                      className={
+                        comingSoon
+                          ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                          : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                      }
+                    >
+                      {comingSoon ? "✓ " : ""}Coming Soon
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
@@ -1120,9 +1343,13 @@ export default function ExplorePage() {
                     setSortBy("popularity.desc")
                     setMediaType("all")
                     setInTheaters(false)
+                    setComingSoon(false)
                     setSelectedStreamingServices([])
                     setMovieDuration("any")
                     setRecommendedBy("0")
+                    setSelectedDirector("")
+                    setDirectorSearchQuery("")
+                    setAvailableDirectors([])
                     loadTrending()
                   }}
                   className="border-white/20 text-white hover:bg-white/20 bg-white/10"
@@ -1134,7 +1361,459 @@ export default function ExplorePage() {
           </Card>
         )}
 
-        {isLoading && results.length === 0 ? (
+        {/* Mobile filters section */}
+        {isMobile && (
+          <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-200 hover:bg-slate-700 bg-slate-800/60 flex-1 sm:flex-none"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-slate-900 border-slate-700 max-h-[85vh]">
+              <SheetClose asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-4 top-4 z-10 h-8 w-8 p-0 text-white hover:bg-white/20 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </SheetClose>
+              <SheetHeader>
+                <SheetTitle className="text-white">Filters</SheetTitle>
+              </SheetHeader>
+              <div className="overflow-y-auto max-h-[calc(85vh-80px)] px-4 pb-6">
+                <div className="space-y-6 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Type</label>
+                      <Select value={mediaType} onValueChange={(value: "all" | "movie" | "tv") => setMediaType(value)}>
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                          <SelectItem
+                            value="all"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            All
+                          </SelectItem>
+                          <SelectItem
+                            value="movie"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Movies
+                          </SelectItem>
+                          <SelectItem
+                            value="tv"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            TV Shows
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Genre</label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (selectedGenres.includes(value)) {
+                            setSelectedGenres(selectedGenres.filter((id) => id !== value))
+                          } else {
+                            setSelectedGenres([...selectedGenres, value])
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue
+                            placeholder={
+                              selectedGenres.length === 0
+                                ? "Any Genre"
+                                : selectedGenres.length === 1
+                                  ? genres.find((g) => g.id.toString() === selectedGenres[0])?.name || "Any Genre"
+                                  : `${selectedGenres.length} genres selected`
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                          {genres.map((genre) => (
+                            <SelectItem
+                              key={genre.id}
+                              value={genre.id.toString()}
+                              className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                                selectedGenres.includes(genre.id.toString()) ? "bg-purple-600 text-white" : ""
+                              }`}
+                            >
+                              {selectedGenres.includes(genre.id.toString()) ? "✓ " : ""}
+                              {genre.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Year</label>
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (selectedYears.includes(value)) {
+                            setSelectedYears(selectedYears.filter((y) => y !== value))
+                          } else {
+                            setSelectedYears([...selectedYears, value])
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue
+                            placeholder={
+                              selectedYears.length === 0
+                                ? "Any Year"
+                                : selectedYears.length === 1
+                                  ? selectedYears[0]
+                                  : `${selectedYears.length} years selected`
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                          {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <SelectItem
+                              key={year}
+                              value={year.toString()}
+                              className={`text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer ${
+                                selectedYears.includes(year.toString()) ? "bg-purple-600 text-white" : ""
+                              }`}
+                            >
+                              {selectedYears.includes(year.toString()) ? "✓ " : ""}
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Sort By</label>
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                          <SelectItem
+                            value="popularity.desc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Most Popular
+                          </SelectItem>
+                          <SelectItem
+                            value="vote_average.desc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Highest Rated
+                          </SelectItem>
+                          <SelectItem
+                            value="release_date.desc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Newest
+                          </SelectItem>
+                          <SelectItem
+                            value="title.asc"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            A-Z
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-white text-sm mb-2 block">Duration</label>
+                      <Select value={movieDuration} onValueChange={setMovieDuration} disabled={mediaType === "tv"}>
+                        <SelectTrigger
+                          className={
+                            mediaType === "tv"
+                              ? "bg-slate-800/60 border-slate-600 text-slate-400 cursor-not-allowed"
+                              : "bg-white/10 border-white/20 text-white"
+                          }
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="z-[9999] bg-slate-800 border-slate-600">
+                          <SelectItem
+                            value="any"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Any Duration
+                          </SelectItem>
+                          <SelectItem
+                            value="0-90"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Under 90 min
+                          </SelectItem>
+                          <SelectItem
+                            value="90-120"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            90-120 min
+                          </SelectItem>
+                          <SelectItem
+                            value="120-150"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            120-150 min
+                          </SelectItem>
+                          <SelectItem
+                            value="150-999"
+                            className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                          >
+                            Over 150 min
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Director</label>
+                    <div className="relative">
+                      <Input
+                        placeholder="Search directors..."
+                        value={directorSearchQuery}
+                        onChange={(e) => setDirectorSearchQuery(e.target.value)}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                      />
+                      {availableDirectors.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-[9999] bg-slate-800 border border-slate-600 rounded-md mt-1 max-h-40 overflow-y-auto">
+                          {availableDirectors.map((director) => (
+                            <button
+                              key={director.id}
+                              onClick={() => {
+                                setSelectedDirector(director.id.toString())
+                                setDirectorSearchQuery(director.name)
+                                setAvailableDirectors([])
+                              }}
+                              className="w-full text-left px-3 py-2 text-slate-200 hover:bg-slate-700"
+                            >
+                              {director.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {selectedDirector && (
+                        <button
+                          onClick={() => {
+                            setSelectedDirector("")
+                            setDirectorSearchQuery("")
+                          }}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Recommended By</label>
+                    <Select value={recommendedBy} onValueChange={setRecommendedBy}>
+                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] bg-slate-800 border-slate-600 max-h-[200px] overflow-y-auto">
+                        <SelectItem
+                          value="0"
+                          className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                        >
+                          Anyone
+                        </SelectItem>
+                        {!isAuthenticated ? (
+                          <SelectItem value="login" className="text-slate-400 cursor-not-allowed" disabled>
+                            Login to see friends
+                          </SelectItem>
+                        ) : friends.length === 0 ? (
+                          <SelectItem value="no-friends" className="text-slate-400 cursor-not-allowed" disabled>
+                            No friends yet
+                          </SelectItem>
+                        ) : (
+                          friends.map((friend) => (
+                            <SelectItem
+                              key={friend.id}
+                              value={friend.id}
+                              className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white"
+                            >
+                              {friend.display_name} (@{friend.username})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Availability</label>
+                    <div className="space-y-2">
+                      <Button
+                        variant={inTheaters ? "default" : "outline"}
+                        onClick={() => setInTheaters(!inTheaters)}
+                        disabled={mediaType === "tv"}
+                        className={
+                          mediaType === "tv"
+                            ? "border-slate-600 text-slate-400 bg-slate-800/60 cursor-not-allowed w-full"
+                            : inTheaters
+                              ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                              : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                        }
+                      >
+                        {inTheaters ? "✓ " : ""}In Theaters
+                      </Button>
+                      <Button
+                        variant={comingSoon ? "default" : "outline"}
+                        onClick={() => setComingSoon(!comingSoon)}
+                        className={
+                          comingSoon
+                            ? "bg-purple-600 hover:bg-purple-700 text-white w-full"
+                            : "border-white/20 text-white hover:bg-white/20 bg-white/10 w-full"
+                        }
+                      >
+                        {comingSoon ? "✓ " : ""}Coming Soon
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-white text-sm mb-2 block">Streaming Services</label>
+                    <div className="flex flex-wrap gap-2">
+                      {streamingServices.map((service) => (
+                        <Button
+                          key={service.id}
+                          variant={selectedStreamingServices.includes(service.id) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleStreamingService(service.id)}
+                          className={
+                            selectedStreamingServices.includes(service.id)
+                              ? "bg-purple-600 hover:bg-purple-700 text-white text-xs h-8"
+                              : "border-white/20 text-white hover:bg-white/20 bg-white/10 text-xs h-8"
+                          }
+                        >
+                          {selectedStreamingServices.includes(service.id) ? "✓ " : ""}
+                          {service.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900 pb-4">
+                    <Button onClick={handleApplyFilters} className="bg-purple-600 hover:bg-purple-700 h-12">
+                      Apply Filters
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleClearFilters}
+                      className="border-white/20 text-white hover:bg-white/20 bg-white/10 h-12"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {directorResults.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Directors</h2>
+            <div className="space-y-6">
+              {directorResults.map((directorResult) => {
+                const isExpanded = expandedDirectors.has(directorResult.director.id)
+                const worksToShow = isExpanded ? directorResult.works : directorResult.works.slice(0, 5)
+
+                return (
+                  <div
+                    key={directorResult.director.id}
+                    className="bg-slate-800/60 rounded-lg p-4 border border-slate-600"
+                  >
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+                        {directorResult.director.profile_path ? (
+                          <Image
+                            src={`https://image.tmdb.org/t/p/w200${directorResult.director.profile_path}`}
+                            alt={directorResult.director.name}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                            No Photo
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{directorResult.director.name}</h3>
+                        <p className="text-slate-400">Director • {directorResult.works.length} works found</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {worksToShow.map((work) => (
+                        <Link key={work.id} href={`/explore/${getMediaType(work)}/${work.id}`} className="group">
+                          <Card className="bg-slate-700/60 border-slate-600 hover:bg-slate-600/60 transition-colors">
+                            <CardContent className="p-2">
+                              <div className="aspect-[2/3] mb-2 rounded overflow-hidden bg-slate-800">
+                                <Image
+                                  src={getPosterUrl(work.poster_path) || "/placeholder.svg"}
+                                  alt={getTitle(work)}
+                                  width={150}
+                                  height={225}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              </div>
+                              <h4 className="text-white text-sm font-medium line-clamp-2 mb-1">{getTitle(work)}</h4>
+                              <p className="text-slate-400 text-xs">{getReleaseDate(work)?.split("-")[0] || "N/A"}</p>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+
+                    {directorResult.works.length > 5 && (
+                      <div className="mt-4 text-center">
+                        <button
+                          onClick={() => toggleDirectorExpansion(directorResult.director.id)}
+                          className="text-purple-400 hover:text-purple-300 text-sm transition-colors cursor-pointer"
+                        >
+                          {isExpanded
+                            ? `Show less works by ${directorResult.director.name}`
+                            : `+${directorResult.works.length - 5} more works by ${directorResult.director.name}`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {isLoading && results.length === 0 && directorResults.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-white">Loading...</div>
           </div>

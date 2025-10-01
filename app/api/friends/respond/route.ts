@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { notifyFriendRequestAccepted } from "@/lib/notifications"
+
+export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,6 +26,24 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "accept") {
+      const { data: friendship } = await supabase
+        .from("friends")
+        .select("user_id")
+        .eq("id", friendshipId)
+        .eq("friend_id", user.id)
+        .eq("status", "pending")
+        .single()
+
+      if (!friendship) {
+        return NextResponse.json({ error: "Friend request not found" }, { status: 404 })
+      }
+
+      const { data: accepterProfile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .single()
+
       // Update the friendship status to accepted
       const { error } = await supabase
         .from("friends")
@@ -34,6 +55,13 @@ export async function POST(request: NextRequest) {
       if (error) {
         console.error("Accept friend request error:", error)
         return NextResponse.json({ error: "Failed to accept friend request" }, { status: 500 })
+      }
+
+      try {
+        await notifyFriendRequestAccepted(friendship.user_id, user.id, accepterProfile?.display_name || "Someone")
+      } catch (notificationError) {
+        console.error("Failed to send friend request accepted notification:", notificationError)
+        // Don't fail the request if notification fails
       }
     } else {
       // Delete the friendship request

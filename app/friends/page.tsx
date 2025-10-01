@@ -11,6 +11,8 @@ import { Search, UserPlus, Users, Clock, Check, X, MessageSquare, Plus, User, Lo
 import { useToast } from "@/hooks/use-toast"
 import { MobileNavigation } from "@/components/mobile-navigation"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -25,9 +27,54 @@ export default function FriendsPage() {
   const [isSearching, setIsSearching] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const { toast } = useToast()
+  const router = useRouter()
+
+  const checkAuthentication = async () => {
+    try {
+      console.log("[v0] Checking authentication...")
+      const supabase = createClient()
+
+      if (!supabase) {
+        console.log("[v0] Supabase client not available")
+        setAuthLoading(false)
+        return
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+
+      if (authError) {
+        console.log("[v0] Auth error:", authError.message)
+        router.push("/auth/login")
+        return
+      }
+
+      const authenticatedUser = authData?.user
+      if (!authenticatedUser) {
+        console.log("[v0] No auth session found, redirecting to login")
+        router.push("/auth/login")
+        return
+      }
+
+      console.log("[v0] User authenticated:", authenticatedUser.id)
+      setUser(authenticatedUser)
+    } catch (error) {
+      console.log("[v0] Auth check error:", error)
+      router.push("/auth/login")
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    checkAuthentication()
+  }, [])
 
   const handleAutoSuggest = async (query: string) => {
+    if (!user) return
+
     if (query.trim().length < 2) {
       setAutoSuggestResults([])
       setShowAutoSuggest(false)
@@ -90,6 +137,8 @@ export default function FriendsPage() {
   }, [])
 
   const searchUsers = async () => {
+    if (!user) return
+
     setIsSearching(true)
     try {
       const response = await fetch(`/api/friends/search?q=${encodeURIComponent(searchQuery)}`)
@@ -109,6 +158,8 @@ export default function FriendsPage() {
   }
 
   const sendFriendRequest = async (friendId: string) => {
+    if (!user) return
+
     try {
       const response = await fetch("/api/friends/request", {
         method: "POST",
@@ -150,6 +201,8 @@ export default function FriendsPage() {
   }
 
   const respondToRequest = async (friendshipId: string, action: "accept" | "decline") => {
+    if (!user) return
+
     try {
       const response = await fetch("/api/friends/respond", {
         method: "POST",
@@ -190,6 +243,8 @@ export default function FriendsPage() {
   }
 
   const fetchFriendsAndRequests = async () => {
+    if (!user) return
+
     setIsLoading(true)
     try {
       const friendsResponse = await fetch("/api/friends/list?type=friends")
@@ -212,8 +267,10 @@ export default function FriendsPage() {
   }
 
   useEffect(() => {
-    fetchFriendsAndRequests()
-  }, [])
+    if (user) {
+      fetchFriendsAndRequests()
+    }
+  }, [user])
 
   const openNativeSMS = () => {
     const inviteLink = `${window.location.origin}/signup?ref=${btoa(Date.now().toString())}`
@@ -295,6 +352,17 @@ export default function FriendsPage() {
           </Button>
         )
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="text-white">Loading...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -387,7 +455,14 @@ export default function FriendsPage() {
                                 onClick={() => selectSuggestion(user)}
                               >
                                 <Avatar className="h-8 w-8">
-                                  <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                                  <AvatarImage
+                                    src={user.avatar_url || "/placeholder.svg"}
+                                    alt={user.display_name}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement
+                                      target.style.display = "none"
+                                    }}
+                                  />
                                   <AvatarFallback className="text-xs bg-purple-600 text-white">
                                     {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
                                   </AvatarFallback>
@@ -503,7 +578,14 @@ export default function FriendsPage() {
                     {searchResults.map((user: any) => (
                       <div key={user.id} className="flex items-center gap-4 p-3 rounded-lg bg-white/5">
                         <Avatar>
-                          <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={user.display_name} />
+                          <AvatarImage
+                            src={user.avatar_url || "/placeholder.svg"}
+                            alt={user.display_name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = "none"
+                            }}
+                          />
                           <AvatarFallback className="bg-purple-600 text-white">
                             {user.display_name?.charAt(0) || user.username?.charAt(0) || "U"}
                           </AvatarFallback>
@@ -537,6 +619,10 @@ export default function FriendsPage() {
                           <AvatarImage
                             src={friend.friend?.avatar_url || "/placeholder.svg"}
                             alt={friend.friend?.display_name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = "none"
+                            }}
                           />
                           <AvatarFallback className="bg-purple-600 text-white">
                             {friend.friend?.display_name?.charAt(0) || friend.friend?.username?.charAt(0) || "F"}
@@ -579,6 +665,10 @@ export default function FriendsPage() {
                           <AvatarImage
                             src={request.user?.avatar_url || "/placeholder.svg"}
                             alt={request.user?.display_name}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = "none"
+                            }}
                           />
                           <AvatarFallback className="bg-purple-600 text-white">
                             {request.user?.display_name?.charAt(0) || request.user?.username?.charAt(0) || "R"}

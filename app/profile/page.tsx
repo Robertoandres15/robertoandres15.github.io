@@ -10,6 +10,7 @@ import { Film, Users, Search, Settings, Edit, List, Activity } from "lucide-reac
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 function UserLists({ userId }: { userId: string }) {
   const [lists, setLists] = useState<any[]>([])
@@ -161,6 +162,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     async function loadProfile() {
@@ -286,12 +288,12 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-2">
             <Film className="h-8 w-8 text-purple-400" />
             <h1 className="text-2xl font-bold text-white">Reel Friends</h1>
           </div>
-          <nav className="flex gap-2">
+          <nav className="flex flex-wrap gap-2">
             <Button variant="ghost" asChild className="text-white hover:bg-white/10">
               <Link href="/feed">
                 <Activity className="h-4 w-4 mr-2" />
@@ -321,19 +323,21 @@ export default function ProfilePage() {
 
         <div className="max-w-4xl mx-auto">
           <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-8">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                <Avatar className="h-24 w-24">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0">
                   <AvatarImage src={profile.avatar_url || "/placeholder.svg"} />
-                  <AvatarFallback className="bg-purple-600 text-white text-2xl">
+                  <AvatarFallback className="bg-purple-600 text-white text-xl sm:text-2xl">
                     {profile.display_name?.[0] || profile.username?.[0] || "U"}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-slate-200">{profile.display_name || profile.username}</h2>
-                    <Button size="sm" asChild className="bg-purple-600 hover:bg-purple-700">
+                <div className="flex-1 text-center sm:text-left w-full">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 mb-2">
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-200">
+                      {profile.display_name || profile.username}
+                    </h2>
+                    <Button size="sm" asChild className="bg-purple-600 hover:bg-purple-700 shrink-0">
                       <Link href="/settings">
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Profile
@@ -345,18 +349,18 @@ export default function ProfilePage() {
 
                   {profile.bio && <p className="text-slate-300 mb-4">{profile.bio}</p>}
 
-                  <div className="flex gap-6">
+                  <div className="flex justify-center sm:justify-start gap-4 sm:gap-6 flex-wrap">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-slate-200">{stats.lists}</div>
-                      <div className="text-sm text-slate-400">Lists</div>
+                      <div className="text-xl sm:text-2xl font-bold text-slate-200">{stats.lists}</div>
+                      <div className="text-xs sm:text-sm text-slate-400">Lists</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-slate-200">{stats.friends}</div>
-                      <div className="text-sm text-slate-400">Friends</div>
+                      <div className="text-xl sm:text-2xl font-bold text-slate-200">{stats.friends}</div>
+                      <div className="text-xs sm:text-sm text-slate-400">Friends</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-slate-200">{stats.activities}</div>
-                      <div className="text-sm text-slate-400">Activities</div>
+                      <div className="text-xl sm:text-2xl font-bold text-slate-200">{stats.activities}</div>
+                      <div className="text-xs sm:text-sm text-slate-400">Activities</div>
                     </div>
                   </div>
                 </div>
@@ -365,7 +369,7 @@ export default function ProfilePage() {
           </Card>
 
           <Tabs defaultValue="lists" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800/80 border-slate-600 text-slate-200">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800/80 border-slate-600 text-slate-200 gap-1">
               <TabsTrigger
                 value="lists"
                 className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-slate-200"

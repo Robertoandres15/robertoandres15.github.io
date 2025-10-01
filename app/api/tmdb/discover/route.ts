@@ -1,11 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { TMDBClient } from "@/lib/tmdb"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   try {
     console.log("[v0] Discover API route called")
-    console.log("[v0] Environment check - TMDB_API_KEY exists:", !!process.env.TMDB_API_KEY)
-    console.log("[v0] Environment check - TMDB_API_KEY length:", process.env.TMDB_API_KEY?.length || 0)
+    const hasToken = !!(process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY)
+    const tokenLength = (process.env.TMDB_API_READ_ACCESS_TOKEN || process.env.TMDB_API_KEY || "").length
+    console.log("[v0] Environment check - TMDB token exists:", hasToken)
+    console.log("[v0] Environment check - TMDB token length:", tokenLength)
 
     const tmdb = new TMDBClient()
 
@@ -17,6 +21,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sort_by") || "popularity.desc"
     const minRating = searchParams.get("min_rating") || ""
     const inTheaters = searchParams.get("in_theaters") === "true"
+    const comingSoon = searchParams.get("coming_soon") === "true"
     const streamingServices = searchParams.get("streaming_services") || ""
     const excludeIds = searchParams.get("exclude_ids") || ""
     const withGenres = searchParams.get("with_genres") || ""
@@ -65,6 +70,23 @@ export async function GET(request: NextRequest) {
       params.with_release_type = "3" // Theatrical release
     }
 
+    if (comingSoon) {
+      const today = new Date()
+      const currentDateString = today.toISOString().split("T")[0] // This will be 2025-09-21
+      const sixMonthsFromNow = new Date(today.getTime() + 180 * 24 * 60 * 60 * 1000)
+
+      if (type === "movie") {
+        params.release_date_gte = currentDateString
+        params.release_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
+        params.region = "US"
+        params.with_original_language = "en" // Focus on English releases for consistency
+      } else {
+        // For TV shows, use first_air_date
+        params.first_air_date_gte = currentDateString
+        params.first_air_date_lte = sixMonthsFromNow.toISOString().split("T")[0]
+      }
+    }
+
     if (streamingServices) {
       params.with_watch_providers = streamingServices
       params.watch_region = "US" // Default to US region
@@ -74,11 +96,40 @@ export async function GET(request: NextRequest) {
       type,
       params,
       inTheaters,
+      comingSoon,
       streamingServices,
       processedYear: year,
       excludeIds,
     })
     const results = type === "tv" ? await tmdb.discoverTV(params) : await tmdb.discoverMovies(params)
+
+    if (comingSoon && results.results) {
+      const currentDateString = new Date().toISOString().split("T")[0]
+
+      console.log(`[v0] Current date for comparison: ${currentDateString}`)
+
+      const filteredResults = []
+
+      for (const item of results.results) {
+        const releaseDateString = item.release_date || item.first_air_date
+
+        if (!releaseDateString) {
+          console.log(`[v0] Coming Soon filter - ${item.title || item.name}: No release date, skipping`)
+          continue
+        }
+
+        const isFuture = releaseDateString >= currentDateString
+
+        console.log(`[v0] Coming Soon filter - ${item.title || item.name}: ${releaseDateString}, isFuture: ${isFuture}`)
+
+        if (isFuture) {
+          filteredResults.push(item)
+        }
+      }
+
+      results.results = filteredResults
+      console.log(`[v0] After Coming Soon filtering: ${results.results.length} items remaining`)
+    }
 
     if (excludeIds && results.results) {
       const excludeIdArray = excludeIds
@@ -100,12 +151,16 @@ export async function GET(request: NextRequest) {
       name: error instanceof Error ? error.name : undefined,
     })
 
-    if (error instanceof Error && error.message.includes("TMDB_API_KEY")) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("TMDB API Read Access Token") || error.message.includes("TMDB_API_KEY"))
+    ) {
       return NextResponse.json(
         {
           error: "TMDB API key configuration error",
           details: error.message,
-          suggestion: "Please check that TMDB_API_KEY environment variable is set correctly",
+          suggestion:
+            "Please check that TMDB_API_READ_ACCESS_TOKEN or TMDB_API_KEY environment variable is set correctly",
         },
         { status: 500 },
       )

@@ -12,6 +12,12 @@
     "cap:sync": "npx cap sync",
     "dev": "next dev",
     "lint": "next lint",
+    "mobile:android": "npm run build:mobile && npx cap open android",
+    "mobile:build": "node scripts/build-mobile.js",
+    "mobile:ios": "npm run build:mobile && npx cap open ios",
+    "mobile:run:android": "npm run build:mobile && npx cap run android",
+    "mobile:run:ios": "npm run build:mobile && npx cap run ios",
+    "mobile:setup": "node scripts/setup-mobile.js",
     "start": "next start"
   },
   "dependencies": {
@@ -37,12 +43,14 @@
     "@radix-ui/react-toast": "latest",
     "@remix-run/react": "latest",
     "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "latest",
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
     "@vercel/blob": "latest",
+    "child_process": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "latest",
     "fs": "latest",
     "geist": "^1.3.0",
     "lucide-react": "^0.454.0",
@@ -55,7 +63,8 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vue": "latest",
-    "vue-router": "latest"
+    "vue-router": "latest",
+    "web-push": "latest"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",
