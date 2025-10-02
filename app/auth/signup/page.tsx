@@ -64,7 +64,9 @@ export default function SignUpPage() {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
 
-      const { error } = await supabase.auth.signUp({
+      console.log("[v0] Attempting signup for email:", email)
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -76,10 +78,27 @@ export default function SignUpPage() {
           },
         },
       })
-      if (error) throw error
+
+      if (error) {
+        console.error("[v0] Signup error:", error)
+
+        // Check for specific error types
+        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
+          throw new Error("This email is already registered. Please sign in instead or use a different email.")
+        }
+
+        throw error
+      }
+
+      console.log("[v0] Signup response:", { user: data.user, session: data.session })
+
+      if (!data.user) {
+        throw new Error("Account creation failed. Please try again.")
+      }
 
       router.push("/onboarding")
     } catch (error: unknown) {
+      console.error("[v0] Signup catch block:", error)
       if (error instanceof Error && error.message.includes("Your project's URL and API key are required")) {
         setError("Authentication service is currently unavailable. Please contact support.")
       } else {
