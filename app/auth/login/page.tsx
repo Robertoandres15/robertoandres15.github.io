@@ -48,14 +48,23 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL
-        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/feed`
-        : `${window.location.origin}/auth/callback?next=/feed`
+      const getRedirectUrl = () => {
+        // For production, use NEXT_PUBLIC_SITE_URL if set
+        if (process.env.NEXT_PUBLIC_SITE_URL) {
+          return `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/feed`
+        }
+        // For Vercel deployments (preview and production), use NEXT_PUBLIC_VERCEL_URL
+        if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+          return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/auth/callback?next=/feed`
+        }
+        // Fallback to current origin (for local development)
+        return `${window.location.origin}/auth/callback?next=/feed`
+      }
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: getRedirectUrl(),
           queryParams: {
             access_type: "offline",
             prompt: "consent",
