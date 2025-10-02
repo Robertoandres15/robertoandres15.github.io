@@ -31,13 +31,13 @@ async function AIMovieSuggestions() {
     if (user) {
       const { data: profile } = await supabase
         .from("users")
-        .select("username, display_name, city, state, zip_code, preferred_movie_genres, preferred_series_genres")
+        .select("username, preferred_movie_genres, preferred_series_genres")
         .eq("id", user.id)
         .single()
 
       userProfile = profile
 
-      if (!profile?.username || !profile?.display_name || !profile?.city || !profile?.state || !profile?.zip_code) {
+      if (!profile?.username) {
         redirect("/onboarding")
       }
     }
@@ -261,13 +261,13 @@ export default async function FeedPage() {
     if (user) {
       const { data: userProfile } = await supabase
         .from("users")
-        .select("username, display_name, city, state, zip_code, preferred_movie_genres, preferred_series_genres")
+        .select("username, preferred_movie_genres, preferred_series_genres")
         .eq("id", user.id)
         .single()
 
       profile = userProfile
 
-      if (!profile?.username || !profile?.display_name || !profile?.city || !profile?.state || !profile?.zip_code) {
+      if (!profile?.username) {
         redirect("/onboarding")
       }
     }

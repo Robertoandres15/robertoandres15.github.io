@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Film, User, ArrowRight, MapPin } from "lucide-react"
+import { Film, User, ArrowRight, MapPin, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 
@@ -16,7 +16,6 @@ export const dynamic = "force-dynamic"
 export default function OnboardingPage() {
   const [user, setUser] = useState<any>(null)
   const [username, setUsername] = useState("")
-  const [displayName, setDisplayName] = useState("")
   const [bio, setBio] = useState("")
   const [city, setCity] = useState("")
   const [state, setState] = useState("")
@@ -25,6 +24,9 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState(1)
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
   const router = useRouter()
   const [supabase, setSupabase] = useState<any>(null)
 
@@ -71,7 +73,6 @@ export default function OnboardingPage() {
         }
         console.log("[v0] User found:", user.id)
         setUser(user)
-        setDisplayName(user.user_metadata?.display_name || "")
       } catch (error) {
         console.error("[v0] Error getting user in onboarding:", error)
         const mockUser = {
@@ -84,6 +85,83 @@ export default function OnboardingPage() {
     }
     getUser()
   }, [router])
+
+  const handleZipCodeChange = async (value: string) => {
+    const cleanedZip = value.replace(/\D/g, "").slice(0, 5)
+    setZipCode(cleanedZip)
+
+    if (cleanedZip.length === 5) {
+      setIsLoadingLocation(true)
+      try {
+        // Use a free ZIP code API to get city and state
+        const response = await fetch(`https://api.zippopotam.us/us/${cleanedZip}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.places && data.places.length > 0) {
+            const place = data.places[0]
+            setCity(place["place name"])
+            setState(place["state abbreviation"])
+            setLocationSuggestions([])
+            setShowSuggestions(false)
+          }
+        }
+      } catch (error) {
+        console.log("[v0] Error fetching location from ZIP:", error)
+      } finally {
+        setIsLoadingLocation(false)
+      }
+    }
+  }
+
+  const handleCityChange = async (value: string) => {
+    setCity(value)
+
+    // Simple autocomplete with common US cities
+    if (value.length >= 2) {
+      const commonCities = [
+        { city: "New York", state: "NY" },
+        { city: "Los Angeles", state: "CA" },
+        { city: "Chicago", state: "IL" },
+        { city: "Houston", state: "TX" },
+        { city: "Phoenix", state: "AZ" },
+        { city: "Philadelphia", state: "PA" },
+        { city: "San Antonio", state: "TX" },
+        { city: "San Diego", state: "CA" },
+        { city: "Dallas", state: "TX" },
+        { city: "San Jose", state: "CA" },
+        { city: "Austin", state: "TX" },
+        { city: "Jacksonville", state: "FL" },
+        { city: "Fort Worth", state: "TX" },
+        { city: "Columbus", state: "OH" },
+        { city: "Charlotte", state: "NC" },
+        { city: "San Francisco", state: "CA" },
+        { city: "Indianapolis", state: "IN" },
+        { city: "Seattle", state: "WA" },
+        { city: "Denver", state: "CO" },
+        { city: "Boston", state: "MA" },
+        { city: "Nashville", state: "TN" },
+        { city: "Portland", state: "OR" },
+        { city: "Las Vegas", state: "NV" },
+        { city: "Miami", state: "FL" },
+        { city: "Atlanta", state: "GA" },
+      ]
+
+      const filtered = commonCities.filter((location) => location.city.toLowerCase().startsWith(value.toLowerCase()))
+
+      setLocationSuggestions(filtered)
+      setShowSuggestions(filtered.length > 0)
+    } else {
+      setLocationSuggestions([])
+      setShowSuggestions(false)
+    }
+  }
+
+  const selectLocation = (location: { city: string; state: string }) => {
+    setCity(location.city)
+    setState(location.state)
+    setShowSuggestions(false)
+    setLocationSuggestions([])
+  }
 
   const handleProfileSetup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -128,7 +206,7 @@ export default function OnboardingPage() {
       const userData = {
         id: user.id,
         username,
-        display_name: displayName,
+        display_name: username, // Use username as display name
         bio: bio || null,
         city: city || null,
         state: state || null,
@@ -157,7 +235,7 @@ export default function OnboardingPage() {
       console.log("[v0] Verifying profile was saved...")
       const { data: verifiedProfile, error: verifyError } = await supabase
         .from("users")
-        .select("username, display_name, city, state, zip_code")
+        .select("username")
         .eq("id", user.id)
         .single()
 
@@ -178,10 +256,8 @@ export default function OnboardingPage() {
   }
 
   const handleComplete = async () => {
-    // Give the database a moment to ensure the profile is fully committed
     await new Promise((resolve) => setTimeout(resolve, 500))
     router.push("/feed")
-    // Force a refresh to ensure the feed page gets the latest profile data
     router.refresh()
   }
 
@@ -224,29 +300,40 @@ export default function OnboardingPage() {
                     required
                     className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
                   />
-                  <p className="text-xs text-slate-400">This will be your unique identifier</p>
+                  <p className="text-xs text-slate-400">This will be your unique identifier and display name</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="displayName" className="text-white">
-                    Display Name *
-                  </Label>
-                  <Input
-                    id="displayName"
-                    type="text"
-                    placeholder="Your Name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                  />
-                </div>
+
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-purple-400" />
-                    <Label className="text-white text-sm font-medium">Location (for finding nearby friends)</Label>
+                    <Label className="text-white text-sm font-medium">
+                      Location (Optional - for finding nearby friends)
+                    </Label>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zipCode" className="text-white text-sm">
+                      Zip Code
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="zipCode"
+                        type="text"
+                        placeholder="10001"
+                        value={zipCode}
+                        onChange={(e) => handleZipCodeChange(e.target.value)}
+                        maxLength={5}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                      />
+                      {isLoadingLocation && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400 animate-spin" />
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400">Enter ZIP code to auto-fill city and state</p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <Label htmlFor="city" className="text-white text-sm">
                         City
                       </Label>
@@ -255,9 +342,25 @@ export default function OnboardingPage() {
                         type="text"
                         placeholder="New York"
                         value={city}
-                        onChange={(e) => setCity(e.target.value)}
+                        onChange={(e) => handleCityChange(e.target.value)}
+                        onFocus={() => city.length >= 2 && setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                         className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
                       />
+                      {showSuggestions && locationSuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-slate-800 border border-white/20 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                          {locationSuggestions.map((location, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => selectLocation(location)}
+                              className="w-full px-3 py-2 text-left text-white hover:bg-purple-600/20 transition-colors text-sm"
+                            >
+                              {location.city}, {location.state}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="state" className="text-white text-sm">
@@ -274,20 +377,7 @@ export default function OnboardingPage() {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode" className="text-white text-sm">
-                      Zip Code
-                    </Label>
-                    <Input
-                      id="zipCode"
-                      type="text"
-                      placeholder="10001"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                      maxLength={5}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                    />
-                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="phoneNumber" className="text-white text-sm">
                       Phone Number (Optional)
