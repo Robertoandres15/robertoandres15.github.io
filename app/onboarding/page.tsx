@@ -54,20 +54,34 @@ export default function OnboardingPage() {
         }
 
         const {
-          data: { user },
-        } = await client.auth.getUser()
+          data: { session },
+          error: sessionError,
+        } = await client.auth.getSession()
 
-        if (!user) {
-          console.log("[v0] No authenticated user found in onboarding")
+        if (sessionError || !session) {
+          console.log("[v0] No valid session found in onboarding:", sessionError?.message)
           router.push("/auth/login?error=session_expired")
           return
         }
 
+        const expectedEmail = localStorage.getItem("reel-friends-current-user-email")
+        if (expectedEmail && session.user.email !== expectedEmail) {
+          console.error("[v0] Session email mismatch!", {
+            expected: expectedEmail,
+            actual: session.user.email,
+          })
+          // Clear the mismatched session
+          await client.auth.signOut()
+          localStorage.removeItem("reel-friends-current-user-email")
+          router.push("/auth/login?error=session_mismatch")
+          return
+        }
+
         console.log("[v0] Authenticated user in onboarding:", {
-          id: user.id,
-          email: user.email,
+          id: session.user.id,
+          email: session.user.email,
         })
-        setUser(user)
+        setUser(session.user)
       } catch (error) {
         console.error("[v0] Error getting user in onboarding:", error)
         router.push("/auth/login?error=auth_error")
@@ -177,6 +191,16 @@ export default function OnboardingPage() {
         return
       }
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session || session.user.id !== user.id) {
+        console.error("[v0] Session invalid or changed during onboarding")
+        setError("Your session has expired. Please sign in again.")
+        router.push("/auth/login")
+        return
+      }
+
       const { data: existingUser, error: usernameCheckError } = await supabase
         .from("users")
         .select("username, id")
@@ -251,6 +275,9 @@ export default function OnboardingPage() {
       }
 
       console.log("[v0] Profile setup successful and verified for user:", user.id)
+
+      localStorage.removeItem("reel-friends-current-user-email")
+
       setStep(2)
     } catch (error: unknown) {
       console.error("[v0] Profile setup error:", error)

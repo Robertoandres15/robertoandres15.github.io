@@ -184,20 +184,36 @@ export default function ProfilePage() {
 
         if (!supabase) {
           console.error("[v0] Supabase client not available")
-          router.push("/auth/signin")
+          router.push("/auth/login")
           return
         }
 
-        const { data: authData, error: authError } = await supabase.auth.getUser()
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (authError || !authData?.user) {
-          console.error("[v0] Auth error or no user:", authError)
-          console.log("[v0] Redirecting to sign in - no valid session")
-          router.push("/auth/signin")
+        if (sessionError || !session) {
+          console.error("[v0] Session error or no session:", sessionError)
+          console.log("[v0] Redirecting to login - no valid session")
+          router.push("/auth/login")
           return
         }
 
-        const user = authData.user
+        const user = session.user
+
+        const expectedEmail = localStorage.getItem("reel-friends-current-user-email")
+        if (expectedEmail && user.email !== expectedEmail) {
+          console.error("[v0] Session email mismatch on profile page!", {
+            expected: expectedEmail,
+            actual: user.email,
+          })
+          // Clear the mismatched session
+          await supabase.auth.signOut()
+          localStorage.removeItem("reel-friends-current-user-email")
+          router.push("/auth/login?error=session_mismatch")
+          return
+        }
 
         console.log("[v0] ===== PROFILE DEBUG INFO =====")
         console.log("[v0] Authenticated User ID:", user.id)
