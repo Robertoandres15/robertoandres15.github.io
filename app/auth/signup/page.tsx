@@ -139,6 +139,153 @@ export default function SignUpPage() {
             <CardDescription className="text-slate-300 text-center">Start your movie discovery journey</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex items-start space-x-2 mb-6">
+              <Checkbox
+                id="terms"
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                className="border-white/20 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 mt-0.5"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="terms" className="text-sm text-slate-300 leading-relaxed cursor-pointer">
+                  I have read and agree to the{" "}
+                  <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
+                    <DialogTrigger asChild>
+                      <button type="button" className="text-purple-400 hover:text-purple-300 underline">
+                        Terms & Conditions
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] bg-slate-900 border-slate-700">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Terms & Conditions</DialogTitle>
+                        <DialogDescription className="text-slate-300">
+                          Please read our terms and conditions carefully
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="h-[60vh] pr-4">
+                        <div className="text-slate-300 space-y-4 text-sm">
+                          <h3 className="text-lg font-semibold text-purple-400">1. Acceptance of Terms</h3>
+                          <p>
+                            By accessing and using Reel Friends, you accept and agree to be bound by the terms and
+                            provision of this agreement.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">2. User Accounts</h3>
+                          <p>
+                            You are responsible for maintaining the confidentiality of your account and password and for
+                            restricting access to your computer.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">3. Content and Conduct</h3>
+                          <p>
+                            Users must not post content that is illegal, harmful, threatening, abusive, harassing,
+                            defamatory, vulgar, obscene, or otherwise objectionable.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">4. Privacy</h3>
+                          <p>
+                            Your privacy is important to us. Please review our Privacy Policy, which also governs your
+                            use of the Service.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">5. Intellectual Property</h3>
+                          <p>
+                            The Service and its original content, features and functionality are and will remain the
+                            exclusive property of Reel Friends and its licensors.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">6. Termination</h3>
+                          <p>
+                            We may terminate or suspend your account and bar access to the Service immediately, without
+                            prior notice or liability, under our sole discretion.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">7. Disclaimer</h3>
+                          <p>
+                            The information on this service is provided on an "as is" basis. To the fullest extent
+                            permitted by law, this Company excludes all representations, warranties, conditions and
+                            terms.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">8. Changes to Terms</h3>
+                          <p>
+                            We reserve the right, at our sole discretion, to modify or replace these Terms at any time.
+                          </p>
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>{" "}
+                  and{" "}
+                  <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
+                    <DialogTrigger asChild>
+                      <button type="button" className="text-purple-400 hover:text-purple-300 underline">
+                        Privacy Policy
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] bg-slate-900 border-slate-700">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Privacy Policy</DialogTitle>
+                        <DialogDescription className="text-slate-300">
+                          Learn how we collect, use, and protect your information
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="h-[60vh] pr-4">
+                        <div className="text-slate-300 space-y-4 text-sm">
+                          <h3 className="text-lg font-semibold text-purple-400">1. Information We Collect</h3>
+                          <p>
+                            We collect information you provide directly to us, such as when you create an account, use
+                            our services, or contact us.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">2. How We Use Your Information</h3>
+                          <p>
+                            We use the information we collect to provide, maintain, and improve our services, process
+                            transactions, and communicate with you.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">3. Information Sharing</h3>
+                          <p>
+                            We do not sell, trade, or otherwise transfer your personal information to third parties
+                            without your consent, except as described in this policy.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">4. Data Security</h3>
+                          <p>
+                            We implement appropriate security measures to protect your personal information against
+                            unauthorized access, alteration, disclosure, or destruction.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">5. Cookies and Tracking</h3>
+                          <p>
+                            We use cookies and similar tracking technologies to track activity on our service and hold
+                            certain information.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">6. Your Rights</h3>
+                          <p>
+                            You have the right to access, update, or delete your personal information. You may also opt
+                            out of certain communications from us.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">7. Children's Privacy</h3>
+                          <p>
+                            Our service is not intended for children under 13. We do not knowingly collect personal
+                            information from children under 13.
+                          </p>
+
+                          <h3 className="text-lg font-semibold text-purple-400">8. Changes to Privacy Policy</h3>
+                          <p>
+                            We may update our Privacy Policy from time to time. We will notify you of any changes by
+                            posting the new Privacy Policy on this page.
+                          </p>
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+                </Label>
+              </div>
+            </div>
+
             <div className="mb-6">
               <Button
                 type="button"
@@ -149,238 +296,71 @@ export default function SignUpPage() {
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path
+                    d="M12.24 15.53h0.01c0.82 0 1.48-0.66 1.48-1.48v-2.32h-2.96v2.32c0 0.82 0.66 1.48 1.48 1.48zM8.52 13.21v-2.32h-2.96v2.32c0 0.82 0.66 1.48 1.48 1.48h0.01c0.82 0 1.47-0.66 1.47-1.48zM12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10c5.52 0 10-4.48 10-10s-4.48-10-10-10zM20.52 12h-2.96c0-2.32-1.16-3.48-3.48-3.48h-2.32v-2.96c0-0.82-0.66-1.48-1.48-1.48h-0.01c-0.82 0-1.47 0.66-1.47 1.48v2.96h-2.32c-2.32 0-3.48 1.16-3.48 3.48h-2.96c0 4.69 3.69 8.48 8.48 8.48s8.48-3.79 8.48-8.48z"
                     fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
                 Continue with Google
               </Button>
             </div>
 
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/10" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white/5 px-2 text-slate-400">Or continue with email</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-white">
-                  Confirm Password
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="bg-white/10 border-white/20 text-white"
-                />
-              </div>
-              <div className="flex items-start space-x-2 pt-2">
-                <Checkbox
-                  id="terms"
-                  checked={agreedToTerms}
-                  onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                  className="border-white/20 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="terms" className="text-sm text-slate-300 leading-relaxed cursor-pointer">
-                    I have read and agree to the{" "}
-                    <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
-                      <DialogTrigger asChild>
-                        <button type="button" className="text-purple-400 hover:text-purple-300 underline">
-                          Terms & Conditions
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] bg-slate-900 border-slate-700">
-                        <DialogHeader>
-                          <DialogTitle className="text-white">Terms & Conditions</DialogTitle>
-                          <DialogDescription className="text-slate-300">
-                            Please read our terms and conditions carefully
-                          </DialogDescription>
-                        </DialogHeader>
-                        <ScrollArea className="h-[60vh] pr-4">
-                          <div className="text-slate-300 space-y-4 text-sm">
-                            <h3 className="text-lg font-semibold text-purple-400">1. Acceptance of Terms</h3>
-                            <p>
-                              By accessing and using Reel Friends, you accept and agree to be bound by the terms and
-                              provision of this agreement.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">2. User Accounts</h3>
-                            <p>
-                              You are responsible for maintaining the confidentiality of your account and password and
-                              for restricting access to your computer.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">3. Content and Conduct</h3>
-                            <p>
-                              Users must not post content that is illegal, harmful, threatening, abusive, harassing,
-                              defamatory, vulgar, obscene, or otherwise objectionable.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">4. Privacy</h3>
-                            <p>
-                              Your privacy is important to us. Please review our Privacy Policy, which also governs your
-                              use of the Service.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">5. Intellectual Property</h3>
-                            <p>
-                              The Service and its original content, features and functionality are and will remain the
-                              exclusive property of Reel Friends and its licensors.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">6. Termination</h3>
-                            <p>
-                              We may terminate or suspend your account and bar access to the Service immediately,
-                              without prior notice or liability, under our sole discretion.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">7. Disclaimer</h3>
-                            <p>
-                              The information on this service is provided on an "as is" basis. To the fullest extent
-                              permitted by law, this Company excludes all representations, warranties, conditions and
-                              terms.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">8. Changes to Terms</h3>
-                            <p>
-                              We reserve the right, at our sole discretion, to modify or replace these Terms at any
-                              time.
-                            </p>
-                          </div>
-                        </ScrollArea>
-                      </DialogContent>
-                    </Dialog>{" "}
-                    and{" "}
-                    <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
-                      <DialogTrigger asChild>
-                        <button type="button" className="text-purple-400 hover:text-purple-300 underline">
-                          Privacy Policy
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] bg-slate-900 border-slate-700">
-                        <DialogHeader>
-                          <DialogTitle className="text-white">Privacy Policy</DialogTitle>
-                          <DialogDescription className="text-slate-300">
-                            Learn how we collect, use, and protect your information
-                          </DialogDescription>
-                        </DialogHeader>
-                        <ScrollArea className="h-[60vh] pr-4">
-                          <div className="text-slate-300 space-y-4 text-sm">
-                            <h3 className="text-lg font-semibold text-purple-400">1. Information We Collect</h3>
-                            <p>
-                              We collect information you provide directly to us, such as when you create an account, use
-                              our services, or contact us.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">2. How We Use Your Information</h3>
-                            <p>
-                              We use the information we collect to provide, maintain, and improve our services, process
-                              transactions, and communicate with you.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">3. Information Sharing</h3>
-                            <p>
-                              We do not sell, trade, or otherwise transfer your personal information to third parties
-                              without your consent, except as described in this policy.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">4. Data Security</h3>
-                            <p>
-                              We implement appropriate security measures to protect your personal information against
-                              unauthorized access, alteration, disclosure, or destruction.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">5. Cookies and Tracking</h3>
-                            <p>
-                              We use cookies and similar tracking technologies to track activity on our service and hold
-                              certain information.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">6. Your Rights</h3>
-                            <p>
-                              You have the right to access, update, or delete your personal information. You may also
-                              opt out of certain communications from us.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">7. Children's Privacy</h3>
-                            <p>
-                              Our service is not intended for children under 13. We do not knowingly collect personal
-                              information from children under 13.
-                            </p>
-
-                            <h3 className="text-lg font-semibold text-purple-400">8. Changes to Privacy Policy</h3>
-                            <p>
-                              We may update our Privacy Policy from time to time. We will notify you of any changes by
-                              posting the new Privacy Policy on this page.
-                            </p>
-                          </div>
-                        </ScrollArea>
-                      </DialogContent>
-                    </Dialog>
+            <form onSubmit={handleSignUp}>
+              <div className="grid gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-sm text-slate-300">
+                    Email
                   </Label>
+                  <Input
+                    id="email"
+                    placeholder="Enter your email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password" className="text-sm text-slate-300">
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    placeholder="Enter your password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="confirmPassword" className="text-sm text-slate-300">
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    placeholder="Confirm your password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
+                  />
                 </div>
               </div>
-              {error && <p className="text-red-400 text-sm">{error}</p>}
-              <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
+              {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+              <Button disabled={isLoading} className="w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white">
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
-            <div className="mt-6 text-center">
-              <p className="text-slate-300 text-sm">
-                Already have an account?{" "}
-                <Link href="/auth/login" className="text-purple-400 hover:text-purple-300 underline">
-                  Sign in
-                </Link>
-              </p>
-            </div>
           </CardContent>
         </Card>
+        <div className="mt-6 text-center">
+          <p className="text-slate-300">
+            Already have an account?{" "}
+            <Link href="/auth/signin" className="text-purple-400 hover:text-purple-300 underline">
+              Sign In
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
