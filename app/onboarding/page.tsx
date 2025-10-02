@@ -256,9 +256,22 @@ export default function OnboardingPage() {
   }
 
   const handleComplete = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    router.push("/feed")
-    router.refresh()
+    console.log("[v0] Start Exploring button clicked")
+    try {
+      console.log("[v0] Waiting 500ms before navigation...")
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      console.log("[v0] Navigating to /feed...")
+      router.push("/feed")
+
+      console.log("[v0] Refreshing router...")
+      router.refresh()
+
+      console.log("[v0] Navigation complete")
+    } catch (error) {
+      console.error("[v0] Error during navigation:", error)
+      setError("Navigation failed. Please try again.")
+    }
   }
 
   if (!user) {
@@ -442,10 +455,17 @@ export default function OnboardingPage() {
                   <li>• See what friends in your area are watching</li>
                 </ul>
               </div>
-              <Button onClick={handleComplete} className="w-full bg-purple-600 hover:bg-purple-700">
+              <Button
+                onClick={() => {
+                  console.log("[v0] Button onClick triggered")
+                  handleComplete()
+                }}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
                 Start Exploring
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
+              {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
             </CardContent>
           </Card>
         )}
