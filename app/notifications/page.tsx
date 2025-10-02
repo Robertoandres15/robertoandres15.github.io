@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { NotificationItem } from "@/components/notification-item"
-import { enablePushNotifications, isPushNotificationEnabled } from "@/lib/push-notifications"
+import { enablePushNotifications, disablePushNotifications, isPushNotificationEnabled } from "@/lib/push-notifications"
 import Link from "next/link"
+import { MobileNavigation } from "@/components/mobile-navigation"
 
 interface Notification {
   id: string
@@ -85,6 +86,27 @@ export default function NotificationsPage() {
     }
   }
 
+  const handleDisablePush = async () => {
+    setIsEnablingPush(true)
+    try {
+      await disablePushNotifications()
+      setPushEnabled(false)
+      console.log("[v0] Push notifications disabled successfully")
+    } catch (error) {
+      console.error("[v0] Failed to disable push notifications:", error)
+    } finally {
+      setIsEnablingPush(false)
+    }
+  }
+
+  const handleTogglePush = async () => {
+    if (pushEnabled) {
+      await handleDisablePush()
+    } else {
+      await handleEnablePush()
+    }
+  }
+
   const handleMarkAllAsRead = async () => {
     setIsMarkingAllRead(true)
     try {
@@ -117,7 +139,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-slate-950 text-white pb-20">
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -152,28 +174,28 @@ export default function NotificationsPage() {
         </div>
 
         {/* Push Notifications Setup */}
-        {!pushEnabled && (
-          <Card className="mb-6 bg-slate-900 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Bell className="h-5 w-5 text-purple-400" />
-                Enable Push Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-300 mb-4">
-                Get notified instantly when you receive friend requests, matches, and more.
-              </p>
-              <Button
-                onClick={handleEnablePush}
-                disabled={isEnablingPush}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                {isEnablingPush ? "Enabling..." : "Enable Notifications"}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <Card className="mb-6 bg-slate-900 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bell className="h-5 w-5 text-purple-400" />
+              {pushEnabled ? "Push Notifications Enabled" : "Enable Push Notifications"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-300 mb-4">
+              {pushEnabled
+                ? "You're receiving push notifications for friend requests, matches, and more."
+                : "Get notified instantly when you receive friend requests, matches, and more."}
+            </p>
+            <Button
+              onClick={handleTogglePush}
+              disabled={isEnablingPush}
+              className={pushEnabled ? "bg-slate-700 hover:bg-slate-600" : "bg-purple-600 hover:bg-purple-700"}
+            >
+              {isEnablingPush ? "Processing..." : pushEnabled ? "Disable Notifications" : "Enable Notifications"}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Notifications List */}
         <div className="space-y-3">
@@ -220,6 +242,9 @@ export default function NotificationsPage() {
           )}
         </div>
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation />
     </div>
   )
 }
