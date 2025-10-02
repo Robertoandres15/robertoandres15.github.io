@@ -48,39 +48,29 @@ export default function OnboardingPage() {
         const client = await initializeSupabase()
 
         if (!client) {
-          console.log("[v0] Supabase client not available, using fallback user")
-          const mockUser = {
-            id: "temp-user-" + Date.now(),
-            email: "user@example.com",
-          }
-          setUser(mockUser)
-          setError("Authentication service unavailable. Profile will be saved when service is restored.")
+          console.log("[v0] Supabase client not available")
+          router.push("/auth/login?error=session_expired")
           return
         }
 
         const {
           data: { user },
         } = await client.auth.getUser()
+
         if (!user) {
-          console.log("[v0] No authenticated user found, using fallback for onboarding")
-          const mockUser = {
-            id: "temp-user-" + Date.now(),
-            email: "user@example.com",
-          }
-          setUser(mockUser)
-          setError("Authentication service unavailable. Profile will be saved when service is restored.")
+          console.log("[v0] No authenticated user found in onboarding")
+          router.push("/auth/login?error=session_expired")
           return
         }
-        console.log("[v0] User found:", user.id)
+
+        console.log("[v0] Authenticated user in onboarding:", {
+          id: user.id,
+          email: user.email,
+        })
         setUser(user)
       } catch (error) {
         console.error("[v0] Error getting user in onboarding:", error)
-        const mockUser = {
-          id: "temp-user-" + Date.now(),
-          email: "user@example.com",
-        }
-        setUser(mockUser)
-        setError("Authentication service unavailable. Profile will be saved when service is restored.")
+        router.push("/auth/login?error=auth_error")
       }
     }
     getUser()
@@ -165,48 +155,58 @@ export default function OnboardingPage() {
 
   const handleProfileSetup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    if (!user) {
+      setError("No authenticated user found. Please sign in again.")
+      router.push("/auth/login")
+      return
+    }
 
     setIsLoading(true)
     setError(null)
 
     try {
-      console.log("[v0] Starting profile setup for user:", user.id)
+      console.log("[v0] Starting profile setup for user:", {
+        id: user.id,
+        email: user.email,
+      })
 
       if (!supabase) {
-        console.log("[v0] Supabase not available, skipping database operations")
-        setError("Profile saved locally. Will sync when authentication service is restored.")
-        setStep(2)
+        console.log("[v0] Supabase not available")
+        setError("Authentication service unavailable. Please try again.")
         setIsLoading(false)
         return
       }
 
       const { data: existingUser, error: usernameCheckError } = await supabase
         .from("users")
-        .select("username")
+        .select("username, id")
         .eq("username", username)
-        .single()
+        .maybeSingle()
 
       console.log("[v0] Username check result:", { existingUser, usernameCheckError })
 
-      if (existingUser) {
+      if (existingUser && existingUser.id !== user.id) {
         setError("Username is already taken")
         setIsLoading(false)
         return
       }
 
-      const { data: currentUser, error: fetchError } = await supabase
+      const { data: currentUserProfile, error: fetchError } = await supabase
         .from("users")
-        .select("id")
+        .select("id, username")
         .eq("id", user.id)
-        .single()
+        .maybeSingle()
 
-      console.log("[v0] Current user check:", { currentUser, fetchError })
+      console.log("[v0] Current user profile check:", {
+        currentUserProfile,
+        fetchError,
+        userId: user.id,
+      })
 
       const userData = {
         id: user.id,
         username,
-        display_name: username, // Use username as display name
+        display_name: username,
         bio: bio || null,
         city: city || null,
         state: state || null,
@@ -215,12 +215,12 @@ export default function OnboardingPage() {
       }
 
       let updateError
-      if (!currentUser) {
-        console.log("[v0] Creating new user record")
+      if (!currentUserProfile) {
+        console.log("[v0] Creating new user profile for:", user.id)
         const { error } = await supabase.from("users").insert(userData)
         updateError = error
       } else {
-        console.log("[v0] Updating existing user record")
+        console.log("[v0] Updating existing user profile for:", user.id)
         const { error } = await supabase.from("users").update(userData).eq("id", user.id)
         updateError = error
       }
@@ -232,20 +232,25 @@ export default function OnboardingPage() {
         throw updateError
       }
 
-      console.log("[v0] Verifying profile was saved...")
       const { data: verifiedProfile, error: verifyError } = await supabase
         .from("users")
-        .select("username")
+        .select("username, id")
         .eq("id", user.id)
         .single()
 
-      console.log("[v0] Profile verification result:", { verifiedProfile, verifyError })
+      console.log("[v0] Profile verification result:", {
+        verifiedProfile,
+        verifyError,
+        expectedUserId: user.id,
+        actualUserId: verifiedProfile?.id,
+        match: verifiedProfile?.id === user.id,
+      })
 
-      if (verifyError || !verifiedProfile?.username) {
-        throw new Error("Profile verification failed. Please try again.")
+      if (verifyError || !verifiedProfile?.username || verifiedProfile.id !== user.id) {
+        throw new Error("Profile verification failed. The profile may belong to a different user.")
       }
 
-      console.log("[v0] Profile setup successful and verified, moving to completion step")
+      console.log("[v0] Profile setup successful and verified for user:", user.id)
       setStep(2)
     } catch (error: unknown) {
       console.error("[v0] Profile setup error:", error)
@@ -258,12 +263,15 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     console.log("[v0] Start Exploring button clicked")
     console.log("[v0] Navigating to feed...")
-    // Use replace instead of push to prevent back navigation to onboarding
     router.replace("/feed")
   }
 
   if (!user) {
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
   }
 
   return (
