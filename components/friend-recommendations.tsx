@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Heart, Check, X, Users, Film } from "lucide-react"
+import { Check, X, Users, Film } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import { ListSelector } from "@/components/list-selector"
 
 interface Friend {
   id: string
@@ -77,12 +78,6 @@ export function FriendRecommendations() {
 
         // Show success message
         switch (action) {
-          case "add_to_wishlist":
-            toast({
-              title: "Added to Wishlist",
-              description: `${recommendation.title} has been added to your wishlist.`,
-            })
-            break
           case "mark_seen":
             toast({
               title: "Marked as Seen",
@@ -222,13 +217,21 @@ export function FriendRecommendations() {
           </div>
 
           <div className="flex gap-3 items-center justify-center">
-            <Button
-              onClick={() => handleAction("add_to_wishlist")}
-              className="bg-purple-600 hover:bg-purple-700 px-4 h-10"
-            >
-              <Heart className="h-4 w-4 mr-2" />
-              Add to Wishlist
-            </Button>
+            <ListSelector
+              mediaItem={{
+                id: currentRecommendation.tmdb_id,
+                title: currentRecommendation.title,
+                poster_path: currentRecommendation.poster_path || null,
+                overview: "",
+                release_date: currentRecommendation.release_date,
+                vote_average: 0,
+                media_type: currentRecommendation.media_type as "movie" | "tv",
+              }}
+              actionType="wishlist"
+              onSuccess={() => {
+                setCurrentIndex((prev) => prev + 1)
+              }}
+            />
             <Button
               onClick={() => handleAction("mark_seen")}
               variant="outline"
