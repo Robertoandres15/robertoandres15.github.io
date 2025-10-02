@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { createClient, clearSupabaseSession } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,19 +21,54 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("[v0] Clearing any existing session data before login")
+      clearSupabaseSession()
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      const supabase = createClient()
+
+      console.log("[v0] Attempting login for:", email)
+
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
         options: {
           emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/feed`,
         },
       })
+
       if (error) throw error
+
+      if (!data.user) {
+        throw new Error("Login failed - no user data returned")
+      }
+
+      console.log("[v0] Login successful for user:", {
+        id: data.user.id,
+        email: data.user.email,
+      })
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session || session.user.email !== email) {
+        console.error("[v0] Session mismatch after login!", {
+          expectedEmail: email,
+          sessionEmail: session?.user.email,
+        })
+        throw new Error("Session verification failed. Please try again.")
+      }
+
+      console.log("[v0] Session verified for correct user")
+
+      localStorage.setItem("reel-friends-current-user-email", email)
+
       router.push("/feed")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")

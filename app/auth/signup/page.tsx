@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { createClient, clearSupabaseSession } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -57,11 +57,18 @@ export default function SignUpPage() {
     }
 
     try {
+      console.log("[v0] Clearing any existing session data before signup")
+      clearSupabaseSession()
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
       const supabase = createClient()
 
       if (!supabase) {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
+
+      await supabase.auth.signOut()
 
       console.log("[v0] Starting signup for email:", email)
 
@@ -103,6 +110,22 @@ export default function SignUpPage() {
         email: data.user.email,
       })
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session || session.user.email !== email) {
+        console.error("[v0] Session mismatch after signup!", {
+          expectedEmail: email,
+          sessionEmail: session?.user.email,
+        })
+        throw new Error("Session verification failed. Please try signing in.")
+      }
+
+      console.log("[v0] Session verified for correct user")
+
+      localStorage.setItem("reel-friends-current-user-email", email)
+
       await new Promise((resolve) => setTimeout(resolve, 500))
 
       router.push("/onboarding")
@@ -116,8 +139,6 @@ export default function SignUpPage() {
       setIsLoading(false)
     }
   }
-
-  // Removed handleOAuthSignUp function
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
