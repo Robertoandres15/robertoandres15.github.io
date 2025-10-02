@@ -59,12 +59,9 @@ export default function SignUpPage() {
     try {
       const supabase = createClient()
 
-      // Check if client was created successfully
       if (!supabase) {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
-
-      console.log("[v0] Attempting signup for email:", email)
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -74,23 +71,26 @@ export default function SignUpPage() {
             ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
             : process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
           data: {
-            email_confirm: false, // Disable email confirmation
+            email_confirm: false,
           },
         },
       })
 
       if (error) {
-        console.error("[v0] Signup error:", error)
-
-        // Check for specific error types
-        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
-          throw new Error("This email is already registered. Please sign in instead or use a different email.")
+        const errorMessage = error.message.toLowerCase()
+        if (
+          errorMessage.includes("already") ||
+          errorMessage.includes("registered") ||
+          errorMessage.includes("exists") ||
+          error.status === 422
+        ) {
+          setError("already_registered")
+          setIsLoading(false)
+          return
         }
 
         throw error
       }
-
-      console.log("[v0] Signup response:", { user: data.user, session: data.session })
 
       if (!data.user) {
         throw new Error("Account creation failed. Please try again.")
@@ -98,7 +98,6 @@ export default function SignUpPage() {
 
       router.push("/onboarding")
     } catch (error: unknown) {
-      console.error("[v0] Signup catch block:", error)
       if (error instanceof Error && error.message.includes("Your project's URL and API key are required")) {
         setError("Authentication service is currently unavailable. Please contact support.")
       } else {
@@ -121,9 +120,6 @@ export default function SignUpPage() {
 
     try {
       const redirectUrl = `${window.location.origin}/auth/callback?next=/onboarding`
-      console.log("[v0] OAuth redirect URL:", redirectUrl)
-      console.log("[v0] window.location.origin:", window.location.origin)
-      console.log("[v0] window.location.href:", window.location.href)
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -137,10 +133,7 @@ export default function SignUpPage() {
       })
 
       if (error) throw error
-
-      console.log("[v0] OAuth redirect initiated", data)
     } catch (error: unknown) {
-      console.error("[v0] OAuth error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
       setIsLoading(false)
     }
@@ -398,7 +391,25 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+              {error && error === "already_registered" ? (
+                <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <p className="text-orange-400 text-sm text-center mb-2">This email is already registered.</p>
+                  <div className="flex gap-2 justify-center">
+                    <Link href="/auth/login">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
+                      >
+                        Sign In Instead
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : error ? (
+                <p className="text-red-500 text-sm mt-4 text-center">{error}</p>
+              ) : null}
               <Button disabled={isLoading} className="w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white">
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
