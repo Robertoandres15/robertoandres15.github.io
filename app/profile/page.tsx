@@ -194,7 +194,11 @@ export default function ProfilePage() {
           return
         }
 
-        console.log("[v0] User authenticated:", user.id)
+        console.log("[v0] ===== PROFILE DEBUG INFO =====")
+        console.log("[v0] Authenticated User ID:", user.id)
+        console.log("[v0] Authenticated User Email:", user.email)
+        console.log("[v0] User metadata:", JSON.stringify(user.user_metadata))
+        console.log("[v0] Fetching profile for user ID:", user.id)
 
         const { data: profile, error: profileError } = await supabase
           .from("users")
@@ -208,6 +212,14 @@ export default function ProfilePage() {
           setLoading(false)
           return
         }
+
+        console.log("[v0] Profile fetched from database:")
+        console.log("[v0] - Profile ID:", profile?.id)
+        console.log("[v0] - Profile Username:", profile?.username)
+        console.log("[v0] - Profile Display Name:", profile?.display_name)
+        console.log("[v0] - Profile Email (if stored):", profile?.email)
+        console.log("[v0] - Full profile data:", JSON.stringify(profile))
+        console.log("[v0] ===== END DEBUG INFO =====")
 
         if (!profile?.username) {
           console.log("[v0] User needs onboarding")
