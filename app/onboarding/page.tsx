@@ -154,7 +154,20 @@ export default function OnboardingPage() {
         throw updateError
       }
 
-      console.log("[v0] Profile setup successful, moving to completion step")
+      console.log("[v0] Verifying profile was saved...")
+      const { data: verifiedProfile, error: verifyError } = await supabase
+        .from("users")
+        .select("username, display_name, city, state, zip_code")
+        .eq("id", user.id)
+        .single()
+
+      console.log("[v0] Profile verification result:", { verifiedProfile, verifyError })
+
+      if (verifyError || !verifiedProfile?.username) {
+        throw new Error("Profile verification failed. Please try again.")
+      }
+
+      console.log("[v0] Profile setup successful and verified, moving to completion step")
       setStep(2)
     } catch (error: unknown) {
       console.error("[v0] Profile setup error:", error)
@@ -164,8 +177,12 @@ export default function OnboardingPage() {
     }
   }
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    // Give the database a moment to ensure the profile is fully committed
+    await new Promise((resolve) => setTimeout(resolve, 500))
     router.push("/feed")
+    // Force a refresh to ensure the feed page gets the latest profile data
+    router.refresh()
   }
 
   if (!user) {
