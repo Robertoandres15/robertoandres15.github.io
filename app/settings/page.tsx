@@ -135,8 +135,6 @@ export default function SettingsPage() {
 
         if (authError) {
           console.error("[v0] Auth error:", authError)
-          // Clear the invalid session
-          await supabase.auth.signOut()
           toast({
             title: "Session Expired",
             description: "Please log in again to continue.",
@@ -149,23 +147,6 @@ export default function SettingsPage() {
         if (!user) {
           console.log("[v0] No authenticated user, redirecting to login")
           router.push("/auth/login")
-          return
-        }
-
-        const expectedEmail = localStorage.getItem("reel-friends-current-user-email")
-        if (expectedEmail && user.email !== expectedEmail) {
-          console.error("[v0] Settings - Session email mismatch!", {
-            expected: expectedEmail,
-            actual: user.email,
-          })
-          await supabase.auth.signOut()
-          localStorage.removeItem("reel-friends-current-user-email")
-          toast({
-            title: "Session Error",
-            description: "Please log in again.",
-            variant: "destructive",
-          })
-          router.push("/auth/login?error=session_mismatch")
           return
         }
 
@@ -190,7 +171,6 @@ export default function SettingsPage() {
           console.error("[v0] Profile error:", profileError)
           if (profileError.code === "PGRST116") {
             // User not found in database
-            await supabase.auth.signOut()
             toast({
               title: "Account Error",
               description: "Your account data is missing. Please contact support or sign up again.",
@@ -206,7 +186,6 @@ export default function SettingsPage() {
           console.error("[v0] CRITICAL: Profile ID mismatch in settings!")
           console.error("[v0] Expected user ID:", user.id)
           console.error("[v0] Got profile ID:", profile.id)
-          await supabase.auth.signOut()
           toast({
             title: "Data Error",
             description: "Profile data mismatch. Please log in again.",
@@ -252,8 +231,6 @@ export default function SettingsPage() {
           description: "Failed to load profile. Please try logging in again.",
           variant: "destructive",
         })
-        // Clear session and redirect to login
-        await supabase.auth.signOut()
         router.push("/auth/login")
       } finally {
         setLoading(false)
