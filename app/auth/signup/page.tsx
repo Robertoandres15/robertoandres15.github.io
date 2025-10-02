@@ -59,12 +59,11 @@ export default function SignUpPage() {
     try {
       const supabase = createClient()
 
-      // Check if client was created successfully
       if (!supabase) {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -72,11 +71,30 @@ export default function SignUpPage() {
             ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
             : process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
           data: {
-            email_confirm: false, // Disable email confirmation
+            email_confirm: false,
           },
         },
       })
-      if (error) throw error
+
+      if (error) {
+        const errorMessage = error.message.toLowerCase()
+        if (
+          errorMessage.includes("already") ||
+          errorMessage.includes("registered") ||
+          errorMessage.includes("exists") ||
+          error.status === 422
+        ) {
+          setError("already_registered")
+          setIsLoading(false)
+          return
+        }
+
+        throw error
+      }
+
+      if (!data.user) {
+        throw new Error("Account creation failed. Please try again.")
+      }
 
       router.push("/onboarding")
     } catch (error: unknown) {
@@ -101,9 +119,7 @@ export default function SignUpPage() {
     setError(null)
 
     try {
-      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL
-        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/onboarding`
-        : `${window.location.origin}/auth/callback?next=/onboarding`
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/onboarding`
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -117,10 +133,7 @@ export default function SignUpPage() {
       })
 
       if (error) throw error
-
-      console.log("[v0] OAuth redirect initiated", data)
     } catch (error: unknown) {
-      console.error("[v0] OAuth error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
       setIsLoading(false)
     }
@@ -378,7 +391,25 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+              {error && error === "already_registered" ? (
+                <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <p className="text-orange-400 text-sm text-center mb-2">This email is already registered.</p>
+                  <div className="flex gap-2 justify-center">
+                    <Link href="/auth/login">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="bg-purple-600 hover:bg-purple-500 text-white border-purple-500"
+                      >
+                        Sign In Instead
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : error ? (
+                <p className="text-red-500 text-sm mt-4 text-center">{error}</p>
+              ) : null}
               <Button disabled={isLoading} className="w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white">
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>

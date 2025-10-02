@@ -126,7 +126,21 @@ export default function SettingsPage() {
       try {
         const {
           data: { user },
+          error: authError,
         } = await supabase.auth.getUser()
+
+        if (authError) {
+          console.error("[v0] Auth error:", authError)
+          // Clear the invalid session
+          await supabase.auth.signOut()
+          toast({
+            title: "Session Expired",
+            description: "Please log in again to continue.",
+            variant: "destructive",
+          })
+          router.push("/auth/login")
+          return
+        }
 
         if (!user) {
           router.push("/auth/login")
@@ -135,7 +149,27 @@ export default function SettingsPage() {
 
         setUser(user)
 
-        const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single()
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single()
+
+        if (profileError) {
+          console.error("[v0] Profile error:", profileError)
+          if (profileError.code === "PGRST116") {
+            // User not found in database
+            await supabase.auth.signOut()
+            toast({
+              title: "Account Error",
+              description: "Your account data is missing. Please contact support or sign up again.",
+              variant: "destructive",
+            })
+            router.push("/auth/login")
+            return
+          }
+          throw profileError
+        }
 
         if (!profile?.username) {
           router.push("/onboarding")
@@ -162,9 +196,12 @@ export default function SettingsPage() {
         console.error("Error loading profile:", error)
         toast({
           title: "Error",
-          description: "Failed to load profile",
+          description: "Failed to load profile. Please try logging in again.",
           variant: "destructive",
         })
+        // Clear session and redirect to login
+        await supabase.auth.signOut()
+        router.push("/auth/login")
       } finally {
         setLoading(false)
       }
@@ -648,38 +685,50 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground">
-      <nav className="flex items-center justify-center gap-8 p-4 border-b border-white/10">
-        <a href="/feed" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+      <nav className="flex items-center justify-start md:justify-center gap-4 md:gap-8 p-4 border-b border-white/10 overflow-x-auto">
+        <a
+          href="/feed"
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
+        >
           <User className="w-5 h-5" />
           <span>Feed</span>
         </a>
-        <a href="/explore" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+        <a
+          href="/explore"
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
+        >
           <User className="w-5 h-5" />
           <span>Explore</span>
         </a>
-        <a href="/friends" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+        <a
+          href="/friends"
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
+        >
           <User className="w-5 h-5" />
           <span>Friends</span>
         </a>
-        <a href="/lists" className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+        <a
+          href="/lists"
+          className="flex items-center gap-2 text-white/60 hover:text-white transition-colors whitespace-nowrap"
+        >
           <User className="w-5 h-5" />
           <span>Lists</span>
         </a>
-        <a href="/profile" className="flex items-center gap-2 text-purple-400 font-medium">
+        <a href="/profile" className="flex items-center gap-2 text-purple-400 font-medium whitespace-nowrap">
           <User className="w-5 h-5" />
           <span>Profile</span>
         </a>
       </nav>
 
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-gray-300">Manage your account settings and preferences</p>
+      <div className="max-w-4xl mx-auto p-4 md:p-6">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
+          <p className="text-gray-300 text-sm md:text-base">Manage your account settings and preferences</p>
         </div>
 
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="w-64 space-y-2">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+          {/* Sidebar - Hidden on mobile */}
+          <div className="hidden md:block md:w-64 space-y-2">
             {[
               { id: "profile", label: "Edit Profile", icon: User },
               { id: "streaming", label: "Streaming Services", icon: Tv },
@@ -705,9 +754,27 @@ export default function SettingsPage() {
             ))}
           </div>
 
+          {/* Mobile Navigation - Shown only on mobile */}
+          <div className="md:hidden mb-4">
+            <select
+              value={activeSection}
+              onChange={(e) => setActiveSection(e.target.value)}
+              className="w-full bg-white/10 border border-white/20 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            >
+              <option value="profile">Edit Profile</option>
+              <option value="streaming">Streaming Services</option>
+              <option value="moderation">Moderation</option>
+              <option value="appearance">Appearance</option>
+              <option value="notifications">Notifications</option>
+              <option value="payments">Payments</option>
+              <option value="security">Sign-In & Security</option>
+              <option value="legal">Legal</option>
+            </select>
+          </div>
+
           {/* Main Content */}
           <div className="flex-1">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4 md:p-6">
               {/* Profile Section */}
               {activeSection === "profile" && (
                 <div className="space-y-6">

@@ -48,9 +48,10 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL
-        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/feed`
-        : `${window.location.origin}/auth/callback?next=/feed`
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/feed`
+      console.log("[v0] OAuth redirect URL:", redirectUrl)
+      console.log("[v0] window.location.origin:", window.location.origin)
+      console.log("[v0] window.location.href:", window.location.href)
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
