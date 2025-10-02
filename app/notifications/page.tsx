@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, CheckCheck, Settings } from "lucide-react"
+import { Bell, CheckCheck, Settings, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { NotificationItem } from "@/components/notification-item"
 import { enablePushNotifications, disablePushNotifications, isPushNotificationEnabled } from "@/lib/push-notifications"
 import Link from "next/link"
@@ -34,12 +35,14 @@ export default function NotificationsPage() {
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false)
   const [pushEnabled, setPushEnabled] = useState(false)
   const [isEnablingPush, setIsEnablingPush] = useState(false)
+  const [permissionDenied, setPermissionDenied] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [page, setPage] = useState(1)
 
   useEffect(() => {
     fetchNotifications()
     checkPushStatus()
+    checkPermissionStatus()
   }, [])
 
   const fetchNotifications = async (pageNum = 1) => {
@@ -71,20 +74,20 @@ export default function NotificationsPage() {
     }
   }
 
+  const checkPermissionStatus = () => {
+    if ("Notification" in window) {
+      setPermissionDenied(Notification.permission === "denied")
+    }
+  }
+
   const handleEnablePush = async () => {
-    console.log("[v0] handleEnablePush called")
     setIsEnablingPush(true)
     try {
       const success = await enablePushNotifications()
-      console.log("[v0] enablePushNotifications returned:", success)
       setPushEnabled(success)
-      if (success) {
-        console.log("[v0] Push notifications enabled successfully")
-      } else {
-        console.log("[v0] Push notifications were not enabled")
-      }
+      checkPermissionStatus()
     } catch (error) {
-      console.error("[v0] Failed to enable push notifications:", error)
+      console.error("Failed to enable push notifications:", error)
     } finally {
       setIsEnablingPush(false)
     }
@@ -95,16 +98,14 @@ export default function NotificationsPage() {
     try {
       await disablePushNotifications()
       setPushEnabled(false)
-      console.log("[v0] Push notifications disabled successfully")
     } catch (error) {
-      console.error("[v0] Failed to disable push notifications:", error)
+      console.error("Failed to disable push notifications:", error)
     } finally {
       setIsEnablingPush(false)
     }
   }
 
   const handleTogglePush = async () => {
-    console.log("[v0] handleTogglePush called, current state:", pushEnabled)
     if (pushEnabled) {
       await handleDisablePush()
     } else {
@@ -181,17 +182,28 @@ export default function NotificationsPage() {
         {/* Push Notifications Setup */}
         <Card className="mb-6 bg-slate-900 border-slate-700">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-white">
               <Bell className="h-5 w-5 text-purple-400" />
               {pushEnabled ? "Push Notifications Enabled" : "Enable Push Notifications"}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-slate-300 mb-4">
+            <p className="text-slate-300 mb-4 text-base">
               {pushEnabled
                 ? "You're receiving push notifications for friend requests, matches, and more."
                 : "Get notified instantly when you receive friend requests, matches, and more."}
             </p>
+
+            {permissionDenied && !pushEnabled && (
+              <Alert className="mb-4 bg-red-950 border-red-800">
+                <AlertCircle className="h-4 w-4 text-red-400" />
+                <AlertDescription className="text-red-200">
+                  Notifications are blocked in your browser. To enable them, click the lock icon in your browser's
+                  address bar and allow notifications for this site.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Button
               onClick={handleTogglePush}
               disabled={isEnablingPush}
@@ -205,7 +217,6 @@ export default function NotificationsPage() {
         {/* Notifications List */}
         <div className="space-y-3">
           {isLoading && page === 1 ? (
-            // Loading skeletons
             Array.from({ length: 5 }).map((_, i) => (
               <Card key={i} className="p-4">
                 <div className="flex items-start gap-3">
@@ -220,7 +231,6 @@ export default function NotificationsPage() {
               </Card>
             ))
           ) : notifications.length === 0 ? (
-            // Empty state
             <Card className="p-8 text-center bg-slate-900 border-slate-700">
               <Bell className="h-12 w-12 text-slate-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-300 mb-2">No notifications yet</h3>
@@ -229,13 +239,11 @@ export default function NotificationsPage() {
               </p>
             </Card>
           ) : (
-            // Notifications
             <>
               {notifications.map((notification) => (
                 <NotificationItem key={notification.id} notification={notification} onMarkAsRead={handleMarkAsRead} />
               ))}
 
-              {/* Load More Button */}
               {hasMore && (
                 <div className="text-center pt-4">
                   <Button variant="outline" onClick={loadMore} disabled={isLoading}>
