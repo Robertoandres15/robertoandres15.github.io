@@ -27,7 +27,28 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser()
+
+  // If there's an error (like user_not_found), clear auth cookies and redirect to login
+  if (error) {
+    console.log("[v0] Auth error in updateSession:", error.message)
+
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    const response = NextResponse.redirect(url)
+
+    // Clear all Supabase auth cookies
+    const cookiesToClear = request.cookies
+      .getAll()
+      .filter((cookie) => cookie.name.startsWith("sb-") || cookie.name.includes("supabase"))
+
+    cookiesToClear.forEach((cookie) => {
+      response.cookies.delete(cookie.name)
+    })
+
+    return response
+  }
 
   if (
     !user &&

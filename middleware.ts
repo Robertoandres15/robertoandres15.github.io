@@ -39,7 +39,29 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser()
+
+  // If there's an error (like user_not_found), clear auth cookies and redirect to login
+  if (error) {
+    console.log("[v0] Auth error in middleware:", error.message)
+
+    // Create a response that clears all Supabase auth cookies
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    const response = NextResponse.redirect(url)
+
+    // Clear all Supabase auth cookies
+    const cookiesToClear = request.cookies
+      .getAll()
+      .filter((cookie) => cookie.name.startsWith("sb-") || cookie.name.includes("supabase"))
+
+    cookiesToClear.forEach((cookie) => {
+      response.cookies.delete(cookie.name)
+    })
+
+    return response
+  }
 
   if (
     !user &&

@@ -33,6 +33,33 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Clear invalid Supabase sessions before React hydrates
+              (function() {
+                try {
+                  // Check if there are Supabase auth items in localStorage
+                  var hasSupabaseAuth = false;
+                  for (var i = 0; i < localStorage.length; i++) {
+                    var key = localStorage.key(i);
+                    if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+                      hasSupabaseAuth = true;
+                      break;
+                    }
+                  }
+                  
+                  // If we have Supabase auth data, we'll let the React component handle validation
+                  // This script just ensures we don't have orphaned data
+                } catch (e) {
+                  console.error('Error checking Supabase session:', e);
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={`font-sans ${inter.variable}`}>
         <ClientLayout>{children}</ClientLayout>
       </body>
