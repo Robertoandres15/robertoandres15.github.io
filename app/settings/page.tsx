@@ -124,10 +124,14 @@ export default function SettingsPage() {
 
     async function loadProfile() {
       try {
+        console.log("[v0] ===== SETTINGS PAGE DEBUG =====")
+
         const {
           data: { user },
           error: authError,
         } = await supabase.auth.getUser()
+
+        console.log("[v0] Settings - Authenticated user:", user?.id, user?.email)
 
         if (authError) {
           console.error("[v0] Auth error:", authError)
@@ -143,17 +147,44 @@ export default function SettingsPage() {
         }
 
         if (!user) {
+          console.log("[v0] No authenticated user, redirecting to login")
           router.push("/auth/login")
           return
         }
 
+        const expectedEmail = localStorage.getItem("reel-friends-current-user-email")
+        if (expectedEmail && user.email !== expectedEmail) {
+          console.error("[v0] Settings - Session email mismatch!", {
+            expected: expectedEmail,
+            actual: user.email,
+          })
+          await supabase.auth.signOut()
+          localStorage.removeItem("reel-friends-current-user-email")
+          toast({
+            title: "Session Error",
+            description: "Please log in again.",
+            variant: "destructive",
+          })
+          router.push("/auth/login?error=session_mismatch")
+          return
+        }
+
         setUser(user)
+
+        console.log("[v0] Settings - Fetching profile for user ID:", user.id)
 
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
           .eq("id", user.id)
           .single()
+
+        console.log("[v0] Settings - Profile fetched:", {
+          profileId: profile?.id,
+          username: profile?.username,
+          displayName: profile?.display_name,
+          email: user.email,
+        })
 
         if (profileError) {
           console.error("[v0] Profile error:", profileError)
@@ -171,11 +202,27 @@ export default function SettingsPage() {
           throw profileError
         }
 
+        if (profile.id !== user.id) {
+          console.error("[v0] CRITICAL: Profile ID mismatch in settings!")
+          console.error("[v0] Expected user ID:", user.id)
+          console.error("[v0] Got profile ID:", profile.id)
+          await supabase.auth.signOut()
+          toast({
+            title: "Data Error",
+            description: "Profile data mismatch. Please log in again.",
+            variant: "destructive",
+          })
+          router.push("/auth/login")
+          return
+        }
+
         if (!profile?.username) {
+          console.log("[v0] Settings - User needs onboarding")
           router.push("/onboarding")
           return
         }
 
+        console.log("[v0] Settings - Setting profile data for:", profile.username)
         setProfile(profile)
         setFormData({
           display_name: profile.display_name || "",
@@ -192,6 +239,12 @@ export default function SettingsPage() {
           preferred_series_genres: profile.preferred_series_genres || [],
           preferred_movie_genres: profile.preferred_movie_genres || [],
         })
+
+        setSubscriptionStatus(profile.subscription_status || "free")
+        setSubscriptionExpiresAt(profile.subscription_expires_at)
+
+        console.log("[v0] Settings - Form data set successfully")
+        console.log("[v0] ===== END SETTINGS DEBUG =====")
       } catch (error) {
         console.error("Error loading profile:", error)
         toast({
@@ -210,34 +263,7 @@ export default function SettingsPage() {
     loadProfile()
   }, [supabase, router, toast])
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const response = await fetch("/api/user/profile")
-        if (response.ok) {
-          const userData = await response.json()
-          if (userData.user) {
-            setFormData({
-              display_name: userData.user.display_name || "",
-              bio: userData.user.bio || "",
-              city: userData.user.city || "",
-              state: userData.user.state || "",
-              zip_code: userData.user.zip_code || "",
-              phone_number: userData.user.phone_number || "",
-            })
-            setProfile(userData.user)
-
-            setSubscriptionStatus(userData.user.subscription_status || "free")
-            setSubscriptionExpiresAt(userData.user.subscription_expires_at)
-          }
-        }
-      } catch (error) {
-        console.log("Failed to load user data:", error)
-      }
-    }
-
-    loadUserData()
-  }, [])
+  // This was causing the wrong user's data to be loaded
 
   useEffect(() => {
     console.log("[v0] Dark mode toggled:", darkMode)
