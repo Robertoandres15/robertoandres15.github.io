@@ -1129,10 +1129,10 @@ export default function ListsPage() {
             </DialogHeader>
             <DialogFooter className="gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => setShowDeleteDialog(null)}
                 disabled={isDeleting}
-                className="border-slate-600 text-white hover:bg-slate-800 hover:text-white"
+                className="bg-slate-800 text-white hover:bg-slate-700 hover:text-white border border-slate-600"
               >
                 Cancel
               </Button>
