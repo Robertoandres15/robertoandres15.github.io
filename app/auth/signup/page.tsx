@@ -63,6 +63,8 @@ export default function SignUpPage() {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
 
+      console.log("[v0] Starting signup for email:", email)
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -95,6 +97,13 @@ export default function SignUpPage() {
       if (!data.user) {
         throw new Error("Account creation failed. Please try again.")
       }
+
+      console.log("[v0] Signup successful for user:", {
+        id: data.user.id,
+        email: data.user.email,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       router.push("/onboarding")
     } catch (error: unknown) {
