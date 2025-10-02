@@ -167,36 +167,42 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadProfile() {
       try {
+        if (typeof window !== "undefined") {
+          const keysToRemove: string[] = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && (key.includes("profile") || key.includes("user_data"))) {
+              keysToRemove.push(key)
+            }
+          }
+          keysToRemove.forEach((key) => localStorage.removeItem(key))
+          console.log("[v0] Cleared cached profile data from localStorage")
+        }
+
         console.log("[v0] Loading profile page")
         const supabase = createClient()
 
         if (!supabase) {
           console.error("[v0] Supabase client not available")
-          setError("Unable to connect to database")
-          setLoading(false)
+          router.push("/auth/signin")
           return
         }
 
         const { data: authData, error: authError } = await supabase.auth.getUser()
 
-        if (authError) {
-          console.error("[v0] Auth error:", authError)
-          setError("Authentication failed")
-          setLoading(false)
+        if (authError || !authData?.user) {
+          console.error("[v0] Auth error or no user:", authError)
+          console.log("[v0] Redirecting to sign in - no valid session")
+          router.push("/auth/signin")
           return
         }
 
-        const user = authData?.user
-        if (!user) {
-          console.error("[v0] No authenticated user")
-          setError("Please log in to view your profile")
-          setLoading(false)
-          return
-        }
+        const user = authData.user
 
         console.log("[v0] ===== PROFILE DEBUG INFO =====")
         console.log("[v0] Authenticated User ID:", user.id)
         console.log("[v0] Authenticated User Email:", user.email)
+        console.log("[v0] User created at:", user.created_at)
         console.log("[v0] User metadata:", JSON.stringify(user.user_metadata))
         console.log("[v0] Fetching profile for user ID:", user.id)
 
@@ -208,6 +214,13 @@ export default function ProfilePage() {
 
         if (profileError) {
           console.error("[v0] Profile fetch error:", profileError)
+
+          if (profileError.code === "PGRST116") {
+            console.log("[v0] No profile found - redirecting to onboarding")
+            router.push("/onboarding")
+            return
+          }
+
           setError("Failed to load profile")
           setLoading(false)
           return
@@ -217,8 +230,19 @@ export default function ProfilePage() {
         console.log("[v0] - Profile ID:", profile?.id)
         console.log("[v0] - Profile Username:", profile?.username)
         console.log("[v0] - Profile Display Name:", profile?.display_name)
-        console.log("[v0] - Profile Email (if stored):", profile?.email)
+        console.log("[v0] - Profile Created At:", profile?.created_at)
         console.log("[v0] - Full profile data:", JSON.stringify(profile))
+
+        if (profile.id !== user.id) {
+          console.error("[v0] CRITICAL: Profile ID mismatch!")
+          console.error("[v0] Expected user ID:", user.id)
+          console.error("[v0] Got profile ID:", profile.id)
+          setError("Profile data mismatch - please contact support")
+          setLoading(false)
+          return
+        }
+
+        console.log("[v0] ✓ Profile ID matches authenticated user ID")
         console.log("[v0] ===== END DEBUG INFO =====")
 
         if (!profile?.username) {
@@ -332,6 +356,12 @@ export default function ProfilePage() {
             </Button>
           </nav>
         </header>
+
+        <div className="max-w-4xl mx-auto mb-4">
+          <div className="bg-purple-600/20 border border-purple-500/30 rounded-lg p-3 text-sm text-purple-200">
+            <span className="font-semibold">Logged in as:</span> {user.email}
+          </div>
+        </div>
 
         <div className="max-w-4xl mx-auto">
           <Card className="bg-slate-800/80 border-slate-600 backdrop-blur-sm mb-8">
