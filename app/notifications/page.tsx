@@ -72,12 +72,16 @@ export default function NotificationsPage() {
   }
 
   const handleEnablePush = async () => {
+    console.log("[v0] handleEnablePush called")
     setIsEnablingPush(true)
     try {
       const success = await enablePushNotifications()
+      console.log("[v0] enablePushNotifications returned:", success)
       setPushEnabled(success)
       if (success) {
         console.log("[v0] Push notifications enabled successfully")
+      } else {
+        console.log("[v0] Push notifications were not enabled")
       }
     } catch (error) {
       console.error("[v0] Failed to enable push notifications:", error)
@@ -100,6 +104,7 @@ export default function NotificationsPage() {
   }
 
   const handleTogglePush = async () => {
+    console.log("[v0] handleTogglePush called, current state:", pushEnabled)
     if (pushEnabled) {
       await handleDisablePush()
     } else {
