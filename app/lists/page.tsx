@@ -1132,7 +1132,7 @@ export default function ListsPage() {
                 variant="outline"
                 onClick={() => setShowDeleteDialog(null)}
                 disabled={isDeleting}
-                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                className="border-slate-600 text-white hover:bg-slate-800 hover:text-white"
               >
                 Cancel
               </Button>
