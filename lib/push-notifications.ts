@@ -44,7 +44,6 @@ export class PushNotificationManager {
       permission = await Notification.requestPermission()
     }
 
-    console.log("[v0] Notification permission:", permission)
     return permission
   }
 
@@ -58,13 +57,14 @@ export class PushNotificationManager {
     }
 
     const permission = await this.requestPermission()
+
     if (permission !== "granted") {
-      console.log("[v0] Push notification permission denied")
       return null
     }
 
     try {
       const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
       if (!vapidPublicKey) {
         throw new Error("VAPID public key not configured")
       }
@@ -82,13 +82,11 @@ export class PushNotificationManager {
         },
       }
 
-      // Save subscription to server
       await this.saveSubscription(subscriptionData)
-      console.log("[v0] Push subscription created and saved")
 
       return subscriptionData
     } catch (error) {
-      console.error("[v0] Push subscription failed:", error)
+      console.error("Push subscription failed:", error)
       throw error
     }
   }
@@ -178,7 +176,7 @@ export async function enablePushNotifications(): Promise<boolean> {
     const subscription = await pushNotifications.subscribe()
     return subscription !== null
   } catch (error) {
-    console.error("[v0] Failed to enable push notifications:", error)
+    console.error("Failed to enable push notifications:", error)
     return false
   }
 }
@@ -192,6 +190,7 @@ export async function isPushNotificationEnabled(): Promise<boolean> {
     const subscription = await pushNotifications.getSubscription()
     return subscription !== null
   } catch (error) {
+    console.error("Error checking push notification status:", error)
     return false
   }
 }
