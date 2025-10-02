@@ -28,6 +28,8 @@ async function AIMovieSuggestions() {
     } = await supabase.auth.getUser()
     user = authUser
 
+    console.log("[v0] AIMovieSuggestions - User ID:", user?.id)
+
     if (user) {
       const { data: profile } = await supabase
         .from("users")
@@ -36,9 +38,13 @@ async function AIMovieSuggestions() {
         .single()
 
       userProfile = profile
+      console.log("[v0] AIMovieSuggestions - Profile data:", JSON.stringify(profile))
 
       if (!profile?.username) {
+        console.log("[v0] AIMovieSuggestions - No username found, redirecting to onboarding")
         redirect("/onboarding")
+      } else {
+        console.log("[v0] AIMovieSuggestions - Profile valid, username:", profile.username)
       }
     }
   }
@@ -240,6 +246,8 @@ function renderMovieSuggestions(suggestions: any[], movieGenres: string[], userP
 }
 
 export default async function FeedPage() {
+  console.log("[v0] FeedPage - Starting to load")
+
   let supabase
   let user = null
   let profile = null
@@ -247,7 +255,9 @@ export default async function FeedPage() {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       supabase = await createClient()
+      console.log("[v0] FeedPage - Supabase client created")
     } catch (error) {
+      console.log("[v0] FeedPage - Error creating Supabase client:", error)
       supabase = null
     }
   }
@@ -258,6 +268,8 @@ export default async function FeedPage() {
     } = await supabase.auth.getUser()
     user = authUser
 
+    console.log("[v0] FeedPage - User authenticated:", !!user, "User ID:", user?.id)
+
     if (user) {
       const { data: userProfile } = await supabase
         .from("users")
@@ -266,14 +278,20 @@ export default async function FeedPage() {
         .single()
 
       profile = userProfile
+      console.log("[v0] FeedPage - Profile fetched:", JSON.stringify(profile))
 
       if (!profile?.username) {
+        console.log("[v0] FeedPage - No username found, redirecting to onboarding")
         redirect("/onboarding")
+      } else {
+        console.log("[v0] FeedPage - Profile valid, proceeding to render feed for:", profile.username)
       }
     }
   }
 
+  console.log("[v0] FeedPage - Loading AI movie suggestions")
   const aiMovieSuggestionsContent = await AIMovieSuggestions()
+  console.log("[v0] FeedPage - AI movie suggestions loaded, rendering page")
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
