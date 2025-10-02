@@ -101,10 +101,15 @@ export default function SignUpPage() {
     setError(null)
 
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/onboarding`
+      console.log("[v0] OAuth redirect URL:", redirectUrl)
+      console.log("[v0] window.location.origin:", window.location.origin)
+      console.log("[v0] window.location.href:", window.location.href)
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: "offline",
             prompt: "consent",
