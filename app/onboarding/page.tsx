@@ -257,21 +257,9 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     console.log("[v0] Start Exploring button clicked")
-    try {
-      console.log("[v0] Waiting 500ms before navigation...")
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      console.log("[v0] Navigating to /feed...")
-      router.push("/feed")
-
-      console.log("[v0] Refreshing router...")
-      router.refresh()
-
-      console.log("[v0] Navigation complete")
-    } catch (error) {
-      console.error("[v0] Error during navigation:", error)
-      setError("Navigation failed. Please try again.")
-    }
+    console.log("[v0] Navigating to feed...")
+    // Use replace instead of push to prevent back navigation to onboarding
+    router.replace("/feed")
   }
 
   if (!user) {
