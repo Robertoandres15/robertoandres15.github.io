@@ -45,6 +45,7 @@ export default function OnboardingPage() {
 
     const getUser = async () => {
       try {
+        console.log("[v0] === ONBOARDING PAGE LOAD ===")
         const client = await initializeSupabase()
 
         if (!client) {
@@ -61,19 +62,6 @@ export default function OnboardingPage() {
         if (sessionError || !session) {
           console.log("[v0] No valid session found in onboarding:", sessionError?.message)
           router.push("/auth/login?error=session_expired")
-          return
-        }
-
-        const expectedEmail = localStorage.getItem("reel-friends-current-user-email")
-        if (expectedEmail && session.user.email !== expectedEmail) {
-          console.error("[v0] Session email mismatch!", {
-            expected: expectedEmail,
-            actual: session.user.email,
-          })
-          // Clear the mismatched session
-          await client.auth.signOut()
-          localStorage.removeItem("reel-friends-current-user-email")
-          router.push("/auth/login?error=session_mismatch")
           return
         }
 
@@ -275,8 +263,6 @@ export default function OnboardingPage() {
       }
 
       console.log("[v0] Profile setup successful and verified for user:", user.id)
-
-      localStorage.removeItem("reel-friends-current-user-email")
 
       setStep(2)
     } catch (error: unknown) {

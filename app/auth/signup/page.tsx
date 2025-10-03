@@ -57,20 +57,24 @@ export default function SignUpPage() {
     }
 
     try {
-      console.log("[v0] Clearing any existing session data before signup")
+      console.log("[v0] === SIGNUP PROCESS START ===")
+      console.log("[v0] Step 1: Clearing all existing session data")
       clearSupabaseSession()
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
+      console.log("[v0] Step 2: Creating fresh Supabase client")
       const supabase = createClient()
 
       if (!supabase) {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
 
+      console.log("[v0] Step 3: Signing out any existing session")
       await supabase.auth.signOut()
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
-      console.log("[v0] Starting signup for email:", email)
+      console.log("[v0] Step 4: Starting signup for email:", email)
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -86,6 +90,7 @@ export default function SignUpPage() {
       })
 
       if (error) {
+        console.error("[v0] Signup error:", error)
         const errorMessage = error.message.toLowerCase()
         if (
           errorMessage.includes("already") ||
@@ -105,31 +110,38 @@ export default function SignUpPage() {
         throw new Error("Account creation failed. Please try again.")
       }
 
-      console.log("[v0] Signup successful for user:", {
+      console.log("[v0] Step 5: Signup successful for user:", {
         id: data.user.id,
         email: data.user.email,
       })
 
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      console.log("[v0] Step 6: Verifying session")
       const {
         data: { session },
       } = await supabase.auth.getSession()
 
-      if (!session || session.user.email !== email) {
-        console.error("[v0] Session mismatch after signup!", {
+      if (!session) {
+        console.error("[v0] No session after signup!")
+        throw new Error("Session creation failed. Please try signing in.")
+      }
+
+      if (session.user.email !== email) {
+        console.error("[v0] Session email mismatch after signup!", {
           expectedEmail: email,
-          sessionEmail: session?.user.email,
+          sessionEmail: session.user.email,
         })
         throw new Error("Session verification failed. Please try signing in.")
       }
 
-      console.log("[v0] Session verified for correct user")
+      console.log("[v0] Step 7: Session verified successfully")
+      console.log("[v0] Step 8: Redirecting to onboarding")
+      console.log("[v0] === SIGNUP PROCESS COMPLETE ===")
 
-      localStorage.setItem("reel-friends-current-user-email", email)
-
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      router.push("/onboarding")
+      router.replace("/onboarding")
     } catch (error: unknown) {
+      console.error("[v0] Signup process failed:", error)
       if (error instanceof Error && error.message.includes("Your project's URL and API key are required")) {
         setError("Authentication service is currently unavailable. Please contact support.")
       } else {
