@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dialog"
 
 export default function SettingsPage() {
+  const [componentKey, setComponentKey] = useState<string>("")
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -127,6 +128,24 @@ export default function SettingsPage() {
       try {
         console.log("[v0] ===== SETTINGS PAGE DEBUG =====")
 
+        setUser(null)
+        setProfile(null)
+        setFormData({
+          display_name: "",
+          bio: "",
+          avatar_url: "",
+          city: "",
+          state: "",
+          zip_code: "",
+          phone_number: "",
+          streaming_services: [],
+          likes_theaters: "",
+          theater_companion: "",
+          likes_series: "",
+          preferred_series_genres: [],
+          preferred_movie_genres: [],
+        })
+
         const {
           data: { user },
           error: authError,
@@ -151,6 +170,7 @@ export default function SettingsPage() {
           return
         }
 
+        setComponentKey(user.id)
         setUser(user)
 
         console.log("[v0] Settings - Fetching profile for user ID:", user.id)
@@ -187,11 +207,33 @@ export default function SettingsPage() {
           console.error("[v0] CRITICAL: Profile ID mismatch in settings!")
           console.error("[v0] Expected user ID:", user.id)
           console.error("[v0] Got profile ID:", profile.id)
+
+          // Clear all state and redirect
+          setUser(null)
+          setProfile(null)
+          setFormData({
+            display_name: "",
+            bio: "",
+            avatar_url: "",
+            city: "",
+            state: "",
+            zip_code: "",
+            phone_number: "",
+            streaming_services: [],
+            likes_theaters: "",
+            theater_companion: "",
+            likes_series: "",
+            preferred_series_genres: [],
+            preferred_movie_genres: [],
+          })
+
           toast({
             title: "Data Error",
             description: "Profile data mismatch. Please log in again.",
             variant: "destructive",
           })
+
+          await supabase.auth.signOut()
           router.push("/auth/login")
           return
         }
@@ -203,8 +245,9 @@ export default function SettingsPage() {
         }
 
         console.log("[v0] Settings - Setting profile data for:", profile.username)
-        setProfile(profile)
-        setFormData({
+
+        const newProfile = { ...profile }
+        const newFormData = {
           display_name: profile.display_name || "",
           bio: profile.bio || "",
           avatar_url: profile.avatar_url || "",
@@ -212,18 +255,23 @@ export default function SettingsPage() {
           state: profile.state || "",
           zip_code: profile.zip_code || "",
           phone_number: profile.phone_number || "",
-          streaming_services: profile.streaming_services || [],
+          streaming_services: profile.streaming_services ? [...profile.streaming_services] : [],
           likes_theaters: profile.likes_theaters || "",
           theater_companion: profile.theater_companion || "",
           likes_series: profile.likes_series || "",
-          preferred_series_genres: profile.preferred_series_genres || [],
-          preferred_movie_genres: profile.preferred_movie_genres || [],
-        })
+          preferred_series_genres: profile.preferred_series_genres ? [...profile.preferred_series_genres] : [],
+          preferred_movie_genres: profile.preferred_movie_genres ? [...profile.preferred_movie_genres] : [],
+        }
+
+        setProfile(newProfile)
+        setFormData(newFormData)
 
         setSubscriptionStatus(profile.subscription_status || "free")
         setSubscriptionExpiresAt(profile.subscription_expires_at)
 
         console.log("[v0] Settings - Form data set successfully")
+        console.log("[v0] Settings - Display name:", newFormData.display_name)
+        console.log("[v0] Settings - Username:", newProfile.username)
         console.log("[v0] ===== END SETTINGS DEBUG =====")
       } catch (error) {
         console.error("Error loading profile:", error)
@@ -725,7 +773,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground">
+    <div
+      key={componentKey}
+      className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground"
+    >
       <nav className="flex items-center justify-start md:justify-center gap-4 md:gap-8 p-4 border-b border-white/10 overflow-x-auto">
         <a
           href="/feed"
