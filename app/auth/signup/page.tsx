@@ -59,9 +59,9 @@ export default function SignUpPage() {
     try {
       console.log("[v0] === SIGNUP PROCESS START ===")
       console.log("[v0] Step 1: Clearing all existing session data")
-      clearSupabaseSession()
+      await clearSupabaseSession()
 
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       console.log("[v0] Step 2: Creating fresh Supabase client")
       const supabase = createClient()

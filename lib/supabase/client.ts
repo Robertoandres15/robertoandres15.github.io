@@ -12,8 +12,21 @@ export function createClient() {
   return client
 }
 
-export function clearSupabaseSession() {
-  // Clear all Supabase cookies
+export async function clearSupabaseSession() {
+  console.log("[v0] Starting session cleanup...")
+
+  // Step 1: Sign out from Supabase if there's an active client
+  if (client) {
+    try {
+      console.log("[v0] Signing out from Supabase...")
+      await client.auth.signOut()
+      console.log("[v0] Supabase sign-out successful")
+    } catch (error) {
+      console.error("[v0] Error during sign-out:", error)
+    }
+  }
+
+  // Step 2: Clear all Supabase cookies
   const cookies = document.cookie.split(";")
   for (const cookie of cookies) {
     const eqPos = cookie.indexOf("=")
@@ -24,7 +37,7 @@ export function clearSupabaseSession() {
     }
   }
 
-  // Clear all localStorage items
+  // Step 3: Clear all localStorage items
   const keysToRemove: string[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
@@ -34,7 +47,7 @@ export function clearSupabaseSession() {
   }
   keysToRemove.forEach((key) => localStorage.removeItem(key))
 
-  // Clear sessionStorage
+  // Step 4: Clear sessionStorage
   const sessionKeysToRemove: string[] = []
   for (let i = 0; i < sessionStorage.length; i++) {
     const key = sessionStorage.key(i)
@@ -46,5 +59,6 @@ export function clearSupabaseSession() {
 
   console.log("[v0] Cleared all Supabase session data and app cache")
 
+  // Step 5: Clear the singleton client
   client = null
 }
