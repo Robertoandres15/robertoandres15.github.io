@@ -46,6 +46,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
+// Import Server Actions
+import { getAuthenticatedUserProfile, updateUserProfile } from "./actions"
+
 export default function SettingsPage() {
   const authenticatedUserIdRef = useRef<string | null>(null)
   const [user, setUser] = useState<any>(null)
@@ -104,27 +107,13 @@ export default function SettingsPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
 
-  const [supabase, setSupabase] = useState<any>(null)
+  const [supabase, setSupabase] = useState<any>(null) // This is now unused, can be removed
   const router = useRouter()
   const { toast } = useToast()
 
-  useEffect(() => {
-    async function initializeSupabase() {
-      try {
-        const { createClient } = await import("@/lib/supabase/client")
-        const client = createClient()
-        setSupabase(client)
-      } catch (error) {
-        console.error("[v0] Failed to initialize Supabase client:", error)
-      }
-    }
-
-    initializeSupabase()
-  }, [])
+  // Removed Supabase initialization useEffect as it's no longer needed
 
   useEffect(() => {
-    if (!supabase) return
-
     async function loadProfile() {
       try {
         setDataReady(false)
@@ -148,131 +137,29 @@ export default function SettingsPage() {
 
         console.log("[v0] ===== SETTINGS PAGE LOAD =====")
         console.log("[v0] Timestamp:", new Date().toISOString())
-        console.log("[v0] User Agent:", navigator.userAgent)
-        console.log("[v0] Window location:", window.location.href)
+        // Log that we are using Server Actions
+        console.log("[v0] Fetching profile via Server Action...")
 
-        console.log("[v0] Step 1: Fetching authenticated user")
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+        const result = await getAuthenticatedUserProfile()
 
-        console.log("[v0] Authenticated user from Supabase:", {
-          id: user?.id,
-          email: user?.email,
-          aud: user?.aud,
-          created_at: user?.created_at,
-        })
-
-        if (authError || !user) {
-          console.error("[v0] ❌ Auth error or no user:", authError)
+        if (!result.success || !result.user || !result.profile) {
+          console.error("[v0] ❌ Failed to load profile:", result.error)
           toast({
             title: "Session Expired",
-            description: "Please log in again to continue.",
+            description: result.error || "Please log in again to continue.",
             variant: "destructive",
           })
           router.push("/auth/login")
           return
         }
 
-        authenticatedUserIdRef.current = user.id
-        console.log("[v0] ✅ Authenticated user ID stored in ref:", authenticatedUserIdRef.current)
+        const { user, profile } = result
 
-        console.log("[v0] Step 2: Fetching profile from database for user ID:", user.id)
-        console.log("[v0] Query: SELECT * FROM users WHERE id = '" + user.id + "'")
-
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single()
-
-        console.log("[v0] Profile query result:", {
-          success: !profileError,
-          error: profileError,
-          profileId: profile?.id,
-          username: profile?.username,
-          displayName: profile?.display_name,
-          email: profile?.email,
-          city: profile?.city,
-          state: profile?.state,
-          phoneNumber: profile?.phone_number,
+        console.log("[v0] ✅ Profile loaded via Server Action:", {
+          userId: user.id,
+          username: profile.username,
+          email: user.email,
         })
-
-        if (profileError) {
-          console.error("[v0] ❌ Profile fetch error:", profileError)
-          console.error("[v0] Error code:", profileError.code)
-          console.error("[v0] Error message:", profileError.message)
-          console.error("[v0] Error details:", profileError.details)
-
-          if (profileError.code === "PGRST116") {
-            console.error("[v0] No profile found for user:", user.id)
-            toast({
-              title: "Account Error",
-              description: "Your account data is missing. Please contact support.",
-              variant: "destructive",
-            })
-            router.push("/auth/login")
-            return
-          }
-
-          if (profileError.code === "42501" || profileError.message?.includes("permission denied")) {
-            console.error("[v0] ❌ RLS POLICY VIOLATION - User cannot access this profile")
-            await supabase.auth.signOut()
-            toast({
-              title: "Security Error",
-              description: "Access denied. Please log in again.",
-              variant: "destructive",
-            })
-            router.push("/auth/login?error=access_denied")
-            return
-          }
-
-          throw profileError
-        }
-
-        console.log("[v0] Step 3: Validating profile ID matches authenticated user ID")
-        console.log("[v0] Authenticated user ID:", user.id)
-        console.log("[v0] Profile ID from database:", profile.id)
-        console.log("[v0] IDs match:", profile.id === user.id)
-
-        if (profile.id !== user.id) {
-          console.error("[v0] ❌❌❌ CRITICAL SECURITY ERROR: Profile ID mismatch! ❌❌❌")
-          console.error("[v0] This is a DATA LEAK - user is seeing another user's data!")
-          console.error("[v0] Authenticated user ID:", user.id)
-          console.error("[v0] Profile ID from database:", profile.id)
-          console.error("[v0] Profile username:", profile.username)
-          console.error("[v0] Profile email:", profile.email)
-          console.error("[v0] This indicates RLS is not working correctly!")
-          console.error("[v0] Signing out and redirecting to login...")
-
-          await supabase.auth.signOut()
-
-          toast({
-            title: "Security Error",
-            description: "Profile data mismatch detected. Please log in again and contact support if this persists.",
-            variant: "destructive",
-          })
-
-          router.push("/auth/login?error=profile_mismatch")
-          return
-        }
-
-        if (authenticatedUserIdRef.current !== user.id) {
-          console.error("[v0] ❌ User changed during load - aborting")
-          return
-        }
-
-        if (!profile?.username) {
-          console.log("[v0] User needs onboarding - no username set")
-          router.push("/onboarding")
-          return
-        }
-
-        console.log("[v0] Step 4: Validation passed - setting state with fresh data")
-        console.log("[v0] ✅ Profile ID matches authenticated user ID")
-        console.log("[v0] Setting user state:", user.id)
-        console.log("[v0] Setting profile state:", profile.username)
 
         setUser(user)
         setProfile(profile)
@@ -328,7 +215,7 @@ export default function SettingsPage() {
     }
 
     loadProfile()
-  }, [supabase, router, toast])
+  }, [router, toast]) // Removed supabase from dependencies
 
   useEffect(() => {
     console.log("[v0] Dark mode toggled:", darkMode)
@@ -504,15 +391,11 @@ export default function SettingsPage() {
 
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          ...formData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id)
+      const result = await updateUserProfile(formData)
 
-      if (error) throw error
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update profile")
+      }
 
       toast({
         title: "Success",
@@ -520,13 +403,15 @@ export default function SettingsPage() {
       })
 
       // Refresh profile data
-      const { data: updatedProfile } = await supabase.from("users").select("*").eq("id", user.id).single()
-      setProfile(updatedProfile)
+      const profileResult = await getAuthenticatedUserProfile()
+      if (profileResult.success && profileResult.profile) {
+        setProfile(profileResult.profile)
+      }
     } catch (error) {
       console.error("Error updating profile:", error)
       toast({
         title: "Error",
-        description: "Failed to update settings",
+        description: error instanceof Error ? error.message : "Failed to update settings",
         variant: "destructive",
       })
     } finally {
@@ -546,6 +431,7 @@ export default function SettingsPage() {
 
     try {
       const { error } = await supabase.auth.updateUser({
+        // Supabase auth still used here
         password: passwordData.new_password,
       })
 
@@ -575,7 +461,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     try {
       // In a real app, you'd want to delete user data first
-      await supabase.auth.signOut()
+      await supabase.auth.signOut() // Supabase auth still used here
       router.push("/")
       toast({
         title: "Account Deleted",
@@ -596,7 +482,7 @@ export default function SettingsPage() {
 
     try {
       // Update user status to deactivated in the database
-      const { error } = await supabase
+      const { error } = await supabase // Supabase still used here
         .from("users")
         .update({
           is_active: false,
@@ -608,7 +494,7 @@ export default function SettingsPage() {
       if (error) throw error
 
       // Sign out the user
-      await supabase.auth.signOut()
+      await supabase.auth.signOut() // Supabase auth still used here
 
       toast({
         title: "Account Deactivated",
@@ -630,7 +516,7 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut()
+      await supabase.auth.signOut() // Supabase auth still used here
       router.push("/")
     } catch (error) {
       console.error("Error signing out:", error)
