@@ -72,7 +72,9 @@ export function SupabaseAuthHandler() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[v0] Auth state changed:", event)
+      if (event === "SIGNED_OUT" || event === "USER_DELETED" || event === "INITIAL_SESSION") {
+        console.log("[v0] Auth state changed:", event)
+      }
 
       if (event === "SIGNED_OUT" || event === "USER_DELETED") {
         console.log("[v0] User signed out or deleted, redirecting to login")

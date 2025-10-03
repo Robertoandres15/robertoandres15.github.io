@@ -999,6 +999,7 @@ export default function SettingsPage() {
                         Display Name
                       </Label>
                       <Input
+                        key={`display_name-${user?.id}`}
                         id="display_name"
                         placeholder="Your display name"
                         value={formData.display_name}
@@ -1019,6 +1020,7 @@ export default function SettingsPage() {
                             City
                           </Label>
                           <Input
+                            key={`city-${user?.id}`}
                             id="city"
                             placeholder="New York"
                             value={formData.city}
@@ -1031,6 +1033,7 @@ export default function SettingsPage() {
                             State
                           </Label>
                           <Input
+                            key={`state-${user?.id}`}
                             id="state"
                             placeholder="NY"
                             value={formData.state}
@@ -1047,6 +1050,7 @@ export default function SettingsPage() {
                           Zip Code
                         </Label>
                         <Input
+                          key={`zip_code-${user?.id}`}
                           id="zip_code"
                           placeholder="10001"
                           value={formData.zip_code}
@@ -1068,6 +1072,7 @@ export default function SettingsPage() {
                         </Label>
                       </div>
                       <Input
+                        key={`phone_number-${user?.id}`}
                         id="phone_number"
                         type="tel"
                         placeholder="(555) 123-4567"
@@ -1088,6 +1093,7 @@ export default function SettingsPage() {
                         Bio
                       </Label>
                       <Textarea
+                        key={`bio-${user?.id}`}
                         id="bio"
                         placeholder="Tell us about yourself and your movie preferences..."
                         value={formData.bio}
