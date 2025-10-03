@@ -47,9 +47,11 @@ import {
 } from "@/components/ui/dialog"
 
 export default function SettingsPage() {
+  const authenticatedUserIdRef = useRef<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [dataReady, setDataReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeSection, setActiveSection] = useState("profile")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -125,8 +127,28 @@ export default function SettingsPage() {
 
     async function loadProfile() {
       try {
+        setDataReady(false)
+        setUser(null)
+        setProfile(null)
+        setFormData({
+          display_name: "",
+          bio: "",
+          avatar_url: "",
+          city: "",
+          state: "",
+          zip_code: "",
+          phone_number: "",
+          streaming_services: [],
+          likes_theaters: "",
+          theater_companion: "",
+          likes_series: "",
+          preferred_series_genres: [],
+          preferred_movie_genres: [],
+        })
+
         console.log("[v0] ===== SETTINGS PAGE LOAD =====")
         console.log("[v0] Timestamp:", new Date().toISOString())
+        console.log("[v0] User Agent:", navigator.userAgent)
 
         console.log("[v0] Step 1: Fetching authenticated user")
         const {
@@ -150,9 +172,9 @@ export default function SettingsPage() {
           return
         }
 
-        setUser(user)
+        authenticatedUserIdRef.current = user.id
 
-        console.log("[v0] Step 2: Fetching profile from database")
+        console.log("[v0] Step 2: Fetching profile from database for user:", user.id)
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -183,21 +205,25 @@ export default function SettingsPage() {
         }
 
         if (profile.id !== user.id) {
-          console.error("[v0] ❌ CRITICAL ERROR: Profile ID mismatch!")
-          console.error("[v0] Expected user ID:", user.id)
-          console.error("[v0] Got profile ID:", profile.id)
-          console.error("[v0] This should NEVER happen - database returned wrong user!")
+          console.error("[v0] ❌ CRITICAL SECURITY ERROR: Profile ID mismatch!")
+          console.error("[v0] Authenticated user ID:", user.id)
+          console.error("[v0] Profile ID from database:", profile.id)
+          console.error("[v0] This indicates a serious data leak - aborting and signing out")
 
-          // Clear everything and force re-login
           await supabase.auth.signOut()
 
           toast({
-            title: "Data Error",
+            title: "Security Error",
             description: "Profile data mismatch detected. Please log in again.",
             variant: "destructive",
           })
 
           router.push("/auth/login?error=profile_mismatch")
+          return
+        }
+
+        if (authenticatedUserIdRef.current !== user.id) {
+          console.error("[v0] ❌ User changed during load - aborting")
           return
         }
 
@@ -207,9 +233,14 @@ export default function SettingsPage() {
           return
         }
 
-        console.log("[v0] Step 3: Setting form data")
+        console.log("[v0] Step 3: Validation passed - setting state with fresh data")
+        console.log("[v0] Setting user state:", user.id)
+        console.log("[v0] Setting profile state:", profile.username)
+
+        setUser(user)
         setProfile(profile)
-        setFormData({
+
+        const newFormData = {
           display_name: String(profile.display_name || ""),
           bio: String(profile.bio || ""),
           avatar_url: String(profile.avatar_url || ""),
@@ -227,20 +258,22 @@ export default function SettingsPage() {
           preferred_movie_genres: Array.isArray(profile.preferred_movie_genres)
             ? [...profile.preferred_movie_genres]
             : [],
+        }
+
+        console.log("[v0] Form data to be set:", {
+          display_name: newFormData.display_name,
+          city: newFormData.city,
+          state: newFormData.state,
+          phone_number: newFormData.phone_number,
         })
+
+        setFormData(newFormData)
 
         setSubscriptionStatus(profile.subscription_status || "free")
         setSubscriptionExpiresAt(profile.subscription_expires_at)
 
-        console.log("[v0] Step 4: Validating state was set correctly")
-        setTimeout(() => {
-          console.log("[v0] Current formData state after setState:", {
-            display_name: String(profile.display_name || ""),
-            city: String(profile.city || ""),
-            state: String(profile.state || ""),
-            phone_number: String(profile.phone_number || ""),
-          })
-        }, 100)
+        console.log("[v0] ✅ All data validated and set - marking as ready to render")
+        setDataReady(true)
 
         console.log("[v0] ✅ Profile loaded successfully for user:", profile.username)
         console.log("[v0] ===== END SETTINGS PAGE LOAD =====")
@@ -733,10 +766,27 @@ export default function SettingsPage() {
     })
   }
 
-  if (loading) {
+  if (loading || !dataReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="text-white">Loading your settings...</div>
+          <div className="text-slate-400 text-sm mt-2">Validating your profile data</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">Unable to load profile data</div>
+          <Button onClick={() => router.push("/auth/login")} className="bg-purple-600 hover:bg-purple-700">
+            Return to Login
+          </Button>
+        </div>
       </div>
     )
   }
@@ -783,9 +833,12 @@ export default function SettingsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
           <p className="text-gray-300 text-sm md:text-base">Manage your account settings and preferences</p>
           {user && profile && (
-            <p className="text-xs text-gray-400 mt-2">
-              Logged in as: {user.email} (@{profile.username})
-            </p>
+            <div className="mt-4 p-3 bg-purple-600/20 border border-purple-500/30 rounded-lg">
+              <p className="text-sm text-purple-200">
+                <span className="font-semibold">Logged in as:</span> {user.email} (@{profile.username})
+              </p>
+              <p className="text-xs text-purple-300 mt-1">User ID: {user.id}</p>
+            </div>
           )}
         </div>
 
