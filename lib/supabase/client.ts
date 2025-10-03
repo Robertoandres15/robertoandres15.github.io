@@ -1,14 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr"
-import type { SupabaseClient } from "@supabase/supabase-js"
-
-let client: SupabaseClient | null = null
 
 export function createClient() {
-  if (client) {
-    return client
-  }
-
-  client = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const client = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
   return client
 }
@@ -21,6 +14,7 @@ export function clearSupabaseSession() {
     const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim()
     if (name.startsWith("sb-") || name.includes("supabase")) {
       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/"
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname
     }
   }
 
@@ -28,7 +22,7 @@ export function clearSupabaseSession() {
   const keysToRemove: string[] = []
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
-    if (key && (key.startsWith("sb-") || key.includes("supabase"))) {
+    if (key && (key.startsWith("sb-") || key.includes("supabase") || key.includes("reel-friends"))) {
       keysToRemove.push(key)
     }
   }
@@ -38,14 +32,11 @@ export function clearSupabaseSession() {
   const sessionKeysToRemove: string[] = []
   for (let i = 0; i < sessionStorage.length; i++) {
     const key = sessionStorage.key(i)
-    if (key && (key.startsWith("sb-") || key.includes("supabase"))) {
+    if (key && (key.startsWith("sb-") || key.includes("supabase") || key.includes("reel-friends"))) {
       sessionKeysToRemove.push(key)
     }
   }
   sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key))
 
-  // Reset the client singleton
-  client = null
-
-  console.log("[v0] Cleared all Supabase session data")
+  console.log("[v0] Cleared all Supabase session data and app cache")
 }

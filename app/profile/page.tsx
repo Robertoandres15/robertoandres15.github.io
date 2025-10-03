@@ -171,7 +171,7 @@ export default function ProfilePage() {
           const keysToRemove: string[] = []
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i)
-            if (key && (key.includes("profile") || key.includes("user_data"))) {
+            if (key && (key.includes("profile") || key.includes("user_data") || key.includes("cached"))) {
               keysToRemove.push(key)
             }
           }
@@ -179,7 +179,7 @@ export default function ProfilePage() {
           console.log("[v0] Cleared cached profile data from localStorage")
         }
 
-        console.log("[v0] Loading profile page")
+        console.log("[v0] === PROFILE PAGE LOAD ===")
         const supabase = createClient()
 
         if (!supabase) {
@@ -202,26 +202,13 @@ export default function ProfilePage() {
 
         const user = session.user
 
-        const expectedEmail = localStorage.getItem("reel-friends-current-user-email")
-        if (expectedEmail && user.email !== expectedEmail) {
-          console.error("[v0] Session email mismatch on profile page!", {
-            expected: expectedEmail,
-            actual: user.email,
-          })
-          // Clear the mismatched session
-          await supabase.auth.signOut()
-          localStorage.removeItem("reel-friends-current-user-email")
-          router.push("/auth/login?error=session_mismatch")
-          return
-        }
-
         console.log("[v0] ===== PROFILE DEBUG INFO =====")
         console.log("[v0] Authenticated User ID:", user.id)
         console.log("[v0] Authenticated User Email:", user.email)
         console.log("[v0] User created at:", user.created_at)
-        console.log("[v0] User metadata:", JSON.stringify(user.user_metadata))
         console.log("[v0] Fetching profile for user ID:", user.id)
 
+        const timestamp = Date.now()
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -246,8 +233,7 @@ export default function ProfilePage() {
         console.log("[v0] - Profile ID:", profile?.id)
         console.log("[v0] - Profile Username:", profile?.username)
         console.log("[v0] - Profile Display Name:", profile?.display_name)
-        console.log("[v0] - Profile Created At:", profile?.created_at)
-        console.log("[v0] - Full profile data:", JSON.stringify(profile))
+        console.log("[v0] - Profile Email (from auth):", user.email)
 
         if (profile.id !== user.id) {
           console.error("[v0] CRITICAL: Profile ID mismatch!")
@@ -267,7 +253,7 @@ export default function ProfilePage() {
           return
         }
 
-        console.log("[v0] Profile loaded:", profile.username)
+        console.log("[v0] Profile loaded successfully:", profile.username)
 
         const [listsResult, friendsResult, activitiesResult] = await Promise.allSettled([
           supabase.from("lists").select("id").eq("user_id", user.id),

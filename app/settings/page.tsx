@@ -54,6 +54,7 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("profile")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
 
   const [formData, setFormData] = useState({
     display_name: "",
@@ -500,6 +501,43 @@ export default function SettingsPage() {
         description: "Failed to delete account",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleDeactivateAccount = async () => {
+    if (!user) return
+
+    try {
+      // Update user status to deactivated in the database
+      const { error } = await supabase
+        .from("users")
+        .update({
+          is_active: false,
+          deactivated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+
+      if (error) throw error
+
+      // Sign out the user
+      await supabase.auth.signOut()
+
+      toast({
+        title: "Account Deactivated",
+        description: "Your account has been deactivated. You can reactivate it by logging in again.",
+      })
+
+      router.push("/")
+    } catch (error) {
+      console.error("Error deactivating account:", error)
+      toast({
+        title: "Error",
+        description: "Failed to deactivate account",
+        variant: "destructive",
+      })
+    } finally {
+      setShowDeactivateConfirm(false)
     }
   }
 
@@ -1404,6 +1442,23 @@ export default function SettingsPage() {
 
                     <Separator className="bg-white/20" />
 
+                    <div className="flex items-center justify-between p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                      <div className="flex items-center gap-3">
+                        <UserX className="h-5 w-5 text-orange-400" />
+                        <div>
+                          <h3 className="text-white font-medium">Deactivate Account</h3>
+                          <p className="text-gray-300 text-sm">Temporarily deactivate your account</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="border-orange-500/20 text-orange-400 hover:bg-orange-500/10 bg-transparent"
+                        onClick={() => setShowDeactivateConfirm(true)}
+                      >
+                        Deactivate
+                      </Button>
+                    </div>
+
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Shield className="h-5 w-5 text-purple-400" />
@@ -1717,6 +1772,49 @@ export default function SettingsPage() {
               ) : (
                 "Subscribe Now"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeactivateConfirm} onOpenChange={setShowDeactivateConfirm}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Deactivate Account</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to deactivate your account?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+              <h4 className="font-medium text-orange-400 mb-2">What happens when you deactivate:</h4>
+              <ul className="text-sm text-slate-300 space-y-2">
+                <li>• Your profile will be hidden from other users</li>
+                <li>• You won't receive notifications</li>
+                <li>• Your posts and reviews will be hidden</li>
+                <li>• You can reactivate anytime by logging back in</li>
+              </ul>
+            </div>
+
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+              <p className="text-sm text-slate-300">
+                <strong className="text-white">Note:</strong> This is different from deleting your account. Deactivation
+                is temporary and reversible.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeactivateConfirm(false)}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleDeactivateAccount} className="bg-orange-600 hover:bg-orange-700 text-white">
+              Deactivate Account
             </Button>
           </DialogFooter>
         </DialogContent>
