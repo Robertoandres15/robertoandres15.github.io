@@ -70,11 +70,7 @@ export default function SignUpPage() {
         throw new Error("Unable to connect to authentication service. Please try again later.")
       }
 
-      console.log("[v0] Step 3: Signing out any existing session")
-      await supabase.auth.signOut()
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      console.log("[v0] Step 4: Starting signup for email:", email)
+      console.log("[v0] Step 3: Starting signup for email:", email)
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -110,14 +106,14 @@ export default function SignUpPage() {
         throw new Error("Account creation failed. Please try again.")
       }
 
-      console.log("[v0] Step 5: Signup successful for user:", {
+      console.log("[v0] Step 4: Signup successful for user:", {
         id: data.user.id,
         email: data.user.email,
       })
 
       await new Promise((resolve) => setTimeout(resolve, 500))
 
-      console.log("[v0] Step 6: Verifying session")
+      console.log("[v0] Step 5: Verifying session")
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -135,8 +131,8 @@ export default function SignUpPage() {
         throw new Error("Session verification failed. Please try signing in.")
       }
 
-      console.log("[v0] Step 7: Session verified successfully")
-      console.log("[v0] Step 8: Redirecting to onboarding")
+      console.log("[v0] Step 6: Session verified successfully")
+      console.log("[v0] Step 7: Redirecting to onboarding")
       console.log("[v0] === SIGNUP PROCESS COMPLETE ===")
 
       router.replace("/onboarding")
