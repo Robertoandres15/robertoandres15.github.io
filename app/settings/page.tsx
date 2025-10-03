@@ -149,6 +149,7 @@ export default function SettingsPage() {
         console.log("[v0] ===== SETTINGS PAGE LOAD =====")
         console.log("[v0] Timestamp:", new Date().toISOString())
         console.log("[v0] User Agent:", navigator.userAgent)
+        console.log("[v0] Window location:", window.location.href)
 
         console.log("[v0] Step 1: Fetching authenticated user")
         const {
@@ -156,13 +157,15 @@ export default function SettingsPage() {
           error: authError,
         } = await supabase.auth.getUser()
 
-        console.log("[v0] Authenticated user:", {
+        console.log("[v0] Authenticated user from Supabase:", {
           id: user?.id,
           email: user?.email,
+          aud: user?.aud,
+          created_at: user?.created_at,
         })
 
         if (authError || !user) {
-          console.error("[v0] Auth error or no user:", authError)
+          console.error("[v0] ❌ Auth error or no user:", authError)
           toast({
             title: "Session Expired",
             description: "Please log in again to continue.",
@@ -173,26 +176,37 @@ export default function SettingsPage() {
         }
 
         authenticatedUserIdRef.current = user.id
+        console.log("[v0] ✅ Authenticated user ID stored in ref:", authenticatedUserIdRef.current)
 
-        console.log("[v0] Step 2: Fetching profile from database for user:", user.id)
+        console.log("[v0] Step 2: Fetching profile from database for user ID:", user.id)
+        console.log("[v0] Query: SELECT * FROM users WHERE id = '" + user.id + "'")
+
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
           .eq("id", user.id)
           .single()
 
-        console.log("[v0] Profile fetched from database:", {
+        console.log("[v0] Profile query result:", {
+          success: !profileError,
+          error: profileError,
           profileId: profile?.id,
           username: profile?.username,
           displayName: profile?.display_name,
+          email: profile?.email,
           city: profile?.city,
           state: profile?.state,
           phoneNumber: profile?.phone_number,
         })
 
         if (profileError) {
-          console.error("[v0] Profile fetch error:", profileError)
+          console.error("[v0] ❌ Profile fetch error:", profileError)
+          console.error("[v0] Error code:", profileError.code)
+          console.error("[v0] Error message:", profileError.message)
+          console.error("[v0] Error details:", profileError.details)
+
           if (profileError.code === "PGRST116") {
+            console.error("[v0] No profile found for user:", user.id)
             toast({
               title: "Account Error",
               description: "Your account data is missing. Please contact support.",
@@ -201,20 +215,42 @@ export default function SettingsPage() {
             router.push("/auth/login")
             return
           }
+
+          if (profileError.code === "42501" || profileError.message?.includes("permission denied")) {
+            console.error("[v0] ❌ RLS POLICY VIOLATION - User cannot access this profile")
+            await supabase.auth.signOut()
+            toast({
+              title: "Security Error",
+              description: "Access denied. Please log in again.",
+              variant: "destructive",
+            })
+            router.push("/auth/login?error=access_denied")
+            return
+          }
+
           throw profileError
         }
 
+        console.log("[v0] Step 3: Validating profile ID matches authenticated user ID")
+        console.log("[v0] Authenticated user ID:", user.id)
+        console.log("[v0] Profile ID from database:", profile.id)
+        console.log("[v0] IDs match:", profile.id === user.id)
+
         if (profile.id !== user.id) {
-          console.error("[v0] ❌ CRITICAL SECURITY ERROR: Profile ID mismatch!")
+          console.error("[v0] ❌❌❌ CRITICAL SECURITY ERROR: Profile ID mismatch! ❌❌❌")
+          console.error("[v0] This is a DATA LEAK - user is seeing another user's data!")
           console.error("[v0] Authenticated user ID:", user.id)
           console.error("[v0] Profile ID from database:", profile.id)
-          console.error("[v0] This indicates a serious data leak - aborting and signing out")
+          console.error("[v0] Profile username:", profile.username)
+          console.error("[v0] Profile email:", profile.email)
+          console.error("[v0] This indicates RLS is not working correctly!")
+          console.error("[v0] Signing out and redirecting to login...")
 
           await supabase.auth.signOut()
 
           toast({
             title: "Security Error",
-            description: "Profile data mismatch detected. Please log in again.",
+            description: "Profile data mismatch detected. Please log in again and contact support if this persists.",
             variant: "destructive",
           })
 
@@ -228,12 +264,13 @@ export default function SettingsPage() {
         }
 
         if (!profile?.username) {
-          console.log("[v0] User needs onboarding")
+          console.log("[v0] User needs onboarding - no username set")
           router.push("/onboarding")
           return
         }
 
-        console.log("[v0] Step 3: Validation passed - setting state with fresh data")
+        console.log("[v0] Step 4: Validation passed - setting state with fresh data")
+        console.log("[v0] ✅ Profile ID matches authenticated user ID")
         console.log("[v0] Setting user state:", user.id)
         console.log("[v0] Setting profile state:", profile.username)
 
@@ -275,10 +312,10 @@ export default function SettingsPage() {
         console.log("[v0] ✅ All data validated and set - marking as ready to render")
         setDataReady(true)
 
-        console.log("[v0] ✅ Profile loaded successfully for user:", profile.username)
+        console.log("[v0] ✅✅✅ Profile loaded successfully for user:", profile.username, "✅✅✅")
         console.log("[v0] ===== END SETTINGS PAGE LOAD =====")
       } catch (error) {
-        console.error("Error loading profile:", error)
+        console.error("[v0] ❌ Error loading profile:", error)
         toast({
           title: "Error",
           description: "Failed to load profile. Please try logging in again.",

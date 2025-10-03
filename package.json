@@ -1,4 +1,25 @@
 {
+  "name": "reel-friends",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "build:mobile": "next build && npx cap sync",
+    "cap:add": "npx cap add",
+    "cap:copy": "npx cap copy",
+    "cap:open": "npx cap open",
+    "cap:run": "npx cap run",
+    "cap:sync": "npx cap sync",
+    "dev": "next dev",
+    "lint": "next lint",
+    "mobile:android": "npm run build:mobile && npx cap open android",
+    "mobile:build": "node scripts/build-mobile.js",
+    "mobile:ios": "npm run build:mobile && npx cap open ios",
+    "mobile:run:android": "npm run build:mobile && npx cap run android",
+    "mobile:run:ios": "npm run build:mobile && npx cap run ios",
+    "mobile:setup": "node scripts/setup-mobile.js",
+    "start": "next start"
+  },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
     "@capacitor/app": "latest",
@@ -22,12 +43,14 @@
     "@radix-ui/react-toast": "latest",
     "@remix-run/react": "latest",
     "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "latest",
     "@sveltejs/kit": "latest",
     "@vercel/analytics": "latest",
     "@vercel/blob": "latest",
+    "child_process": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "latest",
     "fs": "latest",
     "geist": "^1.3.0",
     "lucide-react": "^0.454.0",
@@ -41,9 +64,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vue": "latest",
     "vue-router": "latest",
-    "child_process": "1.0.2",
-    "web-push": "3.6.7",
-    "date-fns": "4.1.0"
+    "web-push": "latest"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",
@@ -53,26 +74,5 @@
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
-  },
-  "name": "reel-friends",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "build": "next build",
-    "build:mobile": "next build && npx cap sync",
-    "cap:add": "npx cap add",
-    "cap:copy": "npx cap copy",
-    "cap:open": "npx cap open",
-    "cap:run": "npx cap run",
-    "cap:sync": "npx cap sync",
-    "dev": "next dev",
-    "lint": "next lint",
-    "start": "next start",
-    "mobile:setup": "node scripts/setup-mobile.js",
-    "mobile:build": "node scripts/build-mobile.js",
-    "mobile:android": "npm run build:mobile && npx cap open android",
-    "mobile:ios": "npm run build:mobile && npx cap open ios",
-    "mobile:run:android": "npm run build:mobile && npx cap run android",
-    "mobile:run:ios": "npm run build:mobile && npx cap run ios"
   }
 }
