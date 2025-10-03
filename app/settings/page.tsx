@@ -837,7 +837,6 @@ export default function SettingsPage() {
               <p className="text-sm text-purple-200">
                 <span className="font-semibold">Logged in as:</span> {user.email} (@{profile.username})
               </p>
-              <p className="text-xs text-purple-300 mt-1">User ID: {user.id}</p>
             </div>
           )}
         </div>
