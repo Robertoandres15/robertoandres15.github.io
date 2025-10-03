@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/dialog"
 
 export default function SettingsPage() {
+  const [renderKey, setRenderKey] = useState<string>(Date.now().toString())
   const [componentKey, setComponentKey] = useState<string>("")
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -126,8 +127,28 @@ export default function SettingsPage() {
 
     async function loadProfile() {
       try {
-        console.log("[v0] ===== SETTINGS PAGE DEBUG =====")
+        console.log("[v0] ===== SETTINGS PAGE LOAD =====")
+        console.log("[v0] Timestamp:", new Date().toISOString())
 
+        console.log("[v0] Step 1: Clearing all cached data")
+
+        // Clear all localStorage items related to user data
+        const keysToRemove: string[] = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && (key.includes("reel-friends") || key.includes("supabase") || key.startsWith("sb-"))) {
+            // Keep darkMode preference
+            if (key !== "darkMode") {
+              keysToRemove.push(key)
+            }
+          }
+        }
+        keysToRemove.forEach((key) => {
+          console.log("[v0] Removing localStorage key:", key)
+          localStorage.removeItem(key)
+        })
+
+        console.log("[v0] Step 2: Resetting all state")
         setUser(null)
         setProfile(null)
         setFormData({
@@ -146,15 +167,19 @@ export default function SettingsPage() {
           preferred_movie_genres: [],
         })
 
+        console.log("[v0] Step 3: Fetching authenticated user")
         const {
           data: { user },
           error: authError,
         } = await supabase.auth.getUser()
 
-        console.log("[v0] Settings - Authenticated user:", user?.id, user?.email)
+        console.log("[v0] Authenticated user:", {
+          id: user?.id,
+          email: user?.email,
+        })
 
-        if (authError) {
-          console.error("[v0] Auth error:", authError)
+        if (authError || !user) {
+          console.error("[v0] Auth error or no user:", authError)
           toast({
             title: "Session Expired",
             description: "Please log in again to continue.",
@@ -164,37 +189,36 @@ export default function SettingsPage() {
           return
         }
 
-        if (!user) {
-          console.log("[v0] No authenticated user, redirecting to login")
-          router.push("/auth/login")
-          return
-        }
-
+        const newRenderKey = `${user.id}-${Date.now()}`
+        setRenderKey(newRenderKey)
         setComponentKey(user.id)
         setUser(user)
 
-        console.log("[v0] Settings - Fetching profile for user ID:", user.id)
+        console.log("[v0] Step 4: Fetching profile from database")
 
+        const timestamp = Date.now()
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
           .eq("id", user.id)
           .single()
 
-        console.log("[v0] Settings - Profile fetched:", {
+        console.log("[v0] Profile fetched from database:", {
           profileId: profile?.id,
           username: profile?.username,
           displayName: profile?.display_name,
-          email: user.email,
+          city: profile?.city,
+          state: profile?.state,
+          phoneNumber: profile?.phone_number,
+          timestamp,
         })
 
         if (profileError) {
-          console.error("[v0] Profile error:", profileError)
+          console.error("[v0] Profile fetch error:", profileError)
           if (profileError.code === "PGRST116") {
-            // User not found in database
             toast({
               title: "Account Error",
-              description: "Your account data is missing. Please contact support or sign up again.",
+              description: "Your account data is missing. Please contact support.",
               variant: "destructive",
             })
             router.push("/auth/login")
@@ -204,75 +228,77 @@ export default function SettingsPage() {
         }
 
         if (profile.id !== user.id) {
-          console.error("[v0] CRITICAL: Profile ID mismatch in settings!")
+          console.error("[v0] ❌ CRITICAL ERROR: Profile ID mismatch!")
           console.error("[v0] Expected user ID:", user.id)
           console.error("[v0] Got profile ID:", profile.id)
+          console.error("[v0] This should NEVER happen - database returned wrong user!")
 
-          // Clear all state and redirect
-          setUser(null)
-          setProfile(null)
-          setFormData({
-            display_name: "",
-            bio: "",
-            avatar_url: "",
-            city: "",
-            state: "",
-            zip_code: "",
-            phone_number: "",
-            streaming_services: [],
-            likes_theaters: "",
-            theater_companion: "",
-            likes_series: "",
-            preferred_series_genres: [],
-            preferred_movie_genres: [],
-          })
+          // Clear everything and force re-login
+          await supabase.auth.signOut()
 
           toast({
             title: "Data Error",
-            description: "Profile data mismatch. Please log in again.",
+            description: "Profile data mismatch detected. Please log in again.",
             variant: "destructive",
           })
 
-          await supabase.auth.signOut()
-          router.push("/auth/login")
+          router.push("/auth/login?error=profile_mismatch")
           return
         }
 
         if (!profile?.username) {
-          console.log("[v0] Settings - User needs onboarding")
+          console.log("[v0] User needs onboarding")
           router.push("/onboarding")
           return
         }
 
-        console.log("[v0] Settings - Setting profile data for:", profile.username)
+        console.log("[v0] Step 5: Setting form data")
 
-        const newProfile = { ...profile }
         const newFormData = {
-          display_name: profile.display_name || "",
-          bio: profile.bio || "",
-          avatar_url: profile.avatar_url || "",
-          city: profile.city || "",
-          state: profile.state || "",
-          zip_code: profile.zip_code || "",
-          phone_number: profile.phone_number || "",
-          streaming_services: profile.streaming_services ? [...profile.streaming_services] : [],
-          likes_theaters: profile.likes_theaters || "",
-          theater_companion: profile.theater_companion || "",
-          likes_series: profile.likes_series || "",
-          preferred_series_genres: profile.preferred_series_genres ? [...profile.preferred_series_genres] : [],
-          preferred_movie_genres: profile.preferred_movie_genres ? [...profile.preferred_movie_genres] : [],
+          display_name: String(profile.display_name || ""),
+          bio: String(profile.bio || ""),
+          avatar_url: String(profile.avatar_url || ""),
+          city: String(profile.city || ""),
+          state: String(profile.state || ""),
+          zip_code: String(profile.zip_code || ""),
+          phone_number: String(profile.phone_number || ""),
+          streaming_services: Array.isArray(profile.streaming_services) ? [...profile.streaming_services] : [],
+          likes_theaters: String(profile.likes_theaters || ""),
+          theater_companion: String(profile.theater_companion || ""),
+          likes_series: String(profile.likes_series || ""),
+          preferred_series_genres: Array.isArray(profile.preferred_series_genres)
+            ? [...profile.preferred_series_genres]
+            : [],
+          preferred_movie_genres: Array.isArray(profile.preferred_movie_genres)
+            ? [...profile.preferred_movie_genres]
+            : [],
         }
 
-        setProfile(newProfile)
+        console.log("[v0] Form data to be set:", {
+          display_name: newFormData.display_name,
+          city: newFormData.city,
+          state: newFormData.state,
+          phone_number: newFormData.phone_number,
+        })
+
+        setProfile({ ...profile })
         setFormData(newFormData)
 
         setSubscriptionStatus(profile.subscription_status || "free")
         setSubscriptionExpiresAt(profile.subscription_expires_at)
 
-        console.log("[v0] Settings - Form data set successfully")
-        console.log("[v0] Settings - Display name:", newFormData.display_name)
-        console.log("[v0] Settings - Username:", newProfile.username)
-        console.log("[v0] ===== END SETTINGS DEBUG =====")
+        console.log("[v0] Step 6: Validating state was set correctly")
+        setTimeout(() => {
+          console.log("[v0] Current formData state after setState:", {
+            display_name: newFormData.display_name,
+            city: newFormData.city,
+            state: newFormData.state,
+            phone_number: newFormData.phone_number,
+          })
+        }, 100)
+
+        console.log("[v0] ✅ Profile loaded successfully for user:", profile.username)
+        console.log("[v0] ===== END SETTINGS PAGE LOAD =====")
       } catch (error) {
         console.error("Error loading profile:", error)
         toast({
@@ -288,8 +314,6 @@ export default function SettingsPage() {
 
     loadProfile()
   }, [supabase, router, toast])
-
-  // This was causing the wrong user's data to be loaded
 
   useEffect(() => {
     console.log("[v0] Dark mode toggled:", darkMode)
@@ -774,7 +798,7 @@ export default function SettingsPage() {
 
   return (
     <div
-      key={componentKey}
+      key={renderKey}
       className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground"
     >
       <nav className="flex items-center justify-start md:justify-center gap-4 md:gap-8 p-4 border-b border-white/10 overflow-x-auto">
@@ -816,6 +840,11 @@ export default function SettingsPage() {
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
           <p className="text-gray-300 text-sm md:text-base">Manage your account settings and preferences</p>
+          {user && profile && (
+            <p className="text-xs text-gray-400 mt-2">
+              Logged in as: {user.email} (@{profile.username})
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 md:gap-8">
@@ -925,6 +954,7 @@ export default function SettingsPage() {
                         Username
                       </Label>
                       <Input
+                        key={`username-${renderKey}`}
                         id="username"
                         value={profile?.username ?? ""}
                         disabled
@@ -939,6 +969,7 @@ export default function SettingsPage() {
                         Display Name
                       </Label>
                       <Input
+                        key={`display_name-${renderKey}`}
                         id="display_name"
                         placeholder="Your display name"
                         value={formData.display_name}
@@ -959,6 +990,7 @@ export default function SettingsPage() {
                             City
                           </Label>
                           <Input
+                            key={`city-${renderKey}`}
                             id="city"
                             placeholder="New York"
                             value={formData.city}
@@ -971,6 +1003,7 @@ export default function SettingsPage() {
                             State
                           </Label>
                           <Input
+                            key={`state-${renderKey}`}
                             id="state"
                             placeholder="NY"
                             value={formData.state}
@@ -987,6 +1020,7 @@ export default function SettingsPage() {
                           Zip Code
                         </Label>
                         <Input
+                          key={`zip_code-${renderKey}`}
                           id="zip_code"
                           placeholder="10001"
                           value={formData.zip_code}
@@ -1008,6 +1042,7 @@ export default function SettingsPage() {
                         </Label>
                       </div>
                       <Input
+                        key={`phone_number-${renderKey}`}
                         id="phone_number"
                         type="tel"
                         placeholder="(555) 123-4567"
@@ -1028,6 +1063,7 @@ export default function SettingsPage() {
                         Bio
                       </Label>
                       <Textarea
+                        key={`bio-${renderKey}`}
                         id="bio"
                         placeholder="Tell us about yourself and your movie preferences..."
                         value={formData.bio}
