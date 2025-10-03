@@ -47,8 +47,6 @@ import {
 } from "@/components/ui/dialog"
 
 export default function SettingsPage() {
-  const [renderKey, setRenderKey] = useState<string>(Date.now().toString())
-  const [componentKey, setComponentKey] = useState<string>("")
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -130,44 +128,7 @@ export default function SettingsPage() {
         console.log("[v0] ===== SETTINGS PAGE LOAD =====")
         console.log("[v0] Timestamp:", new Date().toISOString())
 
-        console.log("[v0] Step 1: Clearing all cached data")
-
-        // Clear all localStorage items related to user data
-        const keysToRemove: string[] = []
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key && (key.includes("reel-friends") || key.includes("supabase") || key.startsWith("sb-"))) {
-            // Keep darkMode preference
-            if (key !== "darkMode") {
-              keysToRemove.push(key)
-            }
-          }
-        }
-        keysToRemove.forEach((key) => {
-          console.log("[v0] Removing localStorage key:", key)
-          localStorage.removeItem(key)
-        })
-
-        console.log("[v0] Step 2: Resetting all state")
-        setUser(null)
-        setProfile(null)
-        setFormData({
-          display_name: "",
-          bio: "",
-          avatar_url: "",
-          city: "",
-          state: "",
-          zip_code: "",
-          phone_number: "",
-          streaming_services: [],
-          likes_theaters: "",
-          theater_companion: "",
-          likes_series: "",
-          preferred_series_genres: [],
-          preferred_movie_genres: [],
-        })
-
-        console.log("[v0] Step 3: Fetching authenticated user")
+        console.log("[v0] Step 1: Fetching authenticated user")
         const {
           data: { user },
           error: authError,
@@ -189,14 +150,9 @@ export default function SettingsPage() {
           return
         }
 
-        const newRenderKey = `${user.id}-${Date.now()}`
-        setRenderKey(newRenderKey)
-        setComponentKey(user.id)
         setUser(user)
 
-        console.log("[v0] Step 4: Fetching profile from database")
-
-        const timestamp = Date.now()
+        console.log("[v0] Step 2: Fetching profile from database")
         const { data: profile, error: profileError } = await supabase
           .from("users")
           .select("*")
@@ -210,7 +166,6 @@ export default function SettingsPage() {
           city: profile?.city,
           state: profile?.state,
           phoneNumber: profile?.phone_number,
-          timestamp,
         })
 
         if (profileError) {
@@ -252,9 +207,9 @@ export default function SettingsPage() {
           return
         }
 
-        console.log("[v0] Step 5: Setting form data")
-
-        const newFormData = {
+        console.log("[v0] Step 3: Setting form data")
+        setProfile(profile)
+        setFormData({
           display_name: String(profile.display_name || ""),
           bio: String(profile.bio || ""),
           avatar_url: String(profile.avatar_url || ""),
@@ -272,28 +227,18 @@ export default function SettingsPage() {
           preferred_movie_genres: Array.isArray(profile.preferred_movie_genres)
             ? [...profile.preferred_movie_genres]
             : [],
-        }
-
-        console.log("[v0] Form data to be set:", {
-          display_name: newFormData.display_name,
-          city: newFormData.city,
-          state: newFormData.state,
-          phone_number: newFormData.phone_number,
         })
-
-        setProfile({ ...profile })
-        setFormData(newFormData)
 
         setSubscriptionStatus(profile.subscription_status || "free")
         setSubscriptionExpiresAt(profile.subscription_expires_at)
 
-        console.log("[v0] Step 6: Validating state was set correctly")
+        console.log("[v0] Step 4: Validating state was set correctly")
         setTimeout(() => {
           console.log("[v0] Current formData state after setState:", {
-            display_name: newFormData.display_name,
-            city: newFormData.city,
-            state: newFormData.state,
-            phone_number: newFormData.phone_number,
+            display_name: String(profile.display_name || ""),
+            city: String(profile.city || ""),
+            state: String(profile.state || ""),
+            phone_number: String(profile.phone_number || ""),
           })
         }, 100)
 
@@ -797,10 +742,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div
-      key={renderKey}
-      className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground"
-    >
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-foreground">
       <nav className="flex items-center justify-start md:justify-center gap-4 md:gap-8 p-4 border-b border-white/10 overflow-x-auto">
         <a
           href="/feed"
@@ -954,7 +896,6 @@ export default function SettingsPage() {
                         Username
                       </Label>
                       <Input
-                        key={`username-${renderKey}`}
                         id="username"
                         value={profile?.username ?? ""}
                         disabled
@@ -969,7 +910,6 @@ export default function SettingsPage() {
                         Display Name
                       </Label>
                       <Input
-                        key={`display_name-${renderKey}`}
                         id="display_name"
                         placeholder="Your display name"
                         value={formData.display_name}
@@ -990,7 +930,6 @@ export default function SettingsPage() {
                             City
                           </Label>
                           <Input
-                            key={`city-${renderKey}`}
                             id="city"
                             placeholder="New York"
                             value={formData.city}
@@ -1003,7 +942,6 @@ export default function SettingsPage() {
                             State
                           </Label>
                           <Input
-                            key={`state-${renderKey}`}
                             id="state"
                             placeholder="NY"
                             value={formData.state}
@@ -1020,7 +958,6 @@ export default function SettingsPage() {
                           Zip Code
                         </Label>
                         <Input
-                          key={`zip_code-${renderKey}`}
                           id="zip_code"
                           placeholder="10001"
                           value={formData.zip_code}
@@ -1042,7 +979,6 @@ export default function SettingsPage() {
                         </Label>
                       </div>
                       <Input
-                        key={`phone_number-${renderKey}`}
                         id="phone_number"
                         type="tel"
                         placeholder="(555) 123-4567"
@@ -1063,7 +999,6 @@ export default function SettingsPage() {
                         Bio
                       </Label>
                       <Textarea
-                        key={`bio-${renderKey}`}
                         id="bio"
                         placeholder="Tell us about yourself and your movie preferences..."
                         value={formData.bio}
