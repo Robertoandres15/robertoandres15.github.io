@@ -15,14 +15,21 @@ export function createClient() {
 export async function clearSupabaseSession() {
   console.log("[v0] Starting session cleanup...")
 
-  // Step 1: Sign out from Supabase if there's an active client
   if (client) {
     try {
-      console.log("[v0] Signing out from Supabase...")
-      await client.auth.signOut()
-      console.log("[v0] Supabase sign-out successful")
+      const {
+        data: { session },
+      } = await client.auth.getSession()
+
+      if (session) {
+        console.log("[v0] Active session found, signing out...")
+        await client.auth.signOut()
+        console.log("[v0] Supabase sign-out successful")
+      } else {
+        console.log("[v0] No active session, skipping sign-out")
+      }
     } catch (error) {
-      console.error("[v0] Error during sign-out:", error)
+      console.error("[v0] Error during session check/sign-out:", error)
     }
   }
 
